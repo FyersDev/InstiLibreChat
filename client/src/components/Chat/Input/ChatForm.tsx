@@ -31,6 +31,8 @@ import StopButton from './StopButton';
 import SendButton from './SendButton';
 import EditBadges from './EditBadges';
 import BadgeRow from './BadgeRow';
+import PinnedCustomizeBadges from './PinnedCustomizeBadges';
+import UploadButton from './UploadButton';
 import Mention from './Mention';
 import store from '~/store';
 
@@ -301,19 +303,30 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
               )}
             >
               <div className={`${isRTL ? 'mr-2' : 'ml-2'}`}>
-                <AttachFileChat conversation={conversation} disableInputs={disableInputs} />
+                <UploadButton disabled={disableInputs || isNotAppendable} conversationId={conversationId} />
               </div>
-              <BadgeRow
-                showEphemeralBadges={!isAgentsEndpoint(endpoint) && !isAssistantsEndpoint(endpoint)}
-                isSubmitting={isSubmitting || isSubmittingAdded}
-                conversationId={conversationId}
-                onChange={setBadges}
-                isInChat={
-                  Array.isArray(conversation?.messages) && conversation.messages.length >= 1
-                }
-              />
+              <div className="flex items-center gap-2 w-full">
+                <BadgeRow
+                  showEphemeralBadges={!isAgentsEndpoint(endpoint) && !isAssistantsEndpoint(endpoint)}
+                  isSubmitting={isSubmitting || isSubmittingAdded}
+                  conversationId={conversationId}
+                  onChange={setBadges}
+                  disabled={disableInputs || isNotAppendable}
+                  isInChat={
+                    Array.isArray(conversation?.messages) && conversation.messages.length >= 1
+                  }
+                />
+                <PinnedCustomizeBadges 
+                  conversationId={conversationId}
+                  onRemove={() => {
+                    // Trigger a refresh of the customize menu state
+                    // This will be handled by the CustomizeSubMenu's refresh mechanism
+                  }}
+                />
+              </div>
               <div className="mx-auto flex" />
-              {SpeechToText && (
+              {/* Hidden speech-to-text icon */}
+              {/* {SpeechToText && (
                 <AudioRecorder
                   methods={methods}
                   ask={submitMessage}
@@ -321,7 +334,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                   disabled={disableInputs || isNotAppendable}
                   isSubmitting={isSubmitting}
                 />
-              )}
+              )} */}
               <div className={`${isRTL ? 'ml-2' : 'mr-2'}`}>
                 {(isSubmitting || isSubmittingAdded) && (showStopButton || showStopAdded) ? (
                   <StopButton stop={handleStopGenerating} setShowStopButton={setShowStopButton} />

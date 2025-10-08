@@ -77,13 +77,31 @@ const DisplayMessage = ({ text, isCreatedByUser, message, showCursor }: TDisplay
     [showCursor, isSubmitting],
   );
 
+  const extractUserPrompt = (input: string) => {
+    const promptLabel = "User Prompt:";
+    const index = input.indexOf(promptLabel);
+    
+    if (index === -1) {
+      // If no "User Prompt:" found, return the original input
+      // This handles cases where there's no structured prompt
+      return input;
+    }
+  
+    // Get everything after "User Prompt:"
+    const extracted = input.slice(index + promptLabel.length).trim();
+    return extracted || input; // Fallback to original if extraction is empty
+  };
+
+  // Extract user prompt from text before creating React elements
+  const displayText = isCreatedByUser ? extractUserPrompt(text) : text;
+
   let content: React.ReactElement;
   if (!isCreatedByUser) {
-    content = <Markdown content={text} isLatestMessage={isLatestMessage} />;
+    content = <Markdown content={displayText} isLatestMessage={isLatestMessage} />;
   } else if (enableUserMsgMarkdown) {
-    content = <MarkdownLite content={text} />;
+    content = <MarkdownLite content={displayText} />;
   } else {
-    content = <>{text}</>;
+    content = <>{displayText}</>;
   }
 
   return (
@@ -91,7 +109,7 @@ const DisplayMessage = ({ text, isCreatedByUser, message, showCursor }: TDisplay
       <div
         className={cn(
           isSubmitting ? 'submitting' : '',
-          showCursorState && !!text.length ? 'result-streaming' : '',
+          showCursorState && !!displayText.length ? 'result-streaming' : '',
           'markdown prose message-content dark:prose-invert light w-full break-words',
           isCreatedByUser && !enableUserMsgMarkdown && 'whitespace-pre-wrap',
           isCreatedByUser ? 'dark:text-gray-20' : 'dark:text-gray-100',

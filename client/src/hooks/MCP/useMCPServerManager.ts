@@ -26,16 +26,12 @@ export function useMCPServerManager({ conversationId }: { conversationId?: strin
   const { showToast } = useToastContext();
   const { data: startupConfig } = useGetStartupConfig();
   const { mcpValues, setMCPValues, isPinned, setIsPinned } = useMCPSelect({ conversationId });
+  const { connectionStatus } = useMCPConnectionStatus({ enabled: true });
 
   const [isConfigModalOpen, setIsConfigModalOpen] = useState(false);
   const [selectedToolForConfig, setSelectedToolForConfig] = useState<TPlugin | null>(null);
   const previousFocusRef = useRef<HTMLElement | null>(null);
   const mcpValuesRef = useRef(mcpValues);
-
-  // fixes the issue where OAuth flows would deselect all the servers except the one that is being authenticated on success
-  useEffect(() => {
-    mcpValuesRef.current = mcpValues;
-  }, [mcpValues]);
 
   const configuredServers = useMemo(() => {
     if (!startupConfig?.mcpServers) return [];
@@ -43,6 +39,31 @@ export function useMCPServerManager({ conversationId }: { conversationId?: strin
       .filter(([, config]) => config.chatMenu !== false)
       .map(([serverName]) => serverName);
   }, [startupConfig?.mcpServers]);
+
+  // fixes the issue where OAuth flows would deselect all the servers except the one that is being authenticated on success
+  useEffect(() => {
+    mcpValuesRef.current = mcpValues;
+  }, [mcpValues]);
+
+  // Auto-select all connected MCP servers
+  useEffect(() => {
+    if (!configuredServers || configuredServers.length === 0 || !connectionStatus) {
+      return;
+    }
+
+    const connectedServers = configuredServers.filter(
+      (serverName) => connectionStatus[serverName]?.connectionState === 'connected'
+    );
+
+    const currentValues = mcpValues ?? [];
+    const missingServers = connectedServers.filter(
+      (serverName) => !currentValues.includes(serverName)
+    );
+
+    if (missingServers.length > 0) {
+      setMCPValues([...currentValues, ...missingServers]);
+    }
+  }, [configuredServers, connectionStatus, mcpValues, setMCPValues]);
 
   const reinitializeMutation = useReinitializeMCPServerMutation();
   const cancelOAuthMutation = useCancelMCPOAuthMutation();
@@ -78,10 +99,6 @@ export function useMCPServerManager({ conversationId }: { conversationId?: strin
       };
     });
     return initialStates;
-  });
-
-  const { connectionStatus } = useMCPConnectionStatus({
-    enabled: !!startupConfig?.mcpServers && Object.keys(startupConfig.mcpServers).length > 0,
   });
 
   /** Filter disconnected servers when values change, but only after initial load

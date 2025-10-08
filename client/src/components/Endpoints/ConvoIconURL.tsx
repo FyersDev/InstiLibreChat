@@ -55,7 +55,7 @@ const ConvoIconURL: React.FC<ConvoIconURLProps> = ({
       />
     );
   }
-
+  console.log('Icon', endpointIconURL);
   return (
     <div className="shadow-stroke relative flex h-full items-center justify-center rounded-full bg-white text-black">
       {Icon && (
@@ -64,7 +64,10 @@ const ConvoIconURL: React.FC<ConvoIconURLProps> = ({
           context={context}
           className="h-2/3 w-2/3"
           agentName={agentName}
-          iconURL={endpointIconURL}
+          //iconURL={endpointIconURL}
+          // get icon from following path
+          // /home/ec2-user/LibreChat/client/dist/assets/fia_logo.svg
+          iconURL={`/home/ec2-user/LibreChat/client/dist/assets/fia_logo.svg`}
           assistantName={assistantName}
           avatar={assistantAvatar || agentAvatar}
         />

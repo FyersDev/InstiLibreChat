@@ -30,6 +30,7 @@ interface BadgeRowProps {
   conversationId?: string | null;
   isSubmitting?: boolean;
   isInChat: boolean;
+  disabled?: boolean;
 }
 
 interface BadgeWrapperProps {
@@ -146,6 +147,7 @@ function BadgeRow({
   onChange,
   onToggle,
   isInChat,
+  disabled,
 }: BadgeRowProps) {
   const [orderedBadges, setOrderedBadges] = useState<BadgeItem[]>([]);
   const [dragState, dispatch] = useReducer(dragReducer, {
@@ -322,7 +324,7 @@ function BadgeRow({
   return (
     <BadgeRowProvider conversationId={conversationId} isSubmitting={isSubmitting}>
       <div ref={containerRef} className="relative flex flex-wrap items-center gap-2">
-        {showEphemeralBadges === true && <ToolsDropdown />}
+        {showEphemeralBadges === true && <ToolsDropdown disabled={disabled} />}
         {tempBadges.map((badge, index) => (
           <React.Fragment key={badge.id}>
             {dragState.draggedBadge && dragState.insertIndex === index && ghostBadge && (

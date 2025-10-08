@@ -41,17 +41,13 @@ export default function Message(props: TMessageProps) {
   const { children, messageId = null, isCreatedByUser } = message ?? {};
 
   const name = useMemo(() => {
-    let result = '';
     if (isCreatedByUser === true) {
-      result = localize('com_user_message');
-    } else if (assistant) {
-      result = assistant.name ?? localize('com_ui_assistant');
-    } else if (agent) {
-      result = agent.name ?? localize('com_ui_agent');
+      return localize('com_user_message');
+    } else {
+      // Always return "FIA" for AI responses regardless of model/endpoint
+      return 'FIA';
     }
-
-    return result;
-  }, [assistant, agent, isCreatedByUser, localize]);
+  }, [isCreatedByUser, localize]);
 
   const iconData: TMessageIcon = useMemo(
     () => ({

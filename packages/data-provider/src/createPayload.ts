@@ -13,6 +13,7 @@ export default function createPayload(submission: t.TSubmission) {
     editedContent,
     ephemeralAgent,
     endpointOption,
+    personaData,
   } = submission;
   const { conversationId } = s.tConvoUpdateSchema.parse(conversation);
   const { endpoint: _e, endpointType } = endpointOption as {
@@ -28,6 +29,7 @@ export default function createPayload(submission: t.TSubmission) {
       (isEdited ? '/modify' : '');
   }
 
+  // Ensure personaData is included in the payload
   const payload: t.TPayload = {
     ...userMessage,
     ...endpointOption,
@@ -38,7 +40,12 @@ export default function createPayload(submission: t.TSubmission) {
     conversationId,
     isContinued: !!(isEdited && isContinued),
     ephemeralAgent: s.isAssistantsEndpoint(endpoint) ? undefined : ephemeralAgent,
+    personaData, // This should contain the structured prompt
   };
+  
+  // Log the payload for debugging
+  console.log('[createPayload] personaData included:', !!personaData);
+  console.log('[createPayload] personaData type:', typeof personaData);
 
   return { server, payload };
 }

@@ -298,6 +298,165 @@ export default function useChatFunctions({
     }
 
     logger.log('message_state', initialResponse);
+    
+  // Get persona data from localStorage
+  const convoId = conversationId ?? Constants.NEW_CONVO;
+  const storedPersonaData = localStorage.getItem(`persona_data_${convoId}`) || '';
+  
+  // Get document data and build document prompt
+  let documentPrompt = '';
+  let documentsList: any[] = [];
+  let enhancedEphemeralAgent = ephemeralAgent ? { ...ephemeralAgent } : {};
+  const documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
+  
+  if (documentDataStr) {
+    try {
+      const documentData = JSON.parse(documentDataStr);
+      if (documentData.documents && documentData.documents.length > 0) {
+        documentsList = documentData.documents;
+        const documentNames = documentsList.map((doc: any) => doc.filename).join(', ');
+        documentPrompt = `Documents:\n${documentNames}`;
+        
+        // Always prepare ephemeral agent with document search info when documents are selected
+        enhancedEphemeralAgent = {
+          ...(ephemeralAgent || {}),
+          // Add document search capability to MCP tools
+          mcp: ['document_search'],
+          // @ts-ignore - Adding documentSearch property for MCP
+          documentSearch: {
+            enabled: true,
+            documents: documentsList.map((doc: any) => doc.filename),
+            selected_files: documentsList.map((doc: any) => doc.filename) // Add this for MCP compatibility
+          }
+        };
+        
+        // Log document search configuration
+        console.log('%c[DOCUMENT SEARCH] Enabling document search for files:', 'color: #4CAF50; font-weight: bold;');
+        console.log(documentsList.map((doc: any) => doc.filename));
+      }
+    } catch (error) {
+      console.error('Error parsing document data:', error);
+    }
+  }
+
+  // Get template data
+  let templatePrompt = '';
+  if (documentDataStr) {
+    try {
+      const documentData = JSON.parse(documentDataStr);
+      if (documentData.template) {
+        const savedTemplatesStr = localStorage.getItem('saved_templates');
+        const parsedTemplates = savedTemplatesStr ? JSON.parse(savedTemplatesStr) : [];
+        
+        // Default templates
+        const defaultTemplates = [
+          {
+            name: 'Quarterly report',
+            detailedPrompt: 'Generate a comprehensive quarterly financial report including: Executive Summary, Financial Highlights, Revenue Analysis, Expense Breakdown, Key Performance Indicators, Market Outlook, Risk Factors, and Management Commentary. Use clear formatting with tables and charts where appropriate.'
+          },
+          {
+            name: 'Annual report',
+            detailedPrompt: 'Create a detailed annual report with: Letter to Shareholders, Business Overview, Financial Performance Review, Market Analysis, Strategic Initiatives, Risk Management, Corporate Governance, and Forward-Looking Statements. Include year-over-year comparisons and detailed financial metrics.'
+          },
+          {
+            name: 'Risk assessment',
+            detailedPrompt: 'Conduct a thorough risk assessment including: Risk Identification, Impact Analysis, Probability Assessment, Risk Matrix, Mitigation Strategies, Contingency Plans, and Monitoring Framework. Categorize risks by type (operational, financial, strategic, compliance) and provide actionable recommendations.'
+          },
+          {
+            name: 'Technical analysis',
+            detailedPrompt: 'Perform technical analysis covering: Price Action Analysis, Chart Patterns, Technical Indicators (RSI, MACD, Moving Averages), Support and Resistance Levels, Volume Analysis, Market Trends, and Trading Signals. Include visual representations and clear entry/exit points.'
+          },
+          {
+            name: 'Market summary',
+            detailedPrompt: 'Provide a comprehensive market summary including: Market Overview, Key Developments, Sector Performance, Economic Indicators, Major News Impact, Trading Volume Analysis, and Market Outlook. Focus on actionable insights and market implications.'
+          }
+        ];
+        
+        const allTemplates = [...defaultTemplates, ...parsedTemplates];
+        const selectedTemplate = allTemplates.find(t => t.name === documentData.template);
+        if (selectedTemplate) {
+          templatePrompt = `Template:\n${selectedTemplate.detailedPrompt}`;
+        }
+      }
+    } catch (error) {
+      console.error('Error parsing template data:', error);
+    }
+  }
+
+  // Build the structured prompt according to your specification
+  let structuredPrompt = '';
+  const promptParts: string[] = [];
+  
+  // First add template if available
+  if (templatePrompt) {
+    promptParts.push(templatePrompt);
+  }
+  
+  // Then add persona if available
+  if (storedPersonaData && storedPersonaData.trim()) {
+    promptParts.push(`Persona:\n${storedPersonaData.trim()}`);
+  }
+  
+  // Then add documents if available
+  if (documentPrompt) {
+    promptParts.push(documentPrompt);
+  }
+  
+  // Always add the user prompt
+  promptParts.push(`User Prompt:\n${text}`);
+  
+  // Join all parts with double newlines - ALWAYS send the structured format to AI
+  structuredPrompt = promptParts.join('\n\n');
+  
+  // Check if we have additional data for debugging purposes
+  const hasAdditionalData = templatePrompt || (storedPersonaData && storedPersonaData.trim()) || documentPrompt;
+
+  // Debug: Print the structured prompt
+  try {
+    console.log('%c[PROMPT DEBUG] === STRUCTURED PROMPT DEBUG ===', 'background: #222; color: #bada55; font-size: 16px;');
+    console.log('%c[PROMPT DEBUG] has_additional_data', 'color: #ff6700;');
+    console.log(hasAdditionalData);
+    console.log('%c[PROMPT DEBUG] template_prompt', 'color: #ff6700;');
+    console.log(templatePrompt || 'None');
+    console.log('%c[PROMPT DEBUG] persona_data', 'color: #ff6700;');
+    console.log(storedPersonaData || 'None');
+    console.log('%c[PROMPT DEBUG] document_prompt', 'color: #ff6700;');
+    console.log(documentPrompt || 'None');
+    console.log('%c[PROMPT DEBUG] user_text', 'color: #ff6700;');
+    console.log(text);
+    console.log('%c[PROMPT DEBUG] final_structured_prompt', 'color: #ff6700; font-weight: bold;');
+    console.log(structuredPrompt);
+    console.log('%c[PROMPT DEBUG] === END DEBUG ===', 'background: #222; color: #bada55; font-size: 16px;');
+    
+    // Also log to window object for easier access
+    try {
+      // @ts-ignore - Adding debug property to window
+      if (!window.promptDebug) {
+        // @ts-ignore - Adding debug property to window
+        window.promptDebug = {};
+      }
+      // @ts-ignore - Adding debug property to window
+      window.promptDebug = {
+        templatePrompt,
+        personaData: storedPersonaData,
+        documentPrompt,
+        userText: text,
+        structuredPrompt
+      };
+    } catch (e) {
+      console.error('Window debug object error:', e);
+    }
+  } catch (e) {
+    console.error('Debug logging error:', e);
+  }
+    
+    // Make sure personaData is properly set
+    const personaData = structuredPrompt.trim();
+    
+    // Log the structured prompt for debugging
+    console.log('[useChatFunctions] Structured prompt length:', personaData.length);
+    console.log('[useChatFunctions] First 100 chars of structured prompt:', personaData.substring(0, 100));
+    
     const submission: TSubmission = {
       conversation: {
         ...conversation,
@@ -308,6 +467,8 @@ export default function useChatFunctions({
         ...currentMsg,
         responseMessageId,
         overrideParentMessageId: isRegenerate ? messageId : null,
+        // Send the full structured prompt as the main text - AI will get this
+        text: structuredPrompt,
       },
       messages: currentMessages,
       isEdited: isEditOrContinue,
@@ -315,7 +476,7 @@ export default function useChatFunctions({
       isRegenerate,
       initialResponse,
       isTemporary,
-      ephemeralAgent,
+      ephemeralAgent: enhancedEphemeralAgent,
       editedContent,
     };
 

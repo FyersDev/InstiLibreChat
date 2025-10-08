@@ -47,7 +47,7 @@ const chatV2 = async (req, res) => {
 
   /** @type {{files: MongoFile[]}} */
   const {
-    text,
+    text: originalText,
     model,
     endpoint,
     files = [],
@@ -60,7 +60,24 @@ const chatV2 = async (req, res) => {
     conversationId: convoId,
     parentMessageId: _parentId = Constants.NO_PARENT,
     clientTimestamp,
+    personaData = null,
   } = req.body;
+
+  // Store original text for user display, create AI text with persona if provided
+  const originalUserText = originalText;
+  let text = originalText;
+  let aiText = originalText;
+  if (personaData && personaData.trim()) {
+    aiText = `User Persona: ${personaData.trim()}
+
+You must strictly adhere to this persona while answering the user query. Respond as this persona would, using their expertise, perspective, and communication style. Do not break character or mention that you are following a persona.
+
+If document names are provided, use the MCP document search tool to retrieve and analyze the content from those documents. Incorporate the document insights into your response while maintaining your persona.
+
+If output template instructions are provided, format your response according to those specifications while maintaining your persona and incorporating any document insights.
+
+Prompt: ${originalUserText}`;
+  }
 
   /** @type {OpenAIClient} */
   let openai;
@@ -144,7 +161,7 @@ const chatV2 = async (req, res) => {
       // TODO: make promptBuffer a config option; buffer for titles, needs buffer for system instructions
       const promptBuffer = parentMessageId === Constants.NO_PARENT && !_thread_id ? 200 : 0;
       // 5 is added for labels
-      let promptTokens = (await countTokens(text + (promptPrefix ?? ''))) + 5;
+      let promptTokens = (await countTokens(aiText + (promptPrefix ?? ''))) + 5;
       promptTokens += totalPreviousTokens + promptBuffer;
       // Count tokens up to the current context window
       promptTokens = Math.min(promptTokens, getModelMaxTokens(model));
@@ -180,7 +197,7 @@ const chatV2 = async (req, res) => {
       content: [
         {
           type: ContentTypes.TEXT,
-          text,
+          text: aiText,
         },
       ],
       metadata: {
@@ -274,7 +291,7 @@ const chatV2 = async (req, res) => {
 
       requestMessage = {
         user: req.user.id,
-        text,
+        text: originalUserText,
         messageId: userMessageId,
         parentMessageId,
         // TODO: make sure client sends correct format for `files`, use zod
@@ -451,7 +468,7 @@ const chatV2 = async (req, res) => {
 
     if (parentMessageId === Constants.NO_PARENT && !_thread_id) {
       addTitle(req, {
-        text,
+        text: originalUserText,
         responseText: response.text,
         conversationId,
         client,

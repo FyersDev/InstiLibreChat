@@ -19,6 +19,7 @@ interface BadgeRowContextType {
   artifacts: ReturnType<typeof useToolToggle>;
   fileSearch: ReturnType<typeof useToolToggle>;
   codeInterpreter: ReturnType<typeof useToolToggle>;
+  persona: ReturnType<typeof useToolToggle>;
   codeApiKeyForm: ReturnType<typeof useCodeApiKeyForm>;
   searchApiKeyForm: ReturnType<typeof useSearchApiKeyForm>;
   mcpServerManager: ReturnType<typeof useMCPServerManager>;
@@ -54,9 +55,6 @@ export default function BadgeRowProvider({
 
   /** Initialize ephemeralAgent from localStorage on mount and when conversation changes */
   useEffect(() => {
-    if (isSubmitting) {
-      return;
-    }
     // Check if this is a new conversation or the first load
     if (!hasInitializedRef.current || lastKeyRef.current !== key) {
       hasInitializedRef.current = true;
@@ -66,11 +64,13 @@ export default function BadgeRowProvider({
       const webSearchToggleKey = `${LocalStorageKeys.LAST_WEB_SEARCH_TOGGLE_}${key}`;
       const fileSearchToggleKey = `${LocalStorageKeys.LAST_FILE_SEARCH_TOGGLE_}${key}`;
       const artifactsToggleKey = `${LocalStorageKeys.LAST_ARTIFACTS_TOGGLE_}${key}`;
+      const personaToggleKey = `last_persona_toggle_${key}`;
 
       const codeToggleValue = getTimestampedValue(codeToggleKey);
       const webSearchToggleValue = getTimestampedValue(webSearchToggleKey);
       const fileSearchToggleValue = getTimestampedValue(fileSearchToggleKey);
       const artifactsToggleValue = getTimestampedValue(artifactsToggleKey);
+      const personaToggleValue = getTimestampedValue(personaToggleKey);
 
       const initialValues: Record<string, any> = {};
 
@@ -106,6 +106,20 @@ export default function BadgeRowProvider({
         }
       }
 
+      if (personaToggleValue !== null) {
+        try {
+          initialValues['persona'] = JSON.parse(personaToggleValue);
+        } catch (e) {
+          console.error('Failed to parse persona toggle value:', e);
+        }
+      } else {
+        // Fallback: if persona_data exists in localStorage mark persona toggle as true
+        const personaData = localStorage.getItem(`persona_data_${key}`);
+        if (personaData && personaData.trim()) {
+          initialValues['persona'] = true;
+        }
+      }
+
       /**
        * Always set values for all tools (use defaults if not in `localStorage`)
        * If `ephemeralAgent` is `null`, create a new object with just our tool values
@@ -115,6 +129,7 @@ export default function BadgeRowProvider({
         [Tools.web_search]: initialValues[Tools.web_search] ?? false,
         [Tools.file_search]: initialValues[Tools.file_search] ?? false,
         [AgentCapabilities.artifacts]: initialValues[AgentCapabilities.artifacts] ?? false,
+        persona: initialValues['persona'] ?? false,
       };
 
       setEphemeralAgent((prev) => ({
@@ -131,6 +146,8 @@ export default function BadgeRowProvider({
             storageKey = webSearchToggleKey;
           } else if (toolKey === Tools.file_search) {
             storageKey = fileSearchToggleKey;
+          } else if (toolKey === 'persona') {
+            storageKey = personaToggleKey;
           }
           // Store the value and set timestamp for existing values
           localStorage.setItem(storageKey, JSON.stringify(value));
@@ -138,7 +155,49 @@ export default function BadgeRowProvider({
         }
       });
     }
-  }, [key, isSubmitting, setEphemeralAgent]);
+  }, [key, setEphemeralAgent]);
+
+  // Migrate customization storage from the temporary key to real conversation ID
+  useEffect(() => {
+    const prevKey = lastKeyRef.current;
+    if (prevKey === Constants.NEW_CONVO && key !== Constants.NEW_CONVO) {
+      // keys to migrate
+      const migrate = (
+        base: string,
+        includePinned = false,
+      ) => {
+        const oldKey = `${base}${Constants.NEW_CONVO}`;
+        const newKey = `${base}${key}`;
+        const value = localStorage.getItem(oldKey);
+        if (value !== null && localStorage.getItem(newKey) === null) {
+          localStorage.setItem(newKey, value);
+        }
+        if (includePinned) {
+          const oldPinned = `${base}pinned`;
+          const newPinned = `${base}pinned`;
+          const pinnedVal = localStorage.getItem(oldPinned);
+          if (pinnedVal !== null && localStorage.getItem(newPinned) === null) {
+            localStorage.setItem(newPinned, pinnedVal);
+          }
+        }
+      };
+      migrate(LocalStorageKeys.LAST_CODE_TOGGLE_);
+      migrate(LocalStorageKeys.LAST_WEB_SEARCH_TOGGLE_);
+      migrate(LocalStorageKeys.LAST_FILE_SEARCH_TOGGLE_);
+      migrate(LocalStorageKeys.LAST_ARTIFACTS_TOGGLE_);
+      // persona toggle key (legacy)
+      migrate('last_persona_toggle_');
+      // persona data & documents
+      const personaData = localStorage.getItem(`persona_data_${Constants.NEW_CONVO}`);
+      if (personaData !== null) {
+        localStorage.setItem(`persona_data_${key}`, personaData);
+      }
+      const personaDocs = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
+      if (personaDocs !== null) {
+        localStorage.setItem(`persona_documents_${key}`, personaDocs);
+      }
+    }
+  }, [key]);
 
   /** CodeInterpreter hooks */
   const codeApiKeyForm = useCodeApiKeyForm({});
@@ -186,6 +245,14 @@ export default function BadgeRowProvider({
     isAuthenticated: true,
   });
 
+  /** Persona hook */
+  const persona = useToolToggle({
+    conversationId,
+    toolKey: 'persona' as any,
+    localStorageKey: 'last_persona_toggle_' as any,
+    isAuthenticated: true,
+  });
+
   const mcpServerManager = useMCPServerManager({ conversationId });
 
   const value: BadgeRowContextType = {
@@ -196,6 +263,7 @@ export default function BadgeRowProvider({
     conversationId,
     codeApiKeyForm,
     codeInterpreter,
+    persona,
     searchApiKeyForm,
     mcpServerManager,
   };
