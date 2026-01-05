@@ -49,6 +49,11 @@ export function DeleteConversationDialog({
   const deleteMutation = useDeleteConversationMutation({
     onSuccess: () => {
       setShowDeleteDialog(false);
+      // Clear the stored conversation ID from localStorage if it matches the deleted conversation
+      const storedConvoId = localStorage.getItem('lastConversationId');
+      if (storedConvoId === conversationId) {
+        localStorage.removeItem('lastConversationId');
+      }
       if (currentConvoId === conversationId || currentConvoId === 'new') {
         newConversation();
         navigate('/c/new', { replace: true });

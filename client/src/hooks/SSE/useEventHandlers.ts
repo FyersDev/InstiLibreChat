@@ -34,6 +34,7 @@ import {
   removeConvoFromAllQueries,
   findConversationInInfinite,
 } from '~/utils';
+import { migrateSelectionsToConversation } from '~/utils/migrateSelections';
 import useAttachmentHandler from '~/hooks/SSE/useAttachmentHandler';
 import useContentHandler from '~/hooks/SSE/useContentHandler';
 import useStepHandler from '~/hooks/SSE/useStepHandler';
@@ -543,6 +544,11 @@ export default function useEventHandlers({
           removeConvoFromAllQueries(queryClient, submissionConvo.conversationId);
         }
 
+        // Migrate selections (persona, template, documents) from NEW_CONVO to actual conversationId
+        if (isNewConvo && conversation.conversationId && conversation.conversationId !== Constants.NEW_CONVO) {
+          migrateSelectionsToConversation(conversation.conversationId);
+        }
+
         /* Refresh title */
         if (
           genTitle &&
@@ -696,6 +702,8 @@ export default function useEventHandlers({
 
       setErrorMessages(receivedConvoId, errorResponse);
       if (receivedConvoId && paramId === Constants.NEW_CONVO && newConversation) {
+        // Migrate selections before creating new conversation
+        migrateSelectionsToConversation(receivedConvoId);
         newConversation({
           template: { conversationId: receivedConvoId },
           preset: tPresetSchema.parse(submission.conversation),

@@ -18,9 +18,9 @@ import {
   FileUpload,
   TooltipAnchor,
   DropdownPopup,
-  AttachmentIcon,
   SharePointIcon,
 } from '@librechat/client';
+import { Upload } from 'lucide-react';
 import type { EndpointFileConfig } from 'librechat-data-provider';
 import {
   useAgentToolPermissions,
@@ -93,11 +93,11 @@ const AttachFileMenu = ({
     if (fileType === 'image') {
       inputRef.current.accept = 'image/*';
     } else if (fileType === 'document') {
-      inputRef.current.accept = '.pdf,application/pdf';
+      inputRef.current.accept = '.docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.jpg,.jpeg,.png,.tiff,.bmp,.webp,.csv,.xlsx,.xlsm,.txt,.json';
     } else if (fileType === 'multimodal') {
-      inputRef.current.accept = 'image/*,.pdf,application/pdf';
+      inputRef.current.accept = 'image/*,.docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.csv,.xlsx,.xlsm,.txt,.json';
     } else if (fileType === 'google_multimodal') {
-      inputRef.current.accept = 'image/*,.pdf,application/pdf,video/*,audio/*';
+      inputRef.current.accept = 'image/*,.docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.csv,.xlsx,.xlsm,.txt,.json,video/*,audio/*';
     } else {
       inputRef.current.accept = '';
     }
@@ -224,7 +224,7 @@ const AttachFileMenu = ({
           )}
         >
           <div className="flex w-full items-center justify-center gap-2">
-            <AttachmentIcon />
+            <Upload className="icon-md" />
           </div>
         </Ariakit.MenuButton>
       }

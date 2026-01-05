@@ -1,43 +1,16 @@
-import { useMemo } from 'react';
-import { useMediaQuery } from '@librechat/client';
 import { useOutletContext } from 'react-router-dom';
-import { getConfigDefaults, PermissionTypes, Permissions } from 'librechat-data-provider';
 import type { ContextType } from '~/common';
-import ModelSelector from './Menus/Endpoints/ModelSelector';
-import { PresetsMenu, HeaderNewChat, OpenSidebar } from './Menus';
-import { useGetStartupConfig } from '~/data-provider';
-import ExportAndShareMenu from './ExportAndShareMenu';
-import BookmarkMenu from './Menus/BookmarkMenu';
-import { TemporaryChat } from './TemporaryChat';
-import AddMultiConvo from './AddMultiConvo';
-import { useHasAccess } from '~/hooks';
+import { HeaderNewChat, OpenSidebar } from './Menus';
 import { AnimatePresence, motion } from 'framer-motion';
-
-const defaultInterface = getConfigDefaults().interface;
+import ModelSelector from '~/components/Chat/Menus/Endpoints/ModelSelector';
+import { useGetStartupConfig } from '~/data-provider';
 
 export default function Header() {
-  const { data: startupConfig } = useGetStartupConfig();
   const { navVisible, setNavVisible } = useOutletContext<ContextType>();
-
-  const interfaceConfig = useMemo(
-    () => startupConfig?.interface ?? defaultInterface,
-    [startupConfig],
-  );
-
-  const hasAccessToBookmarks = useHasAccess({
-    permissionType: PermissionTypes.BOOKMARKS,
-    permission: Permissions.USE,
-  });
-
-  const hasAccessToMultiConvo = useHasAccess({
-    permissionType: PermissionTypes.MULTI_CONVO,
-    permission: Permissions.USE,
-  });
-
-  const isSmallScreen = useMediaQuery('(max-width: 768px)');
+  const { data: startupConfig } = useGetStartupConfig();
 
   return (
-    <div className="sticky top-0 z-10 flex h-14 w-full items-center justify-between bg-white p-2 font-semibold text-text-primary dark:bg-gray-800">
+    <div className="sticky top-0 z-10 flex h-14 w-full items-center justify-between bg-white p-2 font-semibold text-text-primary dark:!bg-[#111111]">
       <div className="hide-scrollbar flex w-full items-center justify-between gap-2 overflow-x-auto">
         <div className="mx-1 flex items-center">
           <AnimatePresence initial={false}>
@@ -55,33 +28,32 @@ export default function Header() {
               </motion.div>
             )}
           </AnimatePresence>
+        </div>
 
-          <div className={navVisible ? 'flex items-center gap-2' : 'ml-2 flex items-center gap-2'}>
-            <ModelSelector startupConfig={startupConfig} />
-            {interfaceConfig.presets === true && interfaceConfig.modelSelect && <PresetsMenu />}
-            {hasAccessToBookmarks === true && <BookmarkMenu />}
-            {hasAccessToMultiConvo === true && <AddMultiConvo />}
-            {isSmallScreen && (
-              <>
-                <ExportAndShareMenu
-                  isSharedButtonEnabled={startupConfig?.sharedLinksEnabled ?? false}
-                />
-                <TemporaryChat />
-              </>
-            )}
+        {/* Center: FIA Logo and Text */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-1">
+          <div className="w-8 h-8 relative rounded-sm flex items-center justify-center">
+            <img
+              src="/assets/FIA.svg"
+              alt="FIA"
+              className="w-full h-full object-contain"
+            />
+          </div>
+          <div 
+            className="text-[20px] font-sans leading-5 text-text-primary dark:text-gray-100"
+            style={{ fontSize: '20px' }}
+          >
+            FIA - FYERS Intelligent Assistant
           </div>
         </div>
-        {!isSmallScreen && (
-          <div className="flex items-center gap-2">
-            <ExportAndShareMenu
-              isSharedButtonEnabled={startupConfig?.sharedLinksEnabled ?? false}
-            />
-            <TemporaryChat />
+
+        {/* Right: Model Selector */}
+        <div className="mx-1 flex items-center">
+          <div className="scale-75 origin-right">
+            <ModelSelector startupConfig={startupConfig} />
           </div>
-        )}
+        </div>
       </div>
-      {/* Empty div for spacing */}
-      <div />
     </div>
   );
 }

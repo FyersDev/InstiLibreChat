@@ -380,6 +380,7 @@ export function useMCPServerManager({ conversationId }: { conversationId?: strin
     (serverNames: string[]) => {
       const connectedServers: string[] = [];
       const disconnectedServers: string[] = [];
+      const unknownServers: string[] = [];
 
       serverNames.forEach((serverName) => {
         if (isInitializing(serverName)) {
@@ -387,15 +388,27 @@ export function useMCPServerManager({ conversationId }: { conversationId?: strin
         }
 
         const serverStatus = connectionStatus?.[serverName];
-        if (serverStatus?.connectionState === 'connected') {
-          connectedServers.push(serverName);
+        
+        // If we have connection status, use it
+        if (serverStatus) {
+          if (serverStatus.connectionState === 'connected') {
+            connectedServers.push(serverName);
+          } else {
+            disconnectedServers.push(serverName);
+          }
         } else {
-          disconnectedServers.push(serverName);
+          // No connection status yet - likely SSE server or not initialized
+          // For SSE servers from YAML, we can add them directly and let backend handle it
+          // They'll be initialized when first used
+          unknownServers.push(serverName);
         }
       });
 
-      setMCPValues(connectedServers);
+      // Combine connected servers and unknown servers (SSE servers without status)
+      // Unknown servers will be initialized when used, but we add them to selection
+      setMCPValues([...connectedServers, ...unknownServers]);
 
+      // Initialize servers that are known to be disconnected
       disconnectedServers.forEach((serverName) => {
         initializeServer(serverName);
       });

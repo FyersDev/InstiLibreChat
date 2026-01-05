@@ -1,5 +1,5 @@
-import { memo, useCallback } from 'react';
-import { useRecoilValue } from 'recoil';
+import { memo, useCallback, useEffect } from 'react';
+import { useRecoilValue, useSetRecoilState } from 'recoil';
 import { useForm } from 'react-hook-form';
 import { Spinner } from '@librechat/client';
 import { useParams } from 'react-router-dom';
@@ -16,6 +16,9 @@ import ChatForm from './Input/ChatForm';
 import Landing from './Landing';
 import Header from './Header';
 import Footer from './Footer';
+import MCPServerSelector from './Input/MCPServerSelector';
+import TemplateSelector from './Input/TemplateSelector';
+import PersonaSelector from './Input/PersonaSelector';
 import { cn } from '~/utils';
 import store from '~/store';
 
@@ -53,6 +56,16 @@ function ChatView({ index = 0 }: { index?: number }) {
 
   useSSE(rootSubmission, chatHelpers, false);
   useSSE(addedSubmission, addedChatHelpers, true);
+  
+  // Reset submission state on unmount / route change
+  const setSubmission = useSetRecoilState(store.submissionByIndex(index));
+  useEffect(() => {
+    return () => {
+      // Clear submission state when component unmounts to prevent stale submissions
+      // This is a safety net in addition to useIdChangeEffect
+      setSubmission(null);
+    };
+  }, [index, conversationId, setSubmission]);
 
   const methods = useForm<ChatFormValues>({
     defaultValues: { text: '' },
@@ -98,6 +111,12 @@ function ChatView({ index = 0 }: { index?: number }) {
                     )}
                   >
                     <ChatForm index={index} />
+                    {/* MCP, Template, and Persona selectors above footer */}
+                    <div className="mt-4 mb-16 flex w-full items-center justify-center gap-3">
+                      <MCPServerSelector />
+                      <TemplateSelector />
+                      <PersonaSelector />
+                    </div>
                     {isLandingPage ? <ConversationStarters /> : <Footer />}
                   </div>
                 </div>

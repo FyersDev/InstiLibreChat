@@ -23,6 +23,8 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
     error: startupConfigError,
   } = useGetStartupConfig({
     enabled: isAuthenticated ? startupConfig === null : true,
+    retry: false, // Don't retry on error for login page
+    retryOnMount: false, // Don't retry when component mounts
   });
   const localize = useLocalize();
   const navigate = useNavigate();
@@ -38,7 +40,7 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
   }, [isAuthenticated, navigate, data]);
 
   useEffect(() => {
-    document.title = startupConfig?.appTitle || 'LibreChat';
+    document.title = startupConfig?.appTitle || 'FIA-Fyers Intelligence Assistant';
   }, [startupConfig?.appTitle]);
 
   useEffect(() => {
@@ -55,6 +57,13 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
     startupConfig,
     isFetching,
   };
+
+  // Skip AuthLayout for custom login/OTP pages (they have their own full-screen design)
+  const isCustomAuthPage = location.pathname === '/login' || location.pathname === '/login/otp';
+
+  if (isCustomAuthPage) {
+    return <Outlet context={contextValue} />;
+  }
 
   return (
     <AuthLayout

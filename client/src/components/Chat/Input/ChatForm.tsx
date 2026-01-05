@@ -25,7 +25,6 @@ import FileFormChat from './Files/FileFormChat';
 import { cn, removeFocusRings } from '~/utils';
 import TextareaHeader from './TextareaHeader';
 import PromptsCommand from './PromptsCommand';
-import AudioRecorder from './AudioRecorder';
 import CollapseChat from './CollapseChat';
 import StreamAudio from './StreamAudio';
 import StopButton from './StopButton';
@@ -33,6 +32,8 @@ import SendButton from './SendButton';
 import EditBadges from './EditBadges';
 import BadgeRow from './BadgeRow';
 import Mention from './Mention';
+import MCPServerSelector from './MCPServerSelector';
+import LandingPageButtons from './LandingPageButtons';
 import store from '~/store';
 
 const ChatForm = memo(({ index = 0 }: { index?: number }) => {
@@ -110,7 +111,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   );
 
   const handleContainerClick = useCallback(() => {
-    /** Check if the device is a touchscreen */
     if (window.matchMedia?.('(pointer: coarse)').matches) {
       return;
     }
@@ -197,7 +197,11 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const baseClasses = useMemo(
     () =>
       cn(
-        'md:py-3.5 m-0 w-full resize-none py-[13px] placeholder-black/50 bg-transparent dark:placeholder-white/50 [&:has(textarea:focus)]:shadow-[0_2px_6px_rgba(0,0,0,.05)]',
+        'px-1.5 py-3 m-0 w-full resize-none font-inter',
+        'placeholder-gray-400 dark:placeholder-gray-500',
+        'bg-white dark:bg-gray-800',
+        'text-gray-900 dark:text-gray-100',
+        'text-base',
         isCollapsed ? 'max-h-[52px]' : 'max-h-[45vh] md:max-h-[55vh]',
         isMoreThanThreeRows ? 'pl-5' : 'px-5',
       ),
@@ -243,11 +247,10 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           <div
             onClick={handleContainerClick}
             className={cn(
-              'relative flex w-full flex-grow flex-col overflow-hidden rounded-t-3xl border pb-4 text-text-primary transition-all duration-200 sm:rounded-3xl sm:pb-0',
+              'relative flex w-full flex-grow flex-col overflow-hidden rounded-[2px]',
+              'bg-white dark:bg-gray-800 border border-[#2434E7] dark:border-blue-500',
+              'transition-all duration-200',
               isTextAreaFocused ? 'shadow-lg' : 'shadow-md',
-              isTemporary
-                ? 'border-violet-800/60 bg-violet-950/10'
-                : 'border-border-light bg-surface-chat',
             )}
           >
             <TextareaHeader addedConvo={addedConvo} setAddedConvo={setAddedConvo} />
@@ -263,6 +266,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                 <div className="relative flex-1">
                   <TextareaAutosize
                     {...registerProps}
+                    placeholder="Ask FIA"
                     ref={(e) => {
                       ref(e);
                       (textAreaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current =
@@ -314,15 +318,15 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
             )}
             <div
               className={cn(
-                '@container items-between flex gap-2 pb-2',
+                '@container items-between flex gap-2 pb-2 px-3',
                 isRTL ? 'flex-row-reverse' : 'flex-row',
               )}
             >
-              <div className={`${isRTL ? 'mr-2' : 'ml-2'}`}>
+              <div>
                 <AttachFileChat conversation={conversation} disableInputs={disableInputs} />
               </div>
               <BadgeRow
-                showEphemeralBadges={!isAgentsEndpoint(endpoint) && !isAssistantsEndpoint(endpoint)}
+                showEphemeralBadges={true}
                 isSubmitting={isSubmitting || isSubmittingAdded}
                 conversationId={conversationId}
                 onChange={setBadges}
@@ -331,16 +335,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                 }
               />
               <div className="mx-auto flex" />
-              {SpeechToText && (
-                <AudioRecorder
-                  methods={methods}
-                  ask={submitMessage}
-                  textAreaRef={textAreaRef}
-                  disabled={disableInputs || isNotAppendable}
-                  isSubmitting={isSubmitting}
-                />
-              )}
-              <div className={`${isRTL ? 'ml-2' : 'mr-2'}`}>
+              <div>
                 {(isSubmitting || isSubmittingAdded) && (showStopButton || showStopAdded) ? (
                   <StopButton stop={handleStopGenerating} setShowStopButton={setShowStopButton} />
                 ) : (

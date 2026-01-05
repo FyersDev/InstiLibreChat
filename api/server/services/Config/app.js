@@ -11,6 +11,24 @@ const BASE_CONFIG_KEY = '_BASE_';
 const loadBaseConfig = async () => {
   /** @type {TCustomConfig} */
   const config = (await loadCustomConfig()) ?? {};
+  
+  // If config validation failed but we still want to load mcpServers,
+  // try to read it directly from YAML as a fallback
+  if (!config.mcpServers) {
+    try {
+      const { loadYaml } = require('@librechat/api');
+      const projectRoot = require('path').resolve(__dirname, '..', '..', '..', '..');
+      const configPath = process.env.CONFIG_PATH || require('path').resolve(projectRoot, 'librechat.yaml');
+      const rawConfig = loadYaml(configPath);
+      if (rawConfig && rawConfig.mcpServers) {
+        logger.info('[loadBaseConfig] Loading mcpServers from raw YAML as fallback');
+        config.mcpServers = rawConfig.mcpServers;
+      }
+    } catch (error) {
+      logger.debug('[loadBaseConfig] Could not load mcpServers from raw YAML:', error.message);
+    }
+  }
+  
   /** @type {Record<string, FunctionTool>} */
   const systemTools = loadAndFormatTools({
     adminFilter: config.filteredTools,

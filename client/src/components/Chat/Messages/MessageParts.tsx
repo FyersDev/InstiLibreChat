@@ -75,6 +75,22 @@ export default function Message(props: TMessageProps) {
     ],
   );
 
+  // Only show loader for the latest message
+  const isLatestMessage = message?.messageId === latestMessage?.messageId;
+  const effectiveIsSubmitting = isLatestMessage ? isSubmitting : false;
+
+  // Temporary debug logging
+  if (isSubmitting) {
+    console.log('[MessageParts] SUBMITTING STATE:', {
+      messageId: message?.messageId,
+      latestMessageId: latestMessage?.messageId,
+      isLatestMessage,
+      isSubmitting,
+      effectiveIsSubmitting,
+      isCreatedByUser: message?.isCreatedByUser,
+    });
+  }
+
   if (!message) {
     return null;
   }
@@ -97,22 +113,41 @@ export default function Message(props: TMessageProps) {
           <div
             id={messageId ?? ''}
             aria-label={`message-${message.depth}-${messageId}`}
-            className={cn(baseClasses.common, baseClasses.chat, 'message-render')}
+            className={cn(
+              baseClasses.common,
+              baseClasses.chat,
+              'message-render'
+            )}
+            style={{
+              flexDirection: isCreatedByUser ? 'row-reverse' : 'row'
+            }}
           >
-            <div className="relative flex flex-shrink-0 flex-col items-center">
-              <div className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-full pt-0.5">
-                <MessageIcon iconData={iconData} assistant={assistant} agent={agent} />
+            {!isCreatedByUser && (
+              <div className="relative flex flex-shrink-0 flex-col items-center">
+                <div className="flex items-center justify-center overflow-hidden rounded-full" style={{ width: '32px', height: '32px' }}>
+                  <MessageIcon 
+                    iconData={iconData} 
+                    assistant={assistant} 
+                    agent={agent}
+                    isSubmitting={effectiveIsSubmitting}
+                  />
+                </div>
               </div>
-            </div>
+            )}
             <div
               className={cn(
                 'relative flex w-11/12 flex-col',
                 isCreatedByUser ? 'user-turn' : 'agent-turn',
               )}
+              style={{
+                alignItems: isCreatedByUser ? 'flex-end' : 'flex-start'
+              }}
             >
-              <h2 className={cn('select-none font-semibold text-text-primary', fontSize)}>
-                {name}
-              </h2>
+              {!isCreatedByUser && (
+                <h2 className={cn('select-none font-semibold text-text-primary', fontSize)}>
+                  {name}
+                </h2>
+              )}
               <div className="flex flex-col gap-1">
                 <div className="flex max-w-full flex-grow flex-col gap-0">
                   <ContentParts

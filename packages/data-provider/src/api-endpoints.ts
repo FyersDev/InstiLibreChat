@@ -12,6 +12,13 @@ if (
   // element in the HTML document, if it exists.
   const baseEl = document.querySelector('base');
   BASE_URL = baseEl?.getAttribute('href') || '/';
+  
+  // Always use relative URLs by setting BASE_URL to empty string or '/'
+  // This ensures the frontend works on any domain (localhost or production)
+  // The proxy will handle routing to the correct backend services
+  if (!BASE_URL || BASE_URL === '/') {
+    BASE_URL = '';
+  }
 }
 
 if (BASE_URL && BASE_URL.endsWith('/')) {

@@ -856,6 +856,7 @@ class AgentClient extends BaseClient {
             messageId: this.responseMessageId,
             conversationId: this.conversationId,
             parentMessageId: this.parentMessageId,
+            ephemeralAgent: this.options.req.body.ephemeralAgent,
           },
           user: createSafeUser(this.options.req.user),
         },

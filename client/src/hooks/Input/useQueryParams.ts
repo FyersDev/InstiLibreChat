@@ -1,6 +1,6 @@
 import { useEffect, useCallback, useRef } from 'react';
 import { useRecoilValue } from 'recoil';
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useParams } from 'react-router-dom';
 import { QueryClient, useQueryClient } from '@tanstack/react-query';
 import {
   QueryKeys,
@@ -9,18 +9,21 @@ import {
   tQueryParamsSchema,
   isAssistantsEndpoint,
   PermissionBits,
+  Constants,
 } from 'librechat-data-provider';
 import type {
   TPreset,
   TEndpointsConfig,
   TStartupConfig,
   AgentListResponse,
+  TMessage,
 } from 'librechat-data-provider';
+import * as t from 'librechat-data-provider';
 import type { ZodAny } from 'zod';
 import { getConvoSwitchLogic, getModelSpecIconURL, removeUnavailableTools, logger } from '~/utils';
 import { useAuthContext, useAgentsMap, useDefaultConvo, useSubmitMessage } from '~/hooks';
 import { useChatContext, useChatFormContext } from '~/Providers';
-import { useGetAgentByIdQuery } from '~/data-provider';
+import { useGetAgentByIdQuery, useGetMessagesByConvoId } from '~/data-provider';
 import store from '~/store';
 
 /**
@@ -114,6 +117,7 @@ export default function useQueryParams({
   const promptTextRef = useRef<string | null>(null);
   const validSettingsRef = useRef<TPreset | null>(null);
   const settingsTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const isExistingConvoRef = useRef(false); // Track if we've detected an existing conversation
 
   const methods = useChatFormContext();
   const [searchParams, setSearchParams] = useSearchParams();
@@ -124,6 +128,22 @@ export default function useQueryParams({
 
   const queryClient = useQueryClient();
   const { conversation, newConversation } = useChatContext();
+  const { conversationId: urlConversationId = '' } = useParams<{ conversationId?: string }>();
+  const conversationId = conversation?.conversationId ?? urlConversationId;
+
+  // Check if conversation already has messages (to prevent re-submission on navigation back)
+  // First check the query cache immediately (synchronous) before waiting for the query
+  // This is critical to prevent re-submission when navigating back to an existing conversation
+  const cachedMessages = queryClient.getQueryData<TMessage[]>([QueryKeys.messages, conversationId]);
+  const hasCachedMessages = cachedMessages && cachedMessages.length > 0;
+  
+  const { data: existingMessages, isFetched: messagesFetched } = useGetMessagesByConvoId(conversationId, {
+    enabled: !!conversationId && conversationId !== Constants.NEW_CONVO,
+  });
+  const hasExistingMessages = hasCachedMessages || (existingMessages && existingMessages.length > 0);
+  
+  // Also check if conversation object has messages directly (faster check)
+  const conversationHasMessages = conversation?.messages && conversation.messages.length > 0;
 
   const urlAgentId = searchParams.get('agent_id') || '';
   const { data: urlAgent } = useGetAgentByIdQuery(urlAgentId);
@@ -261,6 +281,14 @@ export default function useQueryParams({
    * Has internal guards to ensure it only executes once regardless of how many times it's called.
    */
   const processSubmission = useCallback(() => {
+    // CRITICAL: Never submit if this is an existing conversation
+    if (isExistingConvoRef.current) {
+      console.log('Blocking submission: existing conversation detected');
+      submissionHandledRef.current = true;
+      pendingSubmitRef.current = false;
+      return;
+    }
+
     if (submissionHandledRef.current || !pendingSubmitRef.current || !promptTextRef.current) {
       return;
     }
@@ -283,6 +311,37 @@ export default function useQueryParams({
   }, [methods, submitMessage, conversation]);
 
   useEffect(() => {
+    // IMMEDIATE CHECK: If this is an existing conversation, skip all processing
+    const currentConvoId = urlConversationId || conversationId;
+    const isExistingConvo = currentConvoId && currentConvoId !== Constants.NEW_CONVO && currentConvoId !== 'new';
+    
+    // Check cached messages immediately (synchronous check) - critical for navigation back
+    const cachedMsgs = queryClient.getQueryData<TMessage[]>([QueryKeys.messages, currentConvoId]);
+    const hasCachedMsgs = cachedMsgs && cachedMsgs.length > 0;
+    
+    const conversationHasMessages = conversation?.messages && conversation.messages.length > 0;
+    
+    // If it's an existing conversation OR has cached messages OR has conversation messages, skip processing
+    if (isExistingConvo || hasCachedMsgs || hasExistingMessages || conversationHasMessages || isExistingConvoRef.current) {
+      // Mark as existing conversation immediately
+      isExistingConvoRef.current = true;
+      
+      // Clean up any query params immediately
+      const paramString = searchParams.toString();
+      if (paramString) {
+        const currentParams = new URLSearchParams(paramString);
+        currentParams.delete('prompt');
+        currentParams.delete('q');
+        currentParams.delete('submit');
+        setSearchParams(currentParams, { replace: true });
+      }
+      processedRef.current = true;
+      submissionHandledRef.current = true;
+      pendingSubmitRef.current = false;
+      console.log('Immediate skip: existing conversation detected', currentConvoId, 'hasCachedMsgs:', hasCachedMsgs, 'hasExistingMessages:', hasExistingMessages);
+      return; // Exit early, don't even set up the interval
+    }
+
     const processQueryParams = () => {
       const queryParams: Record<string, string> = {};
       searchParams.forEach((value, key) => {
@@ -319,10 +378,55 @@ export default function useQueryParams({
         return;
       }
 
+      // Re-check for existing conversation/messages on each interval (in case they loaded)
+      const currentConvoIdCheck = urlConversationId || conversationId;
+      const isExistingConvoCheck = currentConvoIdCheck && currentConvoIdCheck !== Constants.NEW_CONVO && currentConvoIdCheck !== 'new';
+      
+      // Check cached messages on each interval (they might have loaded)
+      const cachedMsgsCheck = queryClient.getQueryData<TMessage[]>([QueryKeys.messages, currentConvoIdCheck]);
+      const hasCachedMsgsCheck = cachedMsgsCheck && cachedMsgsCheck.length > 0;
+      
+      const conversationHasMessagesCheck = conversation?.messages && conversation.messages.length > 0;
+      
+      if (isExistingConvoCheck || hasCachedMsgsCheck || hasExistingMessages || conversationHasMessagesCheck || isExistingConvoRef.current) {
+        // Mark as existing conversation to prevent any future submissions
+        isExistingConvoRef.current = true;
+        
+        // For existing conversations, just clean up any query params and mark as processed
+        // Do NOT process any query params that might trigger new conversation creation or message submission
+        const paramString = searchParams.toString();
+        if (paramString) {
+          const currentParams = new URLSearchParams(paramString);
+          currentParams.delete('prompt');
+          currentParams.delete('q');
+          currentParams.delete('submit');
+          setSearchParams(currentParams, { replace: true });
+        }
+        processedRef.current = true;
+        submissionHandledRef.current = true;
+        pendingSubmitRef.current = false; // Clear any pending submissions
+        if (settingsTimeoutRef.current) {
+          clearTimeout(settingsTimeoutRef.current);
+          settingsTimeoutRef.current = null;
+        }
+        clearInterval(intervalId);
+        const newUrl = window.location.pathname;
+        window.history.replaceState({}, '', newUrl);
+        console.log('Skipping query params processing for existing conversation:', currentConvoIdCheck, 'hasCachedMsgs:', hasCachedMsgsCheck, 'hasMessages:', hasExistingMessages || conversationHasMessagesCheck);
+        return;
+      }
+
       const { decodedPrompt, validSettings, shouldAutoSubmit } = processQueryParams();
 
       if (!shouldAutoSubmit) {
         submissionHandledRef.current = true;
+      }
+      
+      // Guard: Only proceed with submission if messages have been fetched (or we have cached messages)
+      // This prevents race conditions where we submit before knowing if conversation has messages
+      if (shouldAutoSubmit && !messagesFetched && !hasCachedMessages) {
+        // Wait for messages to be fetched before deciding to submit
+        return;
       }
 
       /** Mark processing as complete and clean up as needed */
@@ -355,8 +459,11 @@ export default function useQueryParams({
         promptTextRef.current = decodedPrompt;
       }
 
-      // Handle auto-submission
-      if (shouldAutoSubmit && decodedPrompt) {
+      // Handle auto-submission (only for new conversations, existing ones are handled above)
+      // Double-check: Never submit if this is an existing conversation with messages
+      // Re-check conversation messages (already checked above, but verify again)
+      const hasConvoMessages = conversation?.messages && conversation.messages.length > 0;
+      if (shouldAutoSubmit && decodedPrompt && !isExistingConvo && !hasExistingMessages && !hasConvoMessages && !isExistingConvoRef.current) {
         if (Object.keys(validSettings).length > 0) {
           // Settings are changing, defer submission
           pendingSubmitRef.current = true;
@@ -389,12 +496,22 @@ export default function useQueryParams({
         submissionHandledRef.current = true;
       }
 
-      if (Object.keys(validSettings).length > 0) {
+      // Only apply settings if we're not in an existing conversation
+      // This prevents creating new conversations when navigating back
+      const currentConvoIdForSettings = urlConversationId || conversationId;
+      const isExistingConvoForSettings = currentConvoIdForSettings && currentConvoIdForSettings !== Constants.NEW_CONVO && currentConvoIdForSettings !== 'new';
+      if (Object.keys(validSettings).length > 0 && !isExistingConvoForSettings) {
         newQueryConvo(validSettings);
       }
 
       success();
     }, 100);
+
+    // Reset the existing conversation ref when conversationId changes to NEW_CONVO
+    // This allows new conversations to work properly
+    if (urlConversationId === Constants.NEW_CONVO || urlConversationId === 'new') {
+      isExistingConvoRef.current = false;
+    }
 
     return () => {
       clearInterval(intervalId);
@@ -412,6 +529,10 @@ export default function useQueryParams({
     setSearchParams,
     queryClient,
     processSubmission,
+    conversationId,
+    urlConversationId,
+    hasExistingMessages,
+    conversation,
   ]);
 
   useEffect(() => {

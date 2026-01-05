@@ -48,11 +48,11 @@ const SidePanelGroup = memo(
     const hideSidePanel = useRecoilValue(store.hideSidePanel);
 
     const calculateLayout = useCallback(() => {
+      // Right side panel is disabled, so main content takes full width
       if (artifacts == null) {
-        const navSize = defaultLayout.length === 2 ? defaultLayout[1] : defaultLayout[2];
-        return [100 - navSize, navSize];
+        return [100, 0]; // Main content: 100%, Side panel: 0%
       } else {
-        const navSize = 0;
+        const navSize = 0; // Side panel disabled
         const remainingSpace = 100 - navSize;
         const newMainSize = Math.floor(remainingSpace / 2);
         const artifactsSize = remainingSpace - newMainSize;
@@ -127,7 +127,8 @@ const SidePanelGroup = memo(
             />
           )}
 
-          {!hideSidePanel && interfaceConfig.sidePanel === true && (
+          {/* Right side panel disabled */}
+          {false && !hideSidePanel && interfaceConfig.sidePanel === true && (
             <SidePanel
               panelRef={panelRef}
               minSize={minSize}
@@ -147,7 +148,8 @@ const SidePanelGroup = memo(
         {artifacts != null && isSmallScreen && (
           <div className="fixed inset-0 z-[100]">{artifacts}</div>
         )}
-        {!hideSidePanel && interfaceConfig.sidePanel === true && (
+        {/* Right side panel close button disabled */}
+        {false && !hideSidePanel && interfaceConfig.sidePanel === true && (
           <button
             aria-label="Close right side panel"
             className={`nav-mask ${!isCollapsed ? 'active' : ''}`}

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { v4 } from 'uuid';
 import { SSE } from 'sse.js';
 import { useSetRecoilState } from 'recoil';
@@ -51,6 +51,9 @@ export default function useSSE(
   const [completed, setCompleted] = useState(new Set());
   const setAbortScroll = useSetRecoilState(store.abortScrollFamily(runIndex));
   const setShowStopButton = useSetRecoilState(store.showStopButtonByIndex(runIndex));
+  
+  // Track seen SSE submissions to prevent duplicate connections
+  const seenSSERef = useRef<Set<string>>(new Set());
 
   const {
     setMessages,
@@ -94,6 +97,20 @@ export default function useSSE(
     if (submission == null || Object.keys(submission).length === 0) {
       return;
     }
+
+    // Create a unique key for this submission to track if we've already seen it
+    const submissionKey = submission.initialResponse?.messageId || 
+                         submission.userMessage?.messageId || 
+                         `${submission.conversation?.conversationId}-${Date.now()}`;
+    
+    // Guard: Prevent duplicate SSE connections for the same submission
+    if (seenSSERef.current.has(submissionKey)) {
+      console.log('SSE guard: Already seen this submission, skipping', submissionKey);
+      return;
+    }
+    
+    // Mark this submission as seen
+    seenSSERef.current.add(submissionKey);
 
     let { userMessage } = submission;
 
@@ -259,7 +276,23 @@ export default function useSSE(
         /* @ts-ignore */
         sse.dispatchEvent(e);
       }
+      // Clean up seen submission key on unmount (but keep it for a bit to prevent rapid re-submissions)
+      // Remove after a delay to allow for legitimate re-submissions after navigation
+      setTimeout(() => {
+        seenSSERef.current.delete(submissionKey);
+      }, 5000); // 5 second window
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [submission]);
+  
+  // Cleanup: Reset submission state on unmount
+  useEffect(() => {
+    return () => {
+      // Clear submission state when component unmounts to prevent stale submissions
+      if (submission != null && Object.keys(submission).length > 0) {
+        setIsSubmitting(false);
+        setShowStopButton(false);
+      }
+    };
+  }, [submission, setIsSubmitting, setShowStopButton]);
 }

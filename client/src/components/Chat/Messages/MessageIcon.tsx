@@ -5,6 +5,7 @@ import type { TMessageIcon } from '~/common';
 import ConvoIconURL from '~/components/Endpoints/ConvoIconURL';
 import { useGetEndpointsQuery } from '~/data-provider';
 import { getIconEndpoint, logger } from '~/utils';
+import { useChatContext } from '~/Providers';
 import Icon from '~/components/Endpoints/Icon';
 
 const MessageIcon = memo(
@@ -12,12 +13,13 @@ const MessageIcon = memo(
     iconData,
     assistant,
     agent,
+    isSubmitting = false,
   }: {
     iconData?: TMessageIcon;
     assistant?: Assistant;
     agent?: Agent;
+    isSubmitting?: boolean;
   }) => {
-    logger.log('icon_data', iconData, assistant, agent);
     const { data: endpointsConfig } = useGetEndpointsQuery();
 
     const agentName = useMemo(() => agent?.name ?? '', [agent]);
@@ -46,6 +48,26 @@ const MessageIcon = memo(
       [endpointsConfig, endpoint],
     );
 
+    // Show loading animation for AI messages that are being generated
+    // Use chatIsSubmitting from ChatContext as fallback since this component
+    // is rendered outside MessageContext
+    const { isSubmitting: chatIsSubmitting } = useChatContext();
+    const effectiveIsSubmitting = isSubmitting || chatIsSubmitting;
+    const shouldShowLoader = effectiveIsSubmitting && iconData?.isCreatedByUser === false;
+
+    if (shouldShowLoader) {
+      return (
+        <div className="flex h-full w-full items-center justify-center">
+          <img
+            src="/assets/loader.gif"
+            alt="Loading..."
+            className="object-contain"
+            style={{ width: '32px', height: '32px' }}
+          />
+        </div>
+      );
+    }
+
     if (iconData?.isCreatedByUser !== true && iconURL != null && iconURL.includes('http')) {
       return (
         <ConvoIconURL
@@ -69,7 +91,7 @@ const MessageIcon = memo(
         model={iconData?.model}
         assistantName={assistantName}
         agentName={agentName}
-        size={28.8}
+        size={32}
       />
     );
   },

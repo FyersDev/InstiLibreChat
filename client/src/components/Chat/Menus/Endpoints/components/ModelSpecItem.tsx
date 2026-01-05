@@ -2,7 +2,6 @@ import React from 'react';
 import type { TModelSpec } from 'librechat-data-provider';
 import { CustomMenuItem as MenuItem } from '../CustomMenu';
 import { useModelSelectorContext } from '../ModelSelectorContext';
-import SpecIcon from './SpecIcon';
 import { cn } from '~/utils';
 
 interface ModelSpecItemProps {
@@ -11,8 +10,7 @@ interface ModelSpecItemProps {
 }
 
 export function ModelSpecItem({ spec, isSelected }: ModelSpecItemProps) {
-  const { handleSelectSpec, endpointsConfig } = useModelSelectorContext();
-  const { showIconInMenu = true } = spec;
+  const { handleSelectSpec } = useModelSelectorContext();
   return (
     <MenuItem
       key={spec.name}
@@ -27,11 +25,6 @@ export function ModelSpecItem({ spec, isSelected }: ModelSpecItemProps) {
           spec.description ? 'items-start' : 'items-center',
         )}
       >
-        {showIconInMenu && (
-          <div className="flex-shrink-0">
-            <SpecIcon currentSpec={spec} endpointsConfig={endpointsConfig} />
-          </div>
-        )}
         <div className="flex min-w-0 flex-col gap-1">
           <span className="truncate text-left">{spec.label}</span>
           {spec.description && (

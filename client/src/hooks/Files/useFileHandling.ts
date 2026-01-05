@@ -24,6 +24,7 @@ import { ephemeralAgentByConvoId } from '~/store';
 import { logger, validateFiles } from '~/utils';
 import useClientResize from './useClientResize';
 import useUpdateFiles from './useUpdateFiles';
+import { uploadDocument } from '~/data-provider/document-service';
 
 type UseFileHandling = {
   fileSetter?: FileSetter;
@@ -158,6 +159,38 @@ const useFileHandling = (params?: UseFileHandling) => {
   const startUpload = async (extendedFile: ExtendedFile) => {
     const filename = extendedFile.file?.name ?? 'File';
     startUploadTimer(extendedFile.file_id, filename, extendedFile.size);
+
+    // Check if file is a document type and upload to document service
+    const documentTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'text/plain',
+      'text/csv',
+    ];
+    const fileParts = filename.toLowerCase().split('.');
+    const lastPart = fileParts[fileParts.length - 1];
+    const fileExtension = (fileParts.length > 1 && lastPart ? lastPart : '') as string;
+    const documentExtensions = ['.pdf', '.doc', '.docx', '.xls', '.xlsx', '.txt', '.csv'];
+    const hasValidExtension = fileExtension !== '';
+    const isDocument = documentTypes.includes(extendedFile.type ?? '' as string) || 
+      (hasValidExtension && fileExtension && documentExtensions.includes(`.${fileExtension}`));
+    
+    // Upload to document service if it's a document file
+    if (isDocument && extendedFile.file) {
+      try {
+        const userInfoStr = localStorage.getItem('userInfo');
+        const userInfo = userInfoStr ? JSON.parse(userInfoStr) : {};
+        const owner = userInfo.email || userInfo.id || 'default_user';
+        await uploadDocument(extendedFile.file, owner);
+        logger.log('files', `Document "${filename}" uploaded to document service`);
+      } catch (error) {
+        logger.error('files', `Failed to upload document to document service:`, error);
+        // Continue with regular file upload even if document upload fails
+      }
+    }
 
     const formData = new FormData();
     formData.append('endpoint', endpoint);

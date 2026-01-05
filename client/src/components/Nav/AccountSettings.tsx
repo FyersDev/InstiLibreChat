@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { useRecoilState } from 'recoil';
 import * as Select from '@ariakit/react/select';
 import { FileText, LogOut } from 'lucide-react';
@@ -7,6 +7,7 @@ import { useGetStartupConfig, useGetUserBalance } from '~/data-provider';
 import FilesView from '~/components/Chat/Input/Files/FilesView';
 import { useAuthContext } from '~/hooks/AuthContext';
 import { useLocalize } from '~/hooks';
+import { saasApi } from '~/services/saasApi';
 import Settings from './Settings';
 import store from '~/store';
 
@@ -19,6 +20,65 @@ function AccountSettings() {
   });
   const [showSettings, setShowSettings] = useState(false);
   const [showFiles, setShowFiles] = useRecoilState(store.showFiles);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          setIsLoading(false);
+          return;
+        }
+        const data = await saasApi.getMe();
+        setUserInfo(data);
+      } catch (error) {
+        console.error('Error loading user info:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    if (isAuthenticated) {
+      loadUserInfo();
+    } else {
+      setIsLoading(false);
+    }
+  }, [isAuthenticated]);
+
+  // Only show AccountSettings for super admins
+  // Check explicitly for true - hide for org admins and regular users
+  const isSuperAdmin = userInfo?.is_super_admin === true;
+
+  // Debug log
+  useEffect(() => {
+    if (!isLoading && userInfo) {
+      console.log('[AccountSettings] Render check:', {
+        isSuperAdmin,
+        is_super_admin: userInfo?.is_super_admin,
+        org_role: userInfo?.org_role,
+        org_id: userInfo?.org_id,
+        willShow: isSuperAdmin
+      });
+    }
+  }, [isLoading, userInfo, isSuperAdmin]);
+
+  // Don't show while loading
+  if (isLoading) {
+    return null;
+  }
+
+  // Don't show if userInfo is not loaded
+  if (!userInfo) {
+    return null;
+  }
+
+  // Only show if explicitly a super admin (is_super_admin === true)
+  // Hide for org admins (org_role === 'admin' but is_super_admin !== true) and regular users
+  if (!isSuperAdmin) {
+    return null;
+  }
 
   return (
     <Select.SelectProvider>
@@ -78,6 +138,8 @@ function AccountSettings() {
             {localize('com_nav_help_faq')}
           </Select.SelectItem>
         )}
+        {isSuperAdmin && (
+          <>
         <Select.SelectItem
           value=""
           onClick={() => setShowSettings(true)}
@@ -86,6 +148,19 @@ function AccountSettings() {
           <GearIcon className="icon-md" aria-hidden="true" />
           {localize('com_nav_settings')}
         </Select.SelectItem>
+        <Select.SelectItem
+          value=""
+          onClick={() => {
+            const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+            window.location.href = `${baseHref}admin`;
+          }}
+          className="select-item text-sm"
+        >
+          <GearIcon className="icon-md" aria-hidden="true" />
+          Admin Dashboard
+        </Select.SelectItem>
+          </>
+        )}
         <DropdownMenuSeparator />
         <Select.SelectItem
           aria-selected={true}

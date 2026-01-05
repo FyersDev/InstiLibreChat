@@ -1,6 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { Spinner } from '@librechat/client';
-import { useParams } from 'react-router-dom';
+import { useParams, useNavigate } from 'react-router-dom';
 import { Constants, EModelEndpoint } from 'librechat-data-provider';
 import { useGetModelsQuery } from 'librechat-data-provider/react-query';
 import type { TPreset } from 'librechat-data-provider';
@@ -17,6 +17,7 @@ import store from '~/store';
 export default function ChatRoute() {
   const { data: startupConfig } = useGetStartupConfig();
   const { isAuthenticated, user } = useAuthRedirect();
+  const navigate = useNavigate();
 
   const setIsTemporary = useRecoilCallback(
     ({ set }) =>
@@ -32,6 +33,7 @@ export default function ChatRoute() {
   useIdChangeEffect(conversationId);
   const { hasSetConversation, conversation } = store.useCreateConversationAtom(index);
   const { newConversation } = useNewConvo();
+  const hasHandledError = useRef(false);
 
   const modelsQuery = useGetModelsQuery({
     enabled: isAuthenticated,
@@ -45,6 +47,45 @@ export default function ChatRoute() {
   const assistantListMap = useAssistantListMap();
 
   const isTemporaryChat = conversation && conversation.expiredAt ? true : false;
+
+  // Handle deleted conversations: if query fails and conversationId is not NEW_CONVO, redirect to new chat
+  useEffect(() => {
+    // Reset error handling flag when conversationId changes
+    if (hasHandledError.current && conversationId !== Constants.NEW_CONVO && conversationId !== 'new') {
+      hasHandledError.current = false;
+    }
+
+    if (
+      initialConvoQuery.isError &&
+      initialConvoQuery.isFetched &&
+      conversationId !== Constants.NEW_CONVO &&
+      conversationId !== 'new' &&
+      isAuthenticated &&
+      !hasSetConversation.current &&
+      !hasHandledError.current
+    ) {
+      hasHandledError.current = true;
+      logger.log('conversation', 'Conversation not found or deleted, redirecting to new chat', {
+        conversationId,
+        error: initialConvoQuery.error,
+      });
+      // Clear the stored conversation ID from localStorage
+      const storedConvoId = localStorage.getItem('lastConversationId');
+      if (storedConvoId === conversationId) {
+        localStorage.removeItem('lastConversationId');
+      }
+      // Navigate to new conversation
+      navigate('/c/new', { replace: true });
+    }
+  }, [
+    initialConvoQuery.isError,
+    initialConvoQuery.isFetched,
+    initialConvoQuery.error,
+    conversationId,
+    isAuthenticated,
+    hasSetConversation,
+    navigate,
+  ]);
 
   useEffect(() => {
     if (conversationId !== Constants.NEW_CONVO && !isTemporaryChat) {

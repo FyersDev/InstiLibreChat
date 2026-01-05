@@ -26,9 +26,13 @@ const edit = require('./edit');
 const keys = require('./keys');
 const user = require('./user');
 const mcp = require('./mcp');
+const screener = require('./screener');
+const market = require('./market');
 
 module.exports = {
   mcp,
+  screener,
+  market,
   edit,
   auth,
   keys,

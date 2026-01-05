@@ -1,4 +1,5 @@
 export { default as Login } from './Login';
+export { default as OTP } from './OTP';
 export { default as Registration } from './Registration';
 export { default as ResetPassword } from './ResetPassword';
 export { default as VerifyEmail } from './VerifyEmail';

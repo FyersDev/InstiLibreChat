@@ -54,9 +54,8 @@ const MCPSubMenu = React.forwardRef<HTMLDivElement, MCPSubMenuProps>(
               />
             }
           >
-            <div className="flex items-center gap-2">
+            <div className="flex items-center justify-center">
               <MCPIcon className="icon-md" />
-              <span>{placeholder || placeholderText}</span>
               <ChevronRight className="ml-auto h-3 w-3" />
             </div>
             <button
@@ -118,6 +117,28 @@ const MCPSubMenu = React.forwardRef<HTMLDivElement, MCPSubMenuProps>(
                 </Ariakit.MenuItem>
               );
             })}
+            {/* Add separator and Clear All option if any servers are selected */}
+            {mcpValues && mcpValues.length > 0 && (
+              <>
+                <div className="my-1 border-t border-border-light" />
+                <Ariakit.MenuItem
+                  onClick={(event) => {
+                    event.preventDefault();
+                    const { batchToggleServers } = mcpServerManager;
+                    batchToggleServers([]);
+                  }}
+                  className={cn(
+                    'flex items-center gap-2 rounded-lg px-2 py-1.5 text-text-primary hover:cursor-pointer',
+                    'scroll-m-1 outline-none transition-colors',
+                    'hover:bg-black/[0.075] dark:hover:bg-white/10',
+                    'data-[active-item]:bg-black/[0.075] dark:data-[active-item]:bg-white/10',
+                    'w-full min-w-0 text-sm text-red-600 dark:text-red-400',
+                  )}
+                >
+                  <span>🗑️ Clear All</span>
+                </Ariakit.MenuItem>
+              </>
+            )}
           </Ariakit.Menu>
         </Ariakit.MenuProvider>
         {configDialogProps && <MCPConfigDialog {...configDialogProps} />}

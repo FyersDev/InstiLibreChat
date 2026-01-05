@@ -61,11 +61,6 @@ export function SearchResults({ results, localize, searchValue }: SearchResultsP
                   spec.description ? 'items-start' : 'items-center',
                 )}
               >
-                {(spec.showIconInMenu ?? true) && (
-                  <div className="flex-shrink-0">
-                    <SpecIcon currentSpec={spec} endpointsConfig={endpointsConfig} />
-                  </div>
-                )}
                 <div className="flex min-w-0 flex-col gap-1">
                   <span className="truncate text-left">{spec.label}</span>
                   {spec.description && (
@@ -126,11 +121,6 @@ export function SearchResults({ results, localize, searchValue }: SearchResultsP
             return (
               <Fragment key={`endpoint-${endpoint.value}-search-${i}`}>
                 <div className="flex items-center gap-2 px-3 py-1 text-sm font-medium">
-                  {endpoint.icon && (
-                    <div className="flex items-center justify-center overflow-hidden rounded-full p-1">
-                      {endpoint.icon}
-                    </div>
-                  )}
                   {endpoint.label}
                 </div>
                 {filteredModels.map((model) => {
@@ -161,15 +151,6 @@ export function SearchResults({ results, localize, searchValue }: SearchResultsP
                       className="flex w-full cursor-pointer items-center justify-start rounded-lg px-3 py-2 pl-6 text-sm"
                     >
                       <div className="flex items-center gap-2">
-                        {endpoint.modelIcons?.[modelId] && (
-                          <div className="flex h-5 w-5 items-center justify-center overflow-hidden rounded-full">
-                            <img
-                              src={endpoint.modelIcons[modelId]}
-                              alt={modelName}
-                              className="h-full w-full object-cover"
-                            />
-                          </div>
-                        )}
                         <span>{modelName}</span>
                       </div>
                       {isGlobal && <EarthIcon className="ml-auto size-4 text-green-400" />}
@@ -204,14 +185,6 @@ export function SearchResults({ results, localize, searchValue }: SearchResultsP
                 className="flex w-full cursor-pointer items-center justify-between rounded-xl px-3 py-2 text-sm"
               >
                 <div className="flex items-center gap-2">
-                  {endpoint.icon && (
-                    <div
-                      className="flex items-center justify-center overflow-hidden rounded-full border border-gray-200 p-1 dark:border-gray-700"
-                      style={{ borderRadius: '50%' }}
-                    >
-                      {endpoint.icon}
-                    </div>
-                  )}
                   <span>{endpoint.label}</span>
                 </div>
                 {selectedEndpoint === endpoint.value && (

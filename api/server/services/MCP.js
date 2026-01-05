@@ -360,11 +360,14 @@ function createToolInstance({ res, toolName, serverName, toolDefinition, provide
       const customUserVars =
         config?.configurable?.userMCPAuthMap?.[`${Constants.mcp_prefix}${serverName}`];
 
+      // Use toolArguments as-is - collection IDs are now provided by LLM from the prompt
+      const finalToolArguments = toolArguments;
+
       const result = await mcpManager.callTool({
         serverName,
         toolName,
         provider,
-        toolArguments,
+        toolArguments: finalToolArguments,
         options: {
           signal: derivedSignal,
         },
@@ -418,10 +421,16 @@ function createToolInstance({ res, toolName, serverName, toolDefinition, provide
     }
   };
 
+  // Enhance description for document_search to include instructions about document IDs
+  let enhancedDescription = description || '';
+  if (serverName === 'document_search') {
+    enhancedDescription = `${enhancedDescription}\n\nIMPORTANT: When using this tool, the 'collection' parameter should be set to one of the available document IDs provided in the context. The system will automatically handle multiple documents by making separate calls for each document ID. Do not use arbitrary numbers for the collection parameter - use the specific document IDs that are available.`;
+  }
+
   const toolInstance = tool(_call, {
     schema,
     name: normalizedToolKey,
-    description: description || '',
+    description: enhancedDescription,
     responseFormat: AgentConstants.CONTENT_AND_ARTIFACT,
   });
   toolInstance.mcp = true;

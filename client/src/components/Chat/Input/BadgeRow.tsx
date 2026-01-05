@@ -19,8 +19,10 @@ import { useChatBadges } from '~/hooks';
 import ToolDialogs from './ToolDialogs';
 import FileSearch from './FileSearch';
 import Artifacts from './Artifacts';
-import MCPSelect from './MCPSelect';
 import WebSearch from './WebSearch';
+import SelectedDocuments from '../../Documents/SelectedDocuments';
+import SelectedPersona from '../../Personas/SelectedPersona';
+import SelectedTemplate from '../../Templates/SelectedTemplate';
 import store from '~/store';
 
 interface BadgeRowProps {
@@ -368,7 +370,9 @@ function BadgeRow({
             <CodeInterpreter />
             <FileSearch />
             <Artifacts />
-            <MCPSelect />
+            <SelectedPersona />
+            <SelectedTemplate />
+            <SelectedDocuments />
           </>
         )}
         {ghostBadge && (

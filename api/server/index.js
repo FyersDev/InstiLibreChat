@@ -145,6 +145,10 @@ const startServer = async () => {
 
   app.use('/api/tags', routes.tags);
   app.use('/api/mcp', routes.mcp);
+  // Register screener route before ErrorController to ensure it's caught
+  app.use('/api/proxy/screener', routes.screener);
+  // Market data API routes
+  app.use('/api/market', routes.market);
 
   app.use(ErrorController);
 

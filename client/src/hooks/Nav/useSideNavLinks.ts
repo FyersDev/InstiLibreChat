@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, useState, useEffect } from 'react';
 import { Blocks, MCPIcon, AttachmentIcon } from '@librechat/client';
 import { Database, Bookmark, Settings2, ArrowRightToLine, MessageSquareQuote } from 'lucide-react';
 import {
@@ -21,6 +21,7 @@ import FilesPanel from '~/components/SidePanel/Files/Panel';
 import MCPPanel from '~/components/SidePanel/MCP/MCPPanel';
 import { useGetStartupConfig } from '~/data-provider';
 import { useHasAccess } from '~/hooks';
+import { saasApi } from '~/services/saasApi';
 
 export default function useSideNavLinks({
   hidePanel,
@@ -62,6 +63,31 @@ export default function useSideNavLinks({
     permission: Permissions.CREATE,
   });
   const { data: startupConfig } = useGetStartupConfig();
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfoLoaded, setUserInfoLoaded] = useState(false);
+
+  // Load user info to check if super admin
+  useEffect(() => {
+    const loadUserInfo = async () => {
+      try {
+        const token = localStorage.getItem('access_token');
+        if (!token) {
+          setUserInfoLoaded(true);
+          return;
+        }
+        const data = await saasApi.getMe();
+        setUserInfo(data);
+      } catch (error) {
+        console.error('Error loading user info:', error);
+      } finally {
+        setUserInfoLoaded(true);
+      }
+    };
+    loadUserInfo();
+  }, []);
+
+  // Only consider super admin if userInfo is loaded AND is_super_admin is explicitly true
+  const isSuperAdmin = userInfoLoaded && userInfo !== null && userInfo?.is_super_admin === true;
 
   const Links = useMemo(() => {
     const links: NavLink[] = [];
@@ -142,17 +168,13 @@ export default function useSideNavLinks({
       Component: FilesPanel,
     });
 
-    if (hasAccessToBookmarks) {
-      links.push({
-        title: 'com_sidepanel_conversation_tags',
-        label: '',
-        icon: Bookmark,
-        id: 'bookmarks',
-        Component: BookmarkPanel,
-      });
-    }
-
+    // Only show MCP settings (flower/gear icon) for super admins
+    // Hide completely for org admins and regular users
+    // Only add if userInfo is loaded AND user is confirmed super admin
     if (
+      userInfoLoaded &&
+      userInfo !== null &&
+      userInfo.is_super_admin === true &&
       startupConfig?.mcpServers &&
       Object.values(startupConfig.mcpServers).some(
         (server: any) =>
@@ -193,6 +215,9 @@ export default function useSideNavLinks({
     hasAccessToCreateAgents,
     hidePanel,
     startupConfig,
+    isSuperAdmin,
+    userInfo,
+    userInfoLoaded,
   ]);
 
   return Links;

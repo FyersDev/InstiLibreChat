@@ -34,32 +34,109 @@ const openidReuseTokens = isEnabled(process.env.OPENID_REUSE_TOKENS);
  * Fetches MCP servers from registry and adds them to the payload.
  * Registry now includes all configured servers (from YAML) plus inspection data when available.
  * Always fetches fresh to avoid caching incomplete initialization state.
+ * Also includes servers directly from mcpConfig (YAML) even if not yet initialized.
  */
 const getMCPServers = async (payload, appConfig) => {
   try {
-    if (appConfig?.mcpConfig == null) {
-      return;
+    logger.info('[getMCPServers] Starting...');
+    logger.info(`[getMCPServers] appConfig exists: ${!!appConfig}`);
+    
+    // Check mcpConfig value (could be null even if key exists)
+    const mcpConfigValue = appConfig?.mcpConfig;
+    logger.info(`[getMCPServers] appConfig.mcpConfig value: ${mcpConfigValue === null ? 'null' : mcpConfigValue === undefined ? 'undefined' : typeof mcpConfigValue}`);
+    logger.info(`[getMCPServers] appConfig.mcpConfig is truthy: ${!!mcpConfigValue}`);
+    
+    // Try multiple ways to get mcpConfig
+    let mcpConfig = mcpConfigValue;
+    
+    // If mcpConfig is null/undefined, try config.mcpServers
+    if (!mcpConfig && appConfig?.config?.mcpServers) {
+      logger.info('[getMCPServers] Using mcpServers from appConfig.config as fallback');
+      mcpConfig = appConfig.config.mcpServers;
     }
-    const mcpManager = getMCPManager();
-    if (!mcpManager) {
-      return;
-    }
-    const mcpServers = await mcpServersRegistry.getAllServerConfigs();
-    if (!mcpServers) return;
-    for (const serverName in mcpServers) {
-      if (!payload.mcpServers) {
-        payload.mcpServers = {};
+    
+    // If still not found, check if config itself has mcpServers at root level
+    if (!mcpConfig && appConfig?.config) {
+      logger.info(`[getMCPServers] Checking appConfig.config structure. Keys: ${Object.keys(appConfig.config).join(', ')}`);
+      // The config object might have mcpServers directly
+      if (appConfig.config.mcpServers) {
+        logger.info('[getMCPServers] Found mcpServers in appConfig.config');
+        mcpConfig = appConfig.config.mcpServers;
       }
-      const serverConfig = mcpServers[serverName];
-      payload.mcpServers[serverName] = removeNullishValues({
-        startup: serverConfig?.startup,
-        chatMenu: serverConfig?.chatMenu,
-        isOAuth: serverConfig.requiresOAuth,
-        customUserVars: serverConfig?.customUserVars,
-      });
     }
+    
+    if (!mcpConfig) {
+      logger.warn('[getMCPServers] No mcpConfig found. appConfig structure:');
+      logger.warn(`[getMCPServers] appConfig keys: ${appConfig ? Object.keys(appConfig).join(', ') : 'appConfig is null'}`);
+      if (appConfig?.config) {
+        logger.warn(`[getMCPServers] appConfig.config keys: ${Object.keys(appConfig.config).join(', ')}`);
+        logger.warn(`[getMCPServers] appConfig.config.mcpServers: ${appConfig.config.mcpServers}`);
+      }
+      // Log the actual mcpConfig value even if null
+      logger.warn(`[getMCPServers] appConfig.mcpConfig raw value: ${JSON.stringify(mcpConfigValue)}`);
+      return;
+    }
+    
+    // Initialize payload.mcpServers if it doesn't exist
+    if (!payload.mcpServers) {
+      payload.mcpServers = {};
+    }
+    
+    // First, add all servers from mcpConfig (YAML) - these are the configured servers
+    // This ensures all configured servers appear even if not yet initialized
+    if (mcpConfig) {
+      const serverNames = Object.keys(mcpConfig);
+      logger.info(`[getMCPServers] Found ${serverNames.length} servers in mcpConfig: ${serverNames.join(', ')}`);
+      
+      for (const serverName in mcpConfig) {
+        const yamlConfig = mcpConfig[serverName];
+        // Only add if not already present (registry takes precedence)
+        if (!payload.mcpServers[serverName]) {
+          payload.mcpServers[serverName] = removeNullishValues({
+            startup: yamlConfig?.startup,
+            chatMenu: yamlConfig?.chatMenu !== false, // Default to true if not specified
+            isOAuth: yamlConfig?.requiresOAuth || false,
+            customUserVars: yamlConfig?.customUserVars || {},
+          });
+          logger.info(`[getMCPServers] Added server "${serverName}" from mcpConfig`);
+        }
+      }
+      logger.info(`[getMCPServers] Added ${Object.keys(mcpConfig).length} servers from mcpConfig`);
+    }
+    
+    // Then, try to get additional info from registry (if servers are initialized)
+    const mcpManager = getMCPManager();
+    if (mcpManager) {
+      try {
+        const mcpServers = await mcpServersRegistry.getAllServerConfigs();
+        if (mcpServers) {
+          // Update with registry data (has more info like connection status)
+          for (const serverName in mcpServers) {
+            const serverConfig = mcpServers[serverName];
+            payload.mcpServers[serverName] = {
+              ...payload.mcpServers[serverName],
+              ...removeNullishValues({
+                startup: serverConfig?.startup,
+                chatMenu: serverConfig?.chatMenu !== false,
+                isOAuth: serverConfig.requiresOAuth,
+                customUserVars: serverConfig?.customUserVars,
+              }),
+            };
+          }
+          logger.info(`[getMCPServers] Updated with ${Object.keys(mcpServers).length} servers from registry`);
+        }
+      } catch (registryError) {
+        logger.warn('[getMCPServers] Error getting servers from registry (non-fatal):', registryError);
+        // Continue - we already have servers from mcpConfig
+      }
+    }
+    
+    const finalCount = Object.keys(payload.mcpServers).length;
+    logger.info(`[getMCPServers] Final mcpServers count: ${finalCount}`);
+    logger.info(`[getMCPServers] Final server names: ${Object.keys(payload.mcpServers).join(', ')}`);
   } catch (error) {
-    logger.error('Error loading MCP servers', error);
+    logger.error('[getMCPServers] Error loading MCP servers:', error);
+    logger.error('[getMCPServers] Error stack:', error.stack);
   }
 };
 
@@ -68,8 +145,10 @@ router.get('/', async function (req, res) {
 
   const cachedStartupConfig = await cache.get(CacheKeys.STARTUP_CONFIG);
   if (cachedStartupConfig) {
+    logger.info('[config route] Using cached startup config, adding MCP servers...');
     const appConfig = await getAppConfig({ role: req.user?.role });
     await getMCPServers(cachedStartupConfig, appConfig);
+    // Send the updated config with MCP servers
     res.send(cachedStartupConfig);
     return;
   }
@@ -189,8 +268,11 @@ router.get('/', async function (req, res) {
       payload.customFooter = process.env.CUSTOM_FOOTER;
     }
 
-    await cache.set(CacheKeys.STARTUP_CONFIG, payload);
+    // IMPORTANT: Add MCP servers BEFORE caching, so they're included in the cached version
     await getMCPServers(payload, appConfig);
+    
+    // Cache the payload with MCP servers included
+    await cache.set(CacheKeys.STARTUP_CONFIG, payload);
     return res.status(200).send(payload);
   } catch (err) {
     logger.error('Error in startup config', err);

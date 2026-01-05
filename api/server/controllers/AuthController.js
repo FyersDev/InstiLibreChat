@@ -80,7 +80,7 @@ const refreshController = async (req, res) => {
         strategyName: 'refreshController',
       });
       if (error || !user) {
-        return res.status(401).redirect('/login');
+        return res.status(401).redirect('/');
       }
       const token = setOpenIDAuthTokens(tokenset, res, user._id.toString(), refreshToken);
 
