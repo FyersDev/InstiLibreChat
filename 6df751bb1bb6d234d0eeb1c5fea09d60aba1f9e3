@@ -1,0 +1,22 @@
+packages/api/src/mcp/MCPManager.ts
+  39da900 151-190
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "05b9884e4c981dfee76ffb15085037a0cc920dce",
+  "prompts": {
+    "39da900": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "cab8948a-af50-48d7-8370-e7f2cdcae839",
+        "model": "default"
+      },
+      "human_author": "Muskan <muskan.nippukumar@fyers.in>",
+      "messages": [],
+      "total_additions": 41,
+      "total_deletions": 1,
+      "accepted_lines": 40,
+      "overriden_lines": 0
+    }
+  }
+}
