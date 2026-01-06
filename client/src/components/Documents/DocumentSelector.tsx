@@ -32,27 +32,22 @@ export default function DocumentSelector({
       const response = await fetchDocuments();
       console.log('DocumentSelector received response:', response);
       
-      // Handle different response structures
       let documentsList: DocumentListItem[] = [];
       
       if (Array.isArray(response)) {
         documentsList = response;
       } else if (response.data) {
-        // Check if data.documents exists (nested structure: {data: {documents: [...]}})
         const dataAny = response.data as any;
         if (dataAny.documents && Array.isArray(dataAny.documents)) {
           documentsList = dataAny.documents;
         } else if (Array.isArray(response.data)) {
-          // Direct array in data: {data: [...]}
           documentsList = response.data;
         }
       } else if (typeof response === 'object' && response !== null) {
-        // Try to find any array property (could be 'documents', 'data', etc.)
         const responseAny = response as any;
         if (responseAny.documents && Array.isArray(responseAny.documents)) {
           documentsList = responseAny.documents;
         } else {
-          // Try to find any array property
           const arrayKeys = Object.keys(responseAny).filter(key => Array.isArray(responseAny[key]));
           if (arrayKeys.length > 0) {
             documentsList = responseAny[arrayKeys[0]];
@@ -80,6 +75,14 @@ export default function DocumentSelector({
   }, [isOpen, loadDocuments]);
 
   const handleToggleSelection = useCallback((documentId: number) => {
+    const document = documents.find(doc => doc.document_id === documentId);
+    const isCompleted = document && (document.status === 'Completed' || document.status === 'completed' || document.status === 'indexed');
+    
+    // Only allow selection if document status is Completed
+    if (!isCompleted) {
+      return;
+    }
+
     setSelectedDocuments((prev) => {
       const newSet = new Set(prev);
       const idStr = documentId.toString();
@@ -90,7 +93,7 @@ export default function DocumentSelector({
       }
       return newSet;
     });
-  }, []);
+  }, [documents]);
 
   const handleConfirm = useCallback(() => {
     const selected = documents.filter((doc) => selectedDocuments.has(doc.document_id.toString()));
@@ -161,7 +164,6 @@ export default function DocumentSelector({
     }
     try {
       const date = new Date(dateString);
-      // Check if date is valid
       if (isNaN(date.getTime())) {
         return 'N/A';
       }
@@ -231,7 +233,7 @@ export default function DocumentSelector({
               </div>
             ) : documents.length === 0 ? (
               <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-                No documents available
+                No completed documents available
               </div>
             ) : (
               <table className="w-full table-fixed">
@@ -257,11 +259,13 @@ export default function DocumentSelector({
                 <tbody>
                   {documents.map((doc) => {
                     const isSelected = selectedDocuments.has(doc.document_id.toString());
+                    const isCompleted = doc.status === 'Completed' || doc.status === 'completed' || doc.status === 'indexed';
                     return (
                       <tr
                         key={doc.document_id}
                         className={cn(
-                          'border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer transition-colors',
+                          'border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
+                          isCompleted ? 'cursor-pointer' : 'opacity-50 cursor-not-allowed',
                           isSelected && 'bg-blue-50 dark:bg-blue-900/20',
                         )}
                         onClick={() => handleToggleSelection(doc.document_id)}
@@ -359,4 +363,3 @@ export default function DocumentSelector({
     </Dialog>
   );
 }
-
