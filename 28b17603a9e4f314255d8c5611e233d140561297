@@ -1,0 +1,22 @@
+api/server/services/Endpoints/agents/agent.js
+  5e3b834 300-304,308,313,318,330-332
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "bf8a962bee106358fa712195dd4d2abc95f82774",
+  "prompts": {
+    "5e3b834": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "b1dbc6e5-f81d-43e3-9fa6-714d9074424a",
+        "model": "default"
+      },
+      "human_author": "Muskan <muskan.nippukumar@fyers.in>",
+      "messages": [],
+      "total_additions": 12,
+      "total_deletions": 7,
+      "accepted_lines": 11,
+      "overriden_lines": 0
+    }
+  }
+}
