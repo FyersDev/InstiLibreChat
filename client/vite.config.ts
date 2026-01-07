@@ -259,6 +259,10 @@ export default defineConfig(({ command }) => ({
         if (warning.message.includes('Error when using sourcemap')) {
           return;
         }
+        // Suppress PostCSS warnings about :is() selector transformations
+        if (warning.message.includes('can not be transformed to an equivalent selector without \':is()\'')) {
+          return;
+        }
         warn(warning);
       },
     },

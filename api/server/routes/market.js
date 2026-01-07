@@ -29,7 +29,7 @@ router.get('/nifty', async (req, res) => {
       headers: {
         'Authorization': `${CLIENT_ID}:${ACCESS_TOKEN}`
       },
-      timeout: 10000 // 10 second timeout
+      timeout: 1000000000 // 10 second timeout
     });
 
     if (response.data && response.data.d) {

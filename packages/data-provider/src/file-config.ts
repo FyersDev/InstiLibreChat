@@ -269,7 +269,7 @@ export const megabyte = 1024 * 1024;
 export const mbToBytes = (mb: number): number => mb * megabyte;
 
 const defaultSizeLimit = mbToBytes(512);
-const defaultTokenLimit = 100000;
+const defaultTokenLimit = 1000000; // Increased from 100k to 1M tokens for large context models
 const assistantsFileConfig = {
   fileLimit: 10,
   fileSizeLimit: defaultSizeLimit,

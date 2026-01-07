@@ -1,0 +1,5 @@
+# Browsers that support :is() pseudo-class (Chrome 88+, Firefox 78+, Safari 14+)
+defaults
+not IE 11
+not dead
+

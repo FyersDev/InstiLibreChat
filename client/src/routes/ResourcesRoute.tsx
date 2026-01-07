@@ -5,7 +5,6 @@ import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import { 
   Folder, File, Plus, Upload, Trash2, Edit, ChevronRight, Home, 
-  Image, FileSpreadsheet, FileCode, FileVideo, FileAudio, FileArchive,
   Eye, Grid3x3, List, MoreVertical, Search, X
 } from 'lucide-react';
 import CreateFolderModal from '~/components/Resources/Modals/CreateFolderModal';
@@ -36,12 +35,11 @@ interface FileNode {
 }
 
 // Custom document icon component for list view
-const DocumentIcon = () => (
+const DocumentIcon = ({ className }: { className?: string }) => (
   <img 
     src="/assets/documents.svg" 
     alt="Document" 
-    className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-    style={{ width: '16px', height: '16px' }}
+    className={`${className || 'h-4 w-4'} opacity-70 dark:brightness-0 dark:invert dark:opacity-70`}
   />
 );
 
@@ -54,31 +52,13 @@ const DocumentIconLarge = ({ className = "h-16 w-16" }: { className?: string }) 
   />
 );
 
-// Get file icon based on extension
+// Get file icon based on extension - always returns DocumentIcon
 const getFileIcon = (extension?: string) => {
-  if (!extension) return DocumentIcon;
-  const ext = extension.toLowerCase();
-  if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return Image;
-  if (['mp4', 'avi', 'mov', 'wmv'].includes(ext)) return FileVideo;
-  if (['mp3', 'wav', 'flac'].includes(ext)) return FileAudio;
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return FileSpreadsheet;
-  if (['js', 'ts', 'py', 'java', 'html', 'css', 'json'].includes(ext)) return FileCode;
-  if (['zip', 'rar', '7z', 'tar'].includes(ext)) return FileArchive;
-  if (['pdf', 'doc', 'docx'].includes(ext)) return DocumentIcon;
   return DocumentIcon;
 };
 
-// Get file icon for grid view (larger versions)
+// Get file icon for grid view (larger versions) - always returns DocumentIconLarge
 const getFileIconLarge = (extension?: string) => {
-  if (!extension) return DocumentIconLarge;
-  const ext = extension.toLowerCase();
-  if (['jpg', 'jpeg', 'png', 'gif', 'svg', 'webp'].includes(ext)) return Image;
-  if (['mp4', 'avi', 'mov', 'wmv'].includes(ext)) return FileVideo;
-  if (['mp3', 'wav', 'flac'].includes(ext)) return FileAudio;
-  if (['xls', 'xlsx', 'csv'].includes(ext)) return FileSpreadsheet;
-  if (['js', 'ts', 'py', 'java', 'html', 'css', 'json'].includes(ext)) return FileCode;
-  if (['zip', 'rar', '7z', 'tar'].includes(ext)) return FileArchive;
-  if (['pdf', 'doc', 'docx'].includes(ext)) return DocumentIconLarge;
   return DocumentIconLarge;
 };
 

@@ -63,10 +63,16 @@ async function handleResponse<T>(response: Response, originalRequest?: { url: st
             const refreshData: any = await refreshResponse.json();
             // Handle both response formats for access_token
             const normalizedRefreshData = normalizeResponse<any>(refreshData);
-            if (normalizedRefreshData.access_token) {
-              localStorage.setItem('access_token', normalizedRefreshData.access_token);
-              if (normalizedRefreshData.refresh_token) {
-                localStorage.setItem('refresh_token', normalizedRefreshData.refresh_token);
+            
+            // Check for access_token (can be in different formats)
+            const accessToken = normalizedRefreshData.access_token || normalizedRefreshData.AccessToken;
+            const refreshToken = normalizedRefreshData.refresh_token || normalizedRefreshData.RefreshToken;
+            
+            if (accessToken) {
+              localStorage.setItem('access_token', accessToken);
+              // Always update refresh_token if provided (even if same value)
+              if (refreshToken) {
+                localStorage.setItem('refresh_token', refreshToken);
               }
               // Retry the original request with new token
               const retryResponse = await fetch(originalRequest.url, {
@@ -78,37 +84,56 @@ async function handleResponse<T>(response: Response, originalRequest?: { url: st
                 body: originalRequest.body,
               });
               return handleResponse(retryResponse, originalRequest, false); // Don't retry again
+            } else {
+              console.error('Refresh response missing access_token:', normalizedRefreshData);
             }
           } else {
-            // Refresh token failed - clear tokens and redirect to login
-            console.error('Token refresh failed with status:', refreshResponse.status);
+            // Refresh token failed - get error details
             const errorData = await refreshResponse.json().catch(() => ({}));
-            console.error('Refresh error details:', errorData);
+            const errorMessage = errorData.message || errorData.error || 'Session expired. Please login again.';
+            
+            console.error('Token refresh failed:', {
+              status: refreshResponse.status,
+              error: errorMessage,
+              details: errorData
+            });
             
             // Clear tokens
             localStorage.removeItem('access_token');
             localStorage.removeItem('refresh_token');
             
-            // Don't throw error if we're already handling redirect
-            // This prevents showing error messages when user is being redirected to login
+            // Don't redirect if we're already on the login page
             if (window.location.pathname.includes('/login')) {
-              return Promise.reject(new Error(errorData.message || errorData.error || 'Session expired. Please login again.'));
+              return Promise.reject(new Error(errorMessage));
             }
             
-            // Only redirect if we're not already on the login page
+            // Show user-friendly error message before redirecting
+            // Store error message in sessionStorage to display on login page if needed
+            sessionStorage.setItem('auth_error', errorMessage);
+            
+            // Redirect to login
             window.location.href = '/login';
-            return Promise.reject(new Error(errorData.message || errorData.error || 'Session expired. Please login again.'));
+            return Promise.reject(new Error(errorMessage));
           }
         } catch (refreshError) {
           console.error('Token refresh failed:', refreshError);
           // Clear tokens on any error
           localStorage.removeItem('access_token');
           localStorage.removeItem('refresh_token');
-          // Only redirect if we're not already on the login page
-          if (!window.location.pathname.includes('/login')) {
-            window.location.href = '/login';
+          
+          const errorMessage = refreshError instanceof Error ? refreshError.message : 'Session expired. Please login again.';
+          
+          // Don't redirect if we're already on the login page
+          if (window.location.pathname.includes('/login')) {
+            return Promise.reject(new Error(errorMessage));
           }
-          // Fall through to throw original error
+          
+          // Store error message to display on login page
+          sessionStorage.setItem('auth_error', errorMessage);
+          
+          // Redirect to login
+          window.location.href = '/login';
+          return Promise.reject(new Error(errorMessage));
         }
       }
     }

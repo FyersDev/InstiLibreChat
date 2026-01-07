@@ -181,7 +181,7 @@ export default function TopNavBar() {
     // Auto-refresh every 1 second for real-time updates
     const interval = setInterval(() => {
       fetchNiftyData();
-    }, 1000);
+    }, 100000000);
 
     return () => clearInterval(interval);
   }, []);

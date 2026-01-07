@@ -14,8 +14,8 @@
   },
   "scripts": {
     "clean": "rimraf dist",
-    "build": "npm run clean && rollup -c --bundleConfigAsCjs",
-    "build:dev": "npm run clean && NODE_ENV=development rollup -c --bundleConfigAsCjs",
+    "build": "npm run clean && cross-env NODE_OPTIONS='--max-old-space-size=4096' rollup -c --bundleConfigAsCjs",
+    "build:dev": "npm run clean && NODE_ENV=development cross-env NODE_OPTIONS='--max-old-space-size=4096' rollup -c --bundleConfigAsCjs",
     "build:watch": "NODE_ENV=development rollup -c -w --bundleConfigAsCjs",
     "build:watch:prod": "rollup -c -w --bundleConfigAsCjs",
     "test": "jest --coverage --watch --testPathIgnorePatterns=\"\\.*integration\\.|\\.*helper\\.\"",
