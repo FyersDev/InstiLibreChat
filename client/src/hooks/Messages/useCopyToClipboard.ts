@@ -63,6 +63,21 @@ export default function useCopyToClipboard({
         }, '');
       }
 
+      // Extract query from JSON structure if present (for user messages)
+      // This allows users to copy just the query text instead of the full JSON
+      if (messageText.trim().startsWith('{')) {
+        try {
+          const requestObject = JSON.parse(messageText);
+          // Check if this is our structured format with a query field
+          if (requestObject.query !== undefined && requestObject.query !== null) {
+            // Extract only the query text for copying
+            messageText = requestObject.query;
+          }
+        } catch (e) {
+          // If JSON parsing fails, continue with original text
+        }
+      }
+
       // Early return if no search data
       if (!searchResults || Object.keys(searchResults).length === 0) {
         // Clean up any citation markers before returning

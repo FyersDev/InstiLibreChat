@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize } from '@librechat/client';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { createPortal } from 'react-dom';
 import { User, Edit, Trash2, MoreVertical } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 export default function TemplatesView() {
+  const { showToast } = useToastContext();
   const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<'personas' | 'templates'>('personas');
   const [templates, setTemplates] = useState<any[]>([]);
@@ -116,11 +117,23 @@ export default function TemplatesView() {
     try {
       if (persona.id) {
         await saasApi.updatePersona(persona.id, persona);
+        showToast({
+          message: `Persona "${persona.name}" updated successfully`,
+          status: 'success',
+        });
       } else {
         await saasApi.createPersona(persona);
+        showToast({
+          message: `Persona "${persona.name}" created successfully`,
+          status: 'success',
+        });
       }
       await fetchPersonas();
-    } catch (error) {
+    } catch (error: any) {
+      showToast({
+        message: error.message || (persona.id ? 'Failed to update persona' : 'Failed to create persona'),
+        status: 'error',
+      });
       throw error;
     }
   };
@@ -137,6 +150,15 @@ export default function TemplatesView() {
   const deletePersona = async (id: string) => {
     try {
       await saasApi.deletePersona(id);
+      showToast({
+        message: 'Persona deleted successfully',
+        status: 'success',
+      });
+    } catch (error: any) {
+      showToast({
+        message: error.message || 'Failed to delete persona',
+        status: 'error',
+      });
     } finally {
       // Always refresh the list, even if deletion fails
       await fetchPersonas();
@@ -180,7 +202,7 @@ export default function TemplatesView() {
         await deletePersona(persona.id);
       } catch (error: any) {
         console.error('Error deleting persona:', error);
-        alert(error.message || 'Failed to delete persona');
+        // Error toast is already shown in deletePersona
       } finally {
         setDeleting(false);
       }

@@ -661,18 +661,26 @@ export default function useChatFunctions({
     const requestObject: any = {};
     let structuredPrompt = '';
     
-    // Build documents array
-    if (documentsList.length > 0) {
-      requestObject.documents = documentsList.map((doc: any) => {
+    // Build documents array - only include if documents are selected AND document_search MCP is enabled
+    const hasDocumentSearchMCP = enhancedEphemeralAgent?.mcp?.includes('document_search') || 
+                                  ephemeralAgent?.mcp?.includes('document_search');
+    
+    if (documentsList.length > 0 && hasDocumentSearchMCP) {
+      const validDocuments = documentsList.map((doc: any) => {
         const docId = typeof doc.document_id === 'number' ? doc.document_id : parseInt(doc.document_id, 10);
         return {
           name: doc.filename,
           collection: isNaN(docId) ? null : docId
         };
       }).filter((doc: any) => doc.collection !== null);
-    } else {
-      requestObject.documents = [];
+      
+      // Only include documents array if there are valid documents
+      if (validDocuments.length > 0) {
+        requestObject.documents = validDocuments;
+      }
+      // If no valid documents, don't include the documents array at all
     }
+    // If no documents or document_search MCP not enabled, don't include documents array
     
     // Build template object
     if (storedTemplateData) {

@@ -1,7 +1,7 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { Upload, FileText, AlertCircle, CheckCircle } from 'lucide-react';
 import { useToastContext } from '@librechat/client';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useUploadPermission } from '~/hooks';
 import { uploadDocument } from '~/data-provider/document-service';
 import { cn } from '~/utils';
 
@@ -13,12 +13,32 @@ interface DocumentUploadProps {
 export default function DocumentUpload({ onUploadSuccess, className }: DocumentUploadProps) {
   const localize = useLocalize();
   const { showToast } = useToastContext();
+  const { canUpload, loading } = useUploadPermission();
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+
+  // Show error if user doesn't have permission
+  useEffect(() => {
+    if (!loading && !canUpload) {
+      showToast({
+        message: 'You do not have permission to upload documents. Please contact your administrator.',
+        status: 'error',
+      });
+    }
+  }, [canUpload, loading, showToast]);
 
   const handleUpload = useCallback(
     async (file: File) => {
       if (!file) return;
+
+      // Check permission before uploading
+      if (!canUpload) {
+        showToast({
+          message: 'You do not have permission to upload documents. Please contact your administrator.',
+          status: 'error',
+        });
+        return;
+      }
 
       // Validate file type (accept common document formats)
       const allowedTypes = [
@@ -190,7 +210,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
           id="document-upload"
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           onChange={handleFileChange}
-          disabled={isUploading}
+          disabled={isUploading || !canUpload}
           accept=".docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.jpg,.jpeg,.png,.tiff,.bmp,.webp,.csv,.xlsx,.xlsm,.txt,.json"
         />
 
@@ -199,6 +219,20 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
             <>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
               <p className="text-sm text-gray-600 dark:text-gray-400">Uploading document...</p>
+            </>
+          ) : !canUpload ? (
+            <>
+              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full">
+                <AlertCircle className="w-6 h-6 text-red-500" />
+              </div>
+              <div>
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                  Upload Permission Required
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                  You do not have permission to upload documents. Please contact your administrator.
+                </p>
+              </div>
             </>
           ) : (
             <>

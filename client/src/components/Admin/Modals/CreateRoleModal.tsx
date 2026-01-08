@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, TextareaAutosize } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, TextareaAutosize, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface CreateRoleModalProps {
@@ -15,6 +15,7 @@ export default function CreateRoleModal({
   onClose,
   onSuccess,
 }: CreateRoleModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
@@ -62,9 +63,17 @@ export default function CreateRoleModal({
         await saasApi.assignPermissionsToRole((roleData as any).id, selectedPermissions);
       }
 
+      showToast({
+        message: `Role "${formData.name}" created successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to create role');
+      showToast({
+        message: err.message || 'Failed to create role',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

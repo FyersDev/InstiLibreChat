@@ -4,16 +4,12 @@
 services:
   api:
     container_name: LibreChat
-    build:
-      context: .
-      dockerfile: Dockerfile.multi
-      target: api-build
     ports:
-      - "3080:3080"  # Backend API port
-      - "3090:3080"  # Frontend port (proxy connects here, maps to 3080 in container)
+      - "${PORT}:${PORT}"
     depends_on:
       - mongodb
-     # - rag_api
+    #  - rag_api
+    image: ghcr.io/danny-avila/librechat-dev:latest
     restart: always
     user: "${UID}:${GID}"
     extra_hosts:
@@ -22,10 +18,8 @@ services:
       - HOST=0.0.0.0
       - MONGO_URI=mongodb://mongodb:27017/LibreChat
       - MEILI_HOST=http://meilisearch:7700
-      - DOMAIN_CLIENT=http://10.10.7.41:7080
-      - DOMAIN_SERVER=http://10.10.7.41:7080
-      # - RAG_PORT=${RAG_PORT:-8000}
-      # - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
+      - RAG_PORT=${RAG_PORT:-8000}
+      - RAG_API_URL=http://rag_api:${RAG_PORT:-8000}
     volumes:
       - type: bind
         source: ./.env
@@ -74,5 +68,5 @@ services:
   #   env_file:
   #     - .env
 
-# volumes:
-#   pgdata2:
+#volumes:
+#  pgdata2:

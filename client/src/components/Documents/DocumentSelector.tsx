@@ -3,6 +3,7 @@ import { RefreshCw, X, Calendar, Check } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@librechat/client';
 import { useLocalize, useMCPServerManager } from '~/hooks';
 import { fetchDocuments, type DocumentListItem } from '~/data-provider/document-service';
+import { Constants } from 'librechat-data-provider';
 import { cn } from '~/utils';
 
 interface DocumentSelectorProps {
@@ -73,6 +74,58 @@ export default function DocumentSelector({
       loadDocuments();
     }
   }, [isOpen, loadDocuments]);
+
+  // Initialize selected documents from localStorage when modal opens and documents are loaded
+  useEffect(() => {
+    if (isOpen && documents.length > 0 && !loading) {
+      const convoId = conversationId || Constants.NEW_CONVO;
+      // Try actual conversationId first, then fallback to NEW_CONVO
+      let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
+      
+      // If no data found for actual conversationId and we're not on NEW_CONVO, also check NEW_CONVO
+      if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
+        documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
+      }
+      
+      if (documentDataStr) {
+        try {
+          const documentData = JSON.parse(documentDataStr);
+          if (documentData.documents && Array.isArray(documentData.documents)) {
+            // Create a Set of document IDs from localStorage
+            const storedIds = new Set<string>();
+            documentData.documents.forEach((doc: any) => {
+              if (doc.document_id) {
+                storedIds.add(doc.document_id.toString());
+              }
+            });
+            
+            // Only update if there are stored documents that exist in the current documents list
+            const validIds = new Set<string>();
+            storedIds.forEach((idStr) => {
+              const docId = parseInt(idStr, 10);
+              const doc = documents.find(d => d.document_id === docId);
+              if (doc) {
+                validIds.add(idStr);
+              }
+            });
+            
+            if (validIds.size > 0) {
+              setSelectedDocuments(validIds);
+              console.log('[DocumentSelector] Initialized selected documents from localStorage:', {
+                conversationId: convoId,
+                storedIds: Array.from(validIds),
+              });
+            }
+          }
+        } catch (error) {
+          console.error('Error parsing document data from localStorage:', error);
+        }
+      }
+    } else if (!isOpen) {
+      // Reset selection when modal closes
+      setSelectedDocuments(new Set());
+    }
+  }, [isOpen, documents, loading, conversationId]);
 
   const handleToggleSelection = useCallback((documentId: number) => {
     const document = documents.find(doc => doc.document_id === documentId);

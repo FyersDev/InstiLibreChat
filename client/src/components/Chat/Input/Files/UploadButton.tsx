@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { TooltipAnchor, Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
-import { useLocalize } from '~/hooks';
+import { useLocalize, useUploadPermission } from '~/hooks';
 import { cn } from '~/utils';
 import DocumentUpload from '~/components/Documents/DocumentUpload';
 
@@ -11,7 +11,8 @@ interface UploadButtonProps {
 
 const UploadButton = ({ disabled }: UploadButtonProps) => {
   const localize = useLocalize();
-  const isDisabled = disabled ?? false;
+  const { canUpload } = useUploadPermission();
+  const isDisabled = Boolean(disabled) || !canUpload;
   const [showUploadDialog, setShowUploadDialog] = useState(false);
 
   const handleClick = useCallback(() => {

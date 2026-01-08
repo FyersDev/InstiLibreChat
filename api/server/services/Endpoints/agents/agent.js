@@ -66,9 +66,17 @@ const initializeAgent = async ({
   }
   let currentFiles;
 
+  // Apply max_tokens from endpoint config as default if not already set
+  const endpointConfig = appConfig?.endpoints?.[EModelEndpoint.agents];
+  const defaultMaxTokens = endpointConfig?.max_tokens;
+  
   const _modelOptions = structuredClone(
     Object.assign(
       { model: agent.model },
+      // Apply default max_tokens from config if not set in model_parameters
+      defaultMaxTokens && !agent.model_parameters?.max_tokens && !agent.model_parameters?.maxTokens && !agent.model_parameters?.maxOutputTokens
+        ? { max_tokens: defaultMaxTokens }
+        : {},
       agent.model_parameters ?? { model: agent.model },
       isInitialAgent === true ? endpointOption?.model_parameters : {},
     ),

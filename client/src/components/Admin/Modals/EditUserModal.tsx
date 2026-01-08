@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface EditUserModalProps {
@@ -9,6 +9,7 @@ interface EditUserModalProps {
 }
 
 export default function EditUserModal({ user, onClose, onSuccess }: EditUserModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     first_name: user.first_name || '',
     last_name: user.last_name || '',
@@ -69,9 +70,17 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
       }
 
       await saasApi.updateUser(user.id, payload);
+      showToast({
+        message: `User "${user.email}" updated successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to update user');
+      showToast({
+        message: err.message || 'Failed to update user',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

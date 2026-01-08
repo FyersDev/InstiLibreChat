@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface AddUserModalProps {
@@ -15,6 +15,7 @@ export default function AddUserModal({
   onClose,
   onSuccess,
 }: AddUserModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     email: '',
     password: '',
@@ -130,9 +131,17 @@ export default function AddUserModal({
       console.log('📤 Creating user with payload:', payload);
 
       await saasApi.createUser(payload);
+      showToast({
+        message: `User "${formData.email}" created successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to create user');
+      showToast({
+        message: err.message || 'Failed to create user',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@librechat/client';
+import { Button, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import AddUserModal from './Modals/AddUserModal';
@@ -28,6 +28,7 @@ export default function UsersView({
   onOrgFilterChange,
   onRefresh,
 }: UsersViewProps) {
+  const { showToast } = useToastContext();
   const [showAddUserModal, setShowAddUserModal] = useState(false);
   const [showEditUserModal, setShowEditUserModal] = useState(false);
   const [selectedUser, setSelectedUser] = useState<any>(null);
@@ -63,9 +64,16 @@ export default function UsersView({
 
     try {
       await saasApi.deleteUser(user.id);
+      showToast({
+        message: `User "${user.email}" deleted successfully`,
+        status: 'success',
+      });
       onRefresh(selectedOrgFilter || null);
     } catch (error: any) {
-      alert(error.message || 'Failed to delete user');
+      showToast({
+        message: error.message || 'Failed to delete user',
+        status: 'error',
+      });
     }
   };
 
@@ -76,9 +84,16 @@ export default function UsersView({
 
     try {
       await saasApi.updateUser(user.id, { status: newStatus });
+      showToast({
+        message: `User status updated to "${newStatus}" successfully`,
+        status: 'success',
+      });
       onRefresh(selectedOrgFilter || null);
     } catch (error: any) {
-      alert(error.message || 'Failed to update user status');
+      showToast({
+        message: error.message || 'Failed to update user status',
+        status: 'error',
+      });
     }
   };
 

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface RolePermissionsModalProps {
@@ -9,6 +9,7 @@ interface RolePermissionsModalProps {
 }
 
 export default function RolePermissionsModal({ role, onClose, onSuccess }: RolePermissionsModalProps) {
+  const { showToast } = useToastContext();
   const [availablePermissions, setAvailablePermissions] = useState<any[]>([]);
   const [rolePermissions, setRolePermissions] = useState<any[]>([]);
   const [selectedPermissions, setSelectedPermissions] = useState<string[]>([]);
@@ -47,9 +48,17 @@ export default function RolePermissionsModal({ role, onClose, onSuccess }: RoleP
 
     try {
       await saasApi.assignPermissionsToRole(role.id, selectedPermissions);
+      showToast({
+        message: `Permissions for role "${role.name}" updated successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to update role permissions');
+      showToast({
+        message: err.message || 'Failed to update role permissions',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

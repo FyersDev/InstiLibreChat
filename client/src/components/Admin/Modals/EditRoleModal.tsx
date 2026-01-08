@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, TextareaAutosize } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, TextareaAutosize, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface EditRoleModalProps {
@@ -9,6 +9,7 @@ interface EditRoleModalProps {
 }
 
 export default function EditRoleModal({ role, onClose, onSuccess }: EditRoleModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: role.name || '',
     description: role.description || '',
@@ -39,9 +40,17 @@ export default function EditRoleModal({ role, onClose, onSuccess }: EditRoleModa
       payload.is_default = formData.is_default;
 
       await saasApi.updateRole(role.id, payload);
+      showToast({
+        message: `Role "${formData.name}" updated successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to update role. Please try again.');
+      showToast({
+        message: err.message || 'Failed to update role',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

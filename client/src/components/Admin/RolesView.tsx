@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Button } from '@librechat/client';
+import { Button, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import CreateRoleModal from './Modals/CreateRoleModal';
@@ -27,6 +27,7 @@ export default function RolesView({
   onOrgFilterChange,
   onRefresh,
 }: RolesViewProps) {
+  const { showToast } = useToastContext();
   const [showCreateRoleModal, setShowCreateRoleModal] = useState(false);
   const [showEditRoleModal, setShowEditRoleModal] = useState(false);
   const [showRolePermissionsModal, setShowRolePermissionsModal] = useState(false);
@@ -39,14 +40,24 @@ export default function RolesView({
 
     try {
       await saasApi.deleteRole(role.id);
+      showToast({
+        message: `Role "${role.name}" deleted successfully`,
+        status: 'success',
+      });
       onRefresh(selectedOrgFilter || undefined);
     } catch (error: any) {
       // If role not found, it might have been deleted already - just refresh
       if (error.message?.includes('not found') || error.message?.includes('NOT_FOUND')) {
-        alert(`Role "${role.name}" was already deleted. Refreshing list...`);
+        showToast({
+          message: `Role "${role.name}" was already deleted. Refreshing list...`,
+          status: 'info',
+        });
         onRefresh(selectedOrgFilter || undefined);
       } else {
-        alert(error.message || 'Failed to delete role');
+        showToast({
+          message: error.message || 'Failed to delete role',
+          status: 'error',
+        });
       }
     }
   };

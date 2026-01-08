@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface EditOrganizationModalProps {
@@ -13,6 +13,7 @@ export default function EditOrganizationModal({
   onClose,
   onSuccess,
 }: EditOrganizationModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: organization.name || '',
     legal_name: organization.legal_name || '',
@@ -111,9 +112,17 @@ export default function EditOrganizationModal({
       }
 
       await saasApi.updateOrganization(organization.id, payload);
+      showToast({
+        message: `Organization "${formData.name}" updated successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to update organization');
+      showToast({
+        message: err.message || 'Failed to update organization',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

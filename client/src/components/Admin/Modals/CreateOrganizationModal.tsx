@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 
 interface CreateOrganizationModalProps {
@@ -8,6 +8,7 @@ interface CreateOrganizationModalProps {
 }
 
 export default function CreateOrganizationModal({ onClose, onSuccess }: CreateOrganizationModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: '',
     legal_name: '',
@@ -102,9 +103,17 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: CreateOr
       // Create organization with logo
       const org: any = await saasApi.createOrganization(payload);
 
+      showToast({
+        message: `Organization "${formData.name}" created successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
       setError(err.message || 'Failed to create organization');
+      showToast({
+        message: err.message || 'Failed to create organization',
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

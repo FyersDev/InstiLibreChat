@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import CreateOrganizationModal from './Modals/CreateOrganizationModal';
@@ -18,6 +18,7 @@ export default function OrganizationsView({
   permissionManager,
   onRefresh,
 }: OrganizationsViewProps) {
+  const { showToast } = useToastContext();
   const [showAddOrgModal, setShowAddOrgModal] = useState(false);
   const [showEditOrgModal, setShowEditOrgModal] = useState(false);
   const [selectedOrg, setSelectedOrg] = useState<any>(null);
@@ -29,9 +30,16 @@ export default function OrganizationsView({
 
     try {
       await saasApi.deleteOrganization(org.id);
+      showToast({
+        message: `Organization "${org.name}" deleted successfully`,
+        status: 'success',
+      });
       onRefresh();
     } catch (error: any) {
-      alert(error.message || 'Failed to delete organization');
+      showToast({
+        message: error.message || 'Failed to delete organization',
+        status: 'error',
+      });
     }
   };
 
