@@ -14,15 +14,16 @@ async function loadDefaultEndpointsConfig(appConfig) {
   const enabledEndpoints = getEnabledEndpoints();
 
   const endpointConfig = {
-    [EModelEndpoint.openAI]: config[EModelEndpoint.openAI],
-    [EModelEndpoint.agents]: config[EModelEndpoint.agents],
-    [EModelEndpoint.assistants]: assistants,
-    [EModelEndpoint.azureAssistants]: azureAssistants,
-    [EModelEndpoint.azureOpenAI]: azureOpenAI,
-    [EModelEndpoint.google]: google,
-    [EModelEndpoint.chatGPTBrowser]: chatGPTBrowser,
-    [EModelEndpoint.gptPlugins]: gptPlugins,
-    [EModelEndpoint.anthropic]: config[EModelEndpoint.anthropic],
+    // Commented out all other endpoints - only keeping bedrock
+    // [EModelEndpoint.openAI]: config[EModelEndpoint.openAI],
+    // [EModelEndpoint.agents]: config[EModelEndpoint.agents],
+    // [EModelEndpoint.assistants]: assistants,
+    // [EModelEndpoint.azureAssistants]: azureAssistants,
+    // [EModelEndpoint.azureOpenAI]: azureOpenAI,
+    // [EModelEndpoint.google]: google,
+    // [EModelEndpoint.chatGPTBrowser]: chatGPTBrowser,
+    // [EModelEndpoint.gptPlugins]: gptPlugins,
+    // [EModelEndpoint.anthropic]: config[EModelEndpoint.anthropic],
     [EModelEndpoint.bedrock]: config[EModelEndpoint.bedrock],
   };
 
