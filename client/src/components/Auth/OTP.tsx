@@ -371,6 +371,10 @@ function OTP() {
                   value={digit}
                   onChange={(e) => handleOtpChange(index, e.target.value)}
                   onKeyDown={(e) => handleKeyDown(index, e)}
+                  autoComplete="off"
+                  autoCorrect="off"
+                  autoCapitalize="off"
+                  spellCheck="false"
                   className="w-10 h-10 sm:w-12 sm:h-12 lg:w-14 lg:h-14 border-2 border-gray-300 rounded-lg text-center text-base sm:text-lg font-semibold focus:border-[#2434E7] focus:outline-none"
                 />
               ))}

@@ -4,7 +4,7 @@ import { Button } from '@librechat/client';
 import { useToastContext } from '@librechat/client';
 import { uploadDocument } from '~/data-provider/document-service';
 import { saasApi } from '~/services/saasApi';
-import { Upload, File as FileIcon } from 'lucide-react';
+import { File as FileIcon } from 'lucide-react';
 
 interface UploadFileModalProps {
   folderId?: string;
@@ -48,11 +48,31 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
 
   const flatFolders = flattenFolders(folders);
 
+  // Filter out "reports" folder from the list
+  const filteredFolders = flatFolders.filter(
+    (folder) => folder.name.toLowerCase() !== 'reports'
+  );
+
+  // Find the "resources" folder to set as default
+  const resourcesFolder = filteredFolders.find(
+    (folder) => folder.name.toLowerCase() === 'resources' || folder.level === 0
+  );
+
+  // Sort folders to put "resources" first
+  const sortedFolders = [...filteredFolders].sort((a, b) => {
+    if (a.id === resourcesFolder?.id) return -1;
+    if (b.id === resourcesFolder?.id) return 1;
+    return 0;
+  });
+
   useEffect(() => {
     if (folderId) {
       setSelectedFolderId(folderId);
+    } else if (resourcesFolder) {
+      // Set resources as default if no folderId is provided
+      setSelectedFolderId(resourcesFolder.id);
     }
-  }, [folderId]);
+  }, [folderId, resourcesFolder?.id]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -169,7 +189,10 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-6">
         <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Upload Document</DialogTitle>
+          <DialogTitle className="text-xl font-semibold flex items-center gap-2">
+            <img src="/assets/export.svg" alt="Upload" className="h-5 w-5 dark:invert" />
+            Upload Document
+          </DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
             Select a document file to upload and store in the database
           </p>
@@ -209,7 +232,7 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
                   </>
                 ) : (
                   <>
-                    <Upload className="h-12 w-12 text-gray-400" />
+                    <img src="/assets/export.svg" alt="Upload" className="h-10 w-10 opacity-40 dark:invert" />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       Click to select a file
                     </span>
@@ -246,8 +269,7 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
               onChange={(e) => setSelectedFolderId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             >
-              <option value="">Root (No folder)</option>
-              {flatFolders.map((folder) => (
+              {sortedFolders.map((folder) => (
                 <option key={folder.id} value={folder.id}>
                   {'  '.repeat(folder.level)}
                   {folder.level > 0 ? '└─ ' : ''}

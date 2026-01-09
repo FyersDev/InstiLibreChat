@@ -46,9 +46,14 @@ export default function useUploadPermission() {
           }
         }
 
-        // Check if user is super admin - grant all permissions
+        // Check if user is super admin or org admin - grant upload permissions
         const userData: any = user || (await saasApi.getMe().catch(() => null));
-        if (userData?.is_super_admin === true) {
+        const isSuperAdmin = userData?.is_super_admin === true;
+        const orgRole = userData?.org_role || userData?.orgRole;
+        const isOrgAdmin = orgRole === 'admin';
+        
+        // Grant upload permissions to super admins and org admins
+        if (isSuperAdmin || isOrgAdmin) {
           permissions = [
             {
               id: 'upload_file-create',

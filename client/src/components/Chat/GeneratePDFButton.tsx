@@ -48,7 +48,7 @@ export default function GeneratePDFButton() {
     .message {
       margin-bottom: 20px;
       padding: 15px;
-      border-radius: 8px;
+      border-radius: 2px;
     }
     .user-message {
       background-color: #f0f0f0;
@@ -70,14 +70,14 @@ export default function GeneratePDFButton() {
     .message-content pre {
       background-color: #f3f4f6;
       padding: 12px;
-      border-radius: 4px;
+      border-radius: 2px;
       overflow-x: auto;
       font-size: 13px;
     }
     .message-content code {
       background-color: #f3f4f6;
       padding: 2px 6px;
-      border-radius: 3px;
+      border-radius: 2px;
       font-size: 13px;
     }
     .message-content table {
@@ -89,7 +89,7 @@ export default function GeneratePDFButton() {
       table-layout: auto;
       display: table;
       border: 1px solid #d1d5db;
-      border-radius: 0.5rem;
+      border-radius: 2px;
       overflow: hidden;
     }
     .message-content table thead {
@@ -237,7 +237,7 @@ export default function GeneratePDFButton() {
             <img 
               src="/assets/documents.svg" 
               alt="Generate PDF" 
-              className="h-4 w-4 opacity-70 dark:invert dark:opacity-70" 
+              className="h-3.5 w-3.5 opacity-70 dark:invert dark:opacity-70" 
             />
             Generate PDF Report
           </>

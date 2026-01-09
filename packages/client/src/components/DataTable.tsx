@@ -14,7 +14,6 @@ import {
 } from '@tanstack/react-table';
 import type { Table as TTable } from '@tanstack/react-table';
 import { Table, TableRow, TableBody, TableCell, TableHead, TableHeader } from './Table';
-import AnimatedSearchInput from './AnimatedSearchInput';
 import { useMediaQuery, useLocalize } from '~/hooks';
 import { TrashIcon, Spinner } from '~/svgs';
 import { Skeleton } from './Skeleton';
@@ -372,7 +371,7 @@ export default function DataTable<TData, TValue>({
   });
 
   return (
-    <div className={cn('flex h-full flex-col gap-4', className)}>
+    <div className={cn('flex flex-col gap-4', className)}>
       {/* Table controls */}
       <div className="flex flex-wrap items-center gap-2 sm:gap-4">
         {enableRowSelection && showCheckboxes && (
@@ -384,23 +383,13 @@ export default function DataTable<TData, TValue>({
             ariaLabel={localize('com_ui_delete_selected_items')}
           />
         )}
-        {filterColumn !== undefined && table.getColumn(filterColumn) && enableSearch && (
-          <div className="relative flex-1">
-            <AnimatedSearchInput
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              isSearching={isSearching}
-              placeholder="Search..."
-            />
-          </div>
-        )}
       </div>
 
       {/* Virtualized table */}
       <div
         ref={tableContainerRef}
         className={cn(
-          'relative h-[calc(100vh-20rem)] max-w-full overflow-x-auto overflow-y-auto rounded-md border border-black/10 dark:border-white/10',
+          'relative max-h-[calc(100vh-20rem)] max-w-full overflow-x-auto overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800',
           'transition-all duration-300 ease-out',
           isSearching && 'bg-surface-secondary/50',
           className,

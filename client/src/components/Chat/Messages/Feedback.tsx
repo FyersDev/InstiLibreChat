@@ -64,7 +64,7 @@ function FeedbackButtons({
             src="/assets/Vectorup.svg" 
             alt="Thumbs Up" 
             className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-            style={{ width: '19px', height: '19px' }}
+            style={{ width: '16px', height: '16px' }}
           />
         </button>
       )}
@@ -80,7 +80,7 @@ function FeedbackButtons({
           src="/assets/Vector.svg" 
           alt="Thumbs Down" 
           className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-          style={{ width: '19px', height: '19px' }}
+          style={{ width: '16px', height: '16px' }}
         />
       </button>
     </>

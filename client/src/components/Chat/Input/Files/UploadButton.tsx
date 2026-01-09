@@ -37,8 +37,9 @@ const UploadButton = ({ disabled }: UploadButtonProps) => {
             onClick={handleClick}
             id="upload-document-button"
             aria-label="Upload Document"
+            style={{ width: '34px', height: '34px' }}
             className={cn(
-              'flex size-9 items-center justify-center rounded-full p-1 transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
+              'flex items-center justify-center rounded-full p-1 transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
               isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent',
             )}
           >
@@ -47,7 +48,7 @@ const UploadButton = ({ disabled }: UploadButtonProps) => {
                 src="/assets/export.svg" 
                 alt="Upload Document" 
                 className="icon-md dark:invert"
-                style={{ width: '20px', height: '20px' }}
+                style={{ width: '18px', height: '18px' }}
               />
             </div>
           </button>

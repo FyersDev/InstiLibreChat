@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, useToastContext } from '@librechat/client';
+import { Search } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import CreateRoleModal from './Modals/CreateRoleModal';
@@ -102,46 +103,46 @@ export default function RolesView({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full border-separate border-spacing-0">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Type
               </th>
               {isSuperAdmin && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Organization
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Description
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {roles.length === 0 ? (
               <tr>
                 <td
                   colSpan={isSuperAdmin ? 5 : 4}
-                  className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+                  className="px-3 py-3 text-center text-gray-500 dark:text-gray-400"
                 >
                   No roles found
                 </td>
               </tr>
             ) : (
               roles.map((role) => (
-                <tr key={role.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                <tr key={role.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <td className="sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     {role.name}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
                         role.type === 'system'
@@ -153,14 +154,14 @@ export default function RolesView({
                     </span>
                   </td>
                   {isSuperAdmin && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {role.org_id ? 'Org Role' : 'System'}
                     </td>
                   )}
-                  <td className="px-6 py-4 text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
                     {role.description || '-'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
                       {permissionManager && permissionManager.canUpdate('roles') && (
                         <>

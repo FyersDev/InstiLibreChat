@@ -4,18 +4,18 @@ import { useAuthContext } from '~/hooks/AuthContext';
 import { PermissionManager, type Permission } from '~/utils/permissions';
 import { saasApi } from '~/services/saasApi';
 
-interface NiftyData {
-  symbol: string;
-  ltp: number;
-  open: number;
-  high: number;
-  low: number;
-  prevClose: number;
-  change: number;
-  changePercent: number;
-  volume: number;
-  timestamp: string;
-}
+// interface NiftyData {
+//   symbol: string;
+//   ltp: number;
+//   open: number;
+//   high: number;
+//   low: number;
+//   prevClose: number;
+//   change: number;
+//   changePercent: number;
+//   volume: number;
+//   timestamp: string;
+// }
 
 export default function TopNavBar() {
   const navigate = useNavigate();
@@ -24,9 +24,9 @@ export default function TopNavBar() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [permissionManager, setPermissionManager] = useState<PermissionManager | null>(null);
   const [activeMenu, setActiveMenu] = useState('FIA research');
-  const [niftyData, setNiftyData] = useState<NiftyData | null>(null);
-  const [niftyLoading, setNiftyLoading] = useState(true);
-  const [niftyError, setNiftyError] = useState<string | null>(null);
+  // const [niftyData, setNiftyData] = useState<NiftyData | null>(null);
+  // const [niftyLoading, setNiftyLoading] = useState(true);
+  // const [niftyError, setNiftyError] = useState<string | null>(null);
 
   useEffect(() => {
     // Load user info and permissions
@@ -108,83 +108,83 @@ export default function TopNavBar() {
   }, [location.pathname]);
 
   // Fetch NIFTY data
-  const fetchNiftyData = async () => {
-    try {
-      setNiftyError(null);
-      const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
-      // Remove trailing slash if present, then add the API path
-      const cleanBaseUrl = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
-      const apiUrl = `${cleanBaseUrl}/api/market/nifty`;
-      
-      const response = await fetch(apiUrl, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        credentials: 'include', // Include cookies for auth
-      });
+  // const fetchNiftyData = async () => {
+  //   try {
+  //     setNiftyError(null);
+  //     const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
+  //     // Remove trailing slash if present, then add the API path
+  //     const cleanBaseUrl = baseHref.endsWith('/') ? baseHref.slice(0, -1) : baseHref;
+  //     const apiUrl = `${cleanBaseUrl}/api/market/nifty`;
+  //     
+  //     const response = await fetch(apiUrl, {
+  //       method: 'GET',
+  //       headers: {
+  //         'Content-Type': 'application/json',
+  //       },
+  //       credentials: 'include', // Include cookies for auth
+  //     });
 
-      // Check content type before parsing
-      const contentType = response.headers.get('content-type') || '';
-      
-      // If response is HTML, the API endpoint doesn't exist (server needs restart or route not registered)
-      if (contentType.includes('text/html')) {
-        // Silently fail - API endpoint not available
-        // Don't log or show errors - just silently return
-        setNiftyError(null);
-        setNiftyLoading(false);
-        return;
-      }
+  //     // Check content type before parsing
+  //     const contentType = response.headers.get('content-type') || '';
+  //     
+  //     // If response is HTML, the API endpoint doesn't exist (server needs restart or route not registered)
+  //     if (contentType.includes('text/html')) {
+  //       // Silently fail - API endpoint not available
+  //       // Don't log or show errors - just silently return
+  //       setNiftyError(null);
+  //       setNiftyLoading(false);
+  //       return;
+  //     }
 
-      if (!response.ok) {
-        // If response is not OK, try to get error message
-        if (contentType.includes('application/json')) {
-          const errorData = await response.json();
-          setNiftyError(errorData.error || `HTTP ${response.status}`);
-        } else {
-          // If non-HTML, non-JSON response
-          setNiftyError(null); // Silently fail
-        }
-        setNiftyLoading(false);
-        return;
-      }
+  //     if (!response.ok) {
+  //       // If response is not OK, try to get error message
+  //       if (contentType.includes('application/json')) {
+  //         const errorData = await response.json();
+  //         setNiftyError(errorData.error || `HTTP ${response.status}`);
+  //       } else {
+  //         // If non-HTML, non-JSON response
+  //         setNiftyError(null); // Silently fail
+  //       }
+  //       setNiftyLoading(false);
+  //       return;
+  //     }
 
-      // Ensure response is JSON before parsing
-      if (!contentType.includes('application/json')) {
-        // Silently fail if not JSON
-        setNiftyError(null);
-        setNiftyLoading(false);
-        return;
-      }
+  //     // Ensure response is JSON before parsing
+  //     if (!contentType.includes('application/json')) {
+  //       // Silently fail if not JSON
+  //       setNiftyError(null);
+  //       setNiftyLoading(false);
+  //       return;
+  //     }
 
-      const result = await response.json();
+  //     const result = await response.json();
 
-      if (result.success && result.data) {
-        setNiftyData(result.data);
-        setNiftyError(null); // Clear any previous errors
-      } else {
-        setNiftyError(result.error || null);
-      }
-    } catch (err: any) {
-      // Silently handle all errors - don't log or show to user
-      // This prevents console spam when API endpoint doesn't exist
-      setNiftyError(null);
-    } finally {
-      setNiftyLoading(false);
-    }
-  };
+  //     if (result.success && result.data) {
+  //       setNiftyData(result.data);
+  //       setNiftyError(null); // Clear any previous errors
+  //     } else {
+  //       setNiftyError(result.error || null);
+  //     }
+  //   } catch (err: any) {
+  //     // Silently handle all errors - don't log or show to user
+  //     // This prevents console spam when API endpoint doesn't exist
+  //     setNiftyError(null);
+  //   } finally {
+  //     setNiftyLoading(false);
+  //   }
+  // };
 
   // Fetch NIFTY data on mount and set up auto-refresh
-  useEffect(() => {
-    fetchNiftyData();
-    
-    // Auto-refresh every 1 second for real-time updates
-    const interval = setInterval(() => {
-      fetchNiftyData();
-    }, 100000000);
+  // useEffect(() => {
+  //   fetchNiftyData();
+  //   
+  //   // Auto-refresh every 1 second for real-time updates
+  //   const interval = setInterval(() => {
+  //     fetchNiftyData();
+  //   }, 100000000);
 
-    return () => clearInterval(interval);
-  }, []);
+  //   return () => clearInterval(interval);
+  // }, []);
 
   const handleMenuChange = (menu: string) => {
     setActiveMenu(menu);
@@ -318,45 +318,45 @@ export default function TopNavBar() {
   });
 
   // Format NIFTY data for display
-  const formatNiftyValue = () => {
-    if (niftyLoading) {
-      return 'Loading...';
-    }
-    if (niftyError || !niftyData) {
-      return 'N/A';
-    }
-    return niftyData.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-  };
+  // const formatNiftyValue = () => {
+  //   if (niftyLoading) {
+  //     return 'Loading...';
+  //   }
+  //   if (niftyError || !niftyData) {
+  //     return 'N/A';
+  //   }
+  //   return niftyData.ltp.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  // };
 
-  const formatNiftyChange = () => {
-    if (!niftyData) return { value: '0.00', percent: '(0.00%)', isPositive: true };
-    const isPositive = niftyData.change >= 0;
-    const changeValue = Math.abs(niftyData.change).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-    const changePercent = Math.abs(niftyData.changePercent).toFixed(2);
-    return {
-      value: `${isPositive ? '+' : '-'}${changeValue}`,
-      percent: `(${isPositive ? '+' : '-'}${changePercent}%)`,
-      isPositive
-    };
-  };
+  // const formatNiftyChange = () => {
+  //   if (!niftyData) return { value: '0.00', percent: '(0.00%)', isPositive: true };
+  //   const isPositive = niftyData.change >= 0;
+  //   const changeValue = Math.abs(niftyData.change).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  //   const changePercent = Math.abs(niftyData.changePercent).toFixed(2);
+  //   return {
+  //     value: `${isPositive ? '+' : '-'}${changeValue}`,
+  //     percent: `(${isPositive ? '+' : '-'}${changePercent}%)`,
+  //     isPositive
+  //   };
+  // };
 
   return (
-    <nav className="bg-white dark:!bg-[#111111] border-b border-[#EDEDED] dark:border-gray-700 px-3 py-1 flex-shrink-0 z-50 min-h-[48px]">
-      <div className="flex items-center justify-between">
+    <nav className="bg-white dark:!bg-[#111111] border-b border-[#EDEDED] dark:border-gray-700 px-3 sm:px-4 md:px-6 py-1 flex-shrink-0 z-50 min-h-[48px]">
+      <div className="flex items-center justify-between relative">
         {/* Left: FYERS Logo & Financial Data */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 flex-shrink-0">
           {/* FYERS Logo */}
           <div className="flex items-center">
             <img
               src="/assets/Logo.svg"
               alt="FYERS"
               className="h-8 w-auto object-contain"
-              style={{ borderRadius: 0 }}
+              style={{ borderRadius: '2px' }}
             />
           </div>
           
           {/* NIFTY Display - Fixed width container to prevent layout shifts */}
-          <div className="flex items-center gap-2 min-w-[280px] font-Inter" style={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'Inter, sans-serif' }}>
+          {/* <div className="flex items-center gap-2 min-w-[280px] font-Inter" style={{ fontVariantNumeric: 'tabular-nums', fontFamily: 'Inter, sans-serif' }}>
             <span className="text-[#2A2A2A] dark:text-gray-100 text-[14px] font-medium leading-[20px] whitespace-nowrap">NIFTY</span>
             <span className="text-[#2A2A2A] dark:text-gray-100 text-[14px] font-medium leading-[20px] tabular-nums min-w-[90px] text-right">
               {formatNiftyValue()}
@@ -377,16 +377,16 @@ export default function TopNavBar() {
                 Data not availables
               </span>
             )}
-          </div>
+          </div> */}
         </div>
 
-        {/* Center: Primary Menu */}
-        <div className="flex items-center gap-1">
+        {/* Center: Primary Menu - Absolutely centered */}
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-2 sm:gap-3 md:gap-4">
           {menus.map((menu) => (
             <button
               key={menu}
               onClick={() => handleMenuChange(menu)}
-              className={`px-4 py-2 rounded-lg font-medium transition ${
+              className={`px-3 py-1 sm:px-4 sm:py-1 md:px-5 md:py-1 rounded-lg text-sm sm:text-base transition whitespace-nowrap ${
                 activeMenu === menu
                   ? 'bg-[#F2F4FF] text-[#2434E7] dark:bg-[#2A2A2A] dark:text-[#A0A8FF]'
                   : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -398,11 +398,11 @@ export default function TopNavBar() {
         </div>
 
         {/* Right: User Actions */}
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           <div className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-center">
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-center">
               <svg
-                className="w-6 h-6 text-gray-600 dark:text-gray-300"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300"
                 fill="currentColor"
                 viewBox="0 0 24 24"
               >
@@ -411,7 +411,7 @@ export default function TopNavBar() {
             </div>
             <button
               onClick={handleLogout}
-              className="text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100"
+              className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 whitespace-nowrap"
             >
               Logout
             </button>

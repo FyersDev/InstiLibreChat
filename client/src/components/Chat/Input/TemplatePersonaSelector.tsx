@@ -1,5 +1,5 @@
 import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, FolderOpen } from 'lucide-react';
+import { ChevronDown } from 'lucide-react';
 import * as Ariakit from '@ariakit/react';
 import { DropdownPopup } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
@@ -433,7 +433,7 @@ export default function TemplatePersonaSelector() {
         disabled
         className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary opacity-50"
       >
-        <FolderOpen className="h-4 w-4" />
+        <img src="/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 dark:invert" />
         <span>Loading...</span>
       </button>
     );
@@ -465,7 +465,7 @@ export default function TemplatePersonaSelector() {
         className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary opacity-50"
         title="No templates or personas available"
       >
-        <FolderOpen className="h-4 w-4" />
+        <img src="/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 dark:invert" />
         <span>{buttonText}</span>
       </button>
     );
@@ -482,7 +482,7 @@ export default function TemplatePersonaSelector() {
           <Ariakit.MenuButton
             className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
           >
-            <FolderOpen className="h-4 w-4" />
+            <img src="/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 dark:invert" />
             <span>{buttonText}</span>
             <ChevronDown className="h-4 w-4" />
           </Ariakit.MenuButton>

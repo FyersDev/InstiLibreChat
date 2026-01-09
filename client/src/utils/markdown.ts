@@ -115,7 +115,7 @@ const markdownCSS = `
   padding: 0.2em 0.4em;
   margin: 0;
   font-size: 85%;
-  border-radius: 6px;
+  border-radius: 2px;
   background-color: rgba(175, 184, 193, 0.2);
   color: #24292f;
   font-family: ui-monospace, monospace;
@@ -127,7 +127,7 @@ const markdownCSS = `
   overflow: auto;
   font-size: 85%;
   line-height: 1.45;
-  border-radius: 6px;
+  border-radius: 2px;
   margin-top: 0;
   margin-bottom: 16px;
   background-color: #f6f8fa;

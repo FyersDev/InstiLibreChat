@@ -10,7 +10,7 @@ export default function Regenerate({ onClick }: TGenButtonProps) {
       <img 
         src="/assets/repeat.svg" 
         alt="Regenerate" 
-        className="h-3 w-3 flex-shrink-0 dark:invert" 
+        className="h-2.5 w-2.5 flex-shrink-0 dark:invert" 
       />
       {localize('com_ui_regenerate')}
     </Button>

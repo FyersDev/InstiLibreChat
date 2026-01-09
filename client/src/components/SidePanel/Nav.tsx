@@ -66,7 +66,7 @@ function NavContent({ links, isCollapsed, resize }: Omit<NavProps, 'defaultActiv
                             <Button
                               variant="outline"
                               size="sm"
-                              className="w-full justify-start bg-transparent text-text-secondary data-[state=open]:bg-surface-secondary data-[state=open]:text-text-primary"
+                              className="w-full justify-start bg-transparent text-text-secondary data-[state=open]:bg-surface-secondary"
                               onClick={(e) => {
                                 if (link.onClick) {
                                   link.onClick(e);
@@ -74,7 +74,7 @@ function NavContent({ links, isCollapsed, resize }: Omit<NavProps, 'defaultActiv
                                 }
                               }}
                             >
-                              <link.icon className="mr-2 h-4 w-4" />
+                              <link.icon className="mr-2 h-4 w-4 text-text-secondary" />
                               {localize(link.title)}
                               {link.label != null && link.label && (
                                 <span

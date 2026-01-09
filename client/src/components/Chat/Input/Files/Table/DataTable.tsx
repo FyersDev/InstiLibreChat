@@ -92,7 +92,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
   });
 
   return (
-    <div className="flex h-full flex-col gap-4">
+    <div className="flex flex-col gap-4">
       <div className="flex flex-wrap items-center gap-2 py-2 sm:gap-4 sm:py-4">
         <Button
           variant="outline"
@@ -150,7 +150,7 @@ export default function DataTable<TData, TValue>({ columns, data }: DataTablePro
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-      <div className="relative grid h-full max-h-[calc(100vh-20rem)] w-full flex-1 overflow-hidden overflow-x-auto overflow-y-auto rounded-md border border-black/10 dark:border-white/10">
+      <div className="relative grid max-h-[calc(100vh-20rem)] w-full flex-1 overflow-hidden overflow-x-auto overflow-y-auto rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800">
         <Table className="w-full min-w-[300px] border-separate border-spacing-0">
           <TableHeader className="sticky top-0 z-50">
             {table.getHeaderGroups().map((headerGroup) => (

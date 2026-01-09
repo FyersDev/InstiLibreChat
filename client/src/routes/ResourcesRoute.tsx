@@ -4,8 +4,8 @@ import { Button } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import { 
-  Folder, File, Plus, Upload, Trash2, Edit, ChevronRight, Home, 
-  Eye, Grid3x3, List, MoreVertical, Search, X
+  File, Plus, Trash2, Edit, ChevronRight, Home, 
+  Eye, List, MoreVertical, Search, X
 } from 'lucide-react';
 import CreateFolderModal from '~/components/Resources/Modals/CreateFolderModal';
 import EditFolderModal from '~/components/Resources/Modals/EditFolderModal';
@@ -43,23 +43,9 @@ const DocumentIcon = ({ className }: { className?: string }) => (
   />
 );
 
-// Custom document icon component for grid view (larger)
-const DocumentIconLarge = ({ className = "h-16 w-16" }: { className?: string }) => (
-  <img 
-    src="/assets/documents.svg" 
-    alt="Document" 
-    className={`${className} opacity-70 dark:brightness-0 dark:invert dark:opacity-70`}
-  />
-);
-
 // Get file icon based on extension - always returns DocumentIcon
 const getFileIcon = (extension?: string) => {
   return DocumentIcon;
-};
-
-// Get file icon for grid view (larger versions) - always returns DocumentIconLarge
-const getFileIconLarge = (extension?: string) => {
-  return DocumentIconLarge;
 };
 
 // Format date for display
@@ -99,7 +85,6 @@ export default function ResourcesRoute() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
-  const [viewMode, setViewMode] = useState<'list' | 'grid'>('list');
   const [activeTab, setActiveTab] = useState<'documents' | 'reports'>('documents');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showSearch, setShowSearch] = useState<boolean>(false);
@@ -494,7 +479,7 @@ export default function ResourcesRoute() {
   return (
     <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
       {/* Header - Responsive */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 sm:px-4 md:px-6 py-3 sm:py-4">
+      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-3 sm:py-4">
         <div className="flex flex-col gap-3">
           {/* First Row: Org selector (if super admin) */}
           {isSuperAdmin && organizations.length > 0 && (
@@ -569,7 +554,7 @@ export default function ResourcesRoute() {
                   className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-none"
                 >
                   <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                  <span className="hidden sm:inline">New folder</span>
+                  <span className="hidden sm:inline">Create folder</span>
                   <span className="sm:hidden">Folder</span>
                 </button>
                 <button
@@ -578,7 +563,7 @@ export default function ResourcesRoute() {
                   }}
                   className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-none"
                 >
-                  <Upload className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <img src="/assets/export.svg" alt="Upload" className="h-3 w-3 sm:h-3.5 sm:w-3.5 dark:invert" />
                   <span className="hidden sm:inline">Upload document</span>
                   <span className="sm:hidden">Upload</span>
                 </button>
@@ -599,7 +584,7 @@ export default function ResourcesRoute() {
                         }
                       }}
                     />
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                     <button
                       onClick={() => {
                         setShowSearch(false);
@@ -628,58 +613,28 @@ export default function ResourcesRoute() {
         </div>
       </div>
 
-      {/* Breadcrumbs and View Toggle - Responsive */}
+      {/* Breadcrumbs - Responsive */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="px-3 sm:px-4 md:px-6 py-2 sm:py-3">
-          <div className="flex flex-row items-center justify-between gap-4">
-            {/* Breadcrumbs - only show for Documents tab */}
-            {activeTab === 'documents' ? (
-              <div className="flex items-center gap-2 text-sm flex-1">
-                {breadcrumbs.map((crumb, index) => (
-                  <div key={crumb.id || 'home'} className="flex items-center gap-2">
-                    {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400" />}
-                    <button
-                      onClick={() => navigateToFolder(crumb.id, crumb.name)}
-                      className={`px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
-                        index === breadcrumbs.length - 1 ? 'font-semibold' : ''
-                      }`}
-                    >
-                      {index === 0 ? <Home className="h-4 w-4 inline mr-1" /> : null}
-                      {crumb.name}
-                    </button>
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="flex-1"></div>
-            )}
-            
-            {/* View Toggle */}
-            <div className="flex items-center gap-1 bg-gray-100 dark:bg-gray-700 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-                title="List View"
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`p-1.5 rounded transition-colors ${
-                  viewMode === 'grid'
-                    ? 'bg-white dark:bg-gray-600 text-blue-600 dark:text-blue-400 shadow-sm'
-                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200'
-                }`}
-                title="Grid View"
-              >
-                <Grid3x3 className="h-4 w-4" />
-              </button>
+        <div className="px-3 py-2 sm:py-3">
+          {/* Breadcrumbs - only show for Documents tab */}
+          {activeTab === 'documents' ? (
+            <div className="flex items-center gap-2 text-sm">
+              {breadcrumbs.map((crumb, index) => (
+                <div key={crumb.id || 'home'} className="flex items-center gap-2">
+                  {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400" />}
+                  <button
+                    onClick={() => navigateToFolder(crumb.id, crumb.name)}
+                    className={`px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
+                      index === breadcrumbs.length - 1 ? 'font-semibold' : ''
+                    }`}
+                  >
+                    {index === 0 ? <Home className="h-4 w-4 inline mr-1" /> : null}
+                    {crumb.name}
+                  </button>
+                </div>
+              ))}
             </div>
-          </div>
+          ) : null}
         </div>
       </div>
 
@@ -693,19 +648,21 @@ export default function ResourcesRoute() {
 
         {filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
           <div className="text-center py-12">
-            <Folder className="h-16 w-16 text-gray-400 mx-auto mb-4" />
+            <img src="/assets/Folder.svg" alt="Empty Folder" className="h-12 w-12 mx-auto mb-4 opacity-40 dark:invert" />
             <p className="text-gray-600 dark:text-gray-400 mb-4">This folder is empty</p>
           </div>
-        ) : viewMode === 'list' ? (
+        ) : (
           /* List/Table View - Responsive */
-          <div className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 overflow-x-auto mx-2 sm:mx-4 md:mx-6 my-4 rounded-lg">
+          <div className="bg-white dark:bg-gray-800 overflow-x-auto mb-4 rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="w-full min-w-[640px]">
-              <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+              <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
                 <tr>
-                  <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Name</th>
-                  <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden md:table-cell">Created by</th>
-                  <th className="px-3 sm:px-4 md:px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider hidden sm:table-cell">Date</th>
-                  <th className="px-3 sm:px-4 md:px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Name
+                  </th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">Created by</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:table-cell">Date</th>
+                  <th className="px-3 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
                 </tr>
               </thead>
               <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
@@ -715,16 +672,16 @@ export default function ResourcesRoute() {
                   return (
                     <tr
                       key={folder.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                      className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                       onDoubleClick={(e) => {
                         if (!(e.target as HTMLElement).closest('.dropdown-trigger, .dropdown-menu')) {
                           navigateToFolder(folder.id, folder.name);
                         }
                       }}
                     >
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <Folder className="h-4 w-4 sm:h-5 sm:w-5 text-blue-500 flex-shrink-0" />
+                          <img src="/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 dark:invert" />
                           <div className="min-w-0">
                             <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{folder.name}</div>
                             {folderFileCount > 0 && (
@@ -733,13 +690,13 @@ export default function ResourcesRoute() {
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                         {folder.created_by_name || 'Unknown'}
                       </td>
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                      <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         {formatDate(folder.created_at)}
                       </td>
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           {canManage && (
                             <div className="relative">
@@ -800,7 +757,7 @@ export default function ResourcesRoute() {
                                       <img 
                                         src="/assets/edit.svg" 
                                         alt="Edit" 
-                                        className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                                        className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                                       />
                                       Rename
                                     </button>
@@ -818,7 +775,7 @@ export default function ResourcesRoute() {
                                       <img 
                                         src="/assets/delete.svg" 
                                         alt="Delete" 
-                                        className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                                        className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                                       />
                                       Delete
                                     </button>
@@ -839,22 +796,22 @@ export default function ResourcesRoute() {
                   return (
                     <tr
                       key={file.id}
-                      className="hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                      className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
                       onDoubleClick={() => handlePreviewFile(file)}
                     >
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap">
+                      <td className="px-3 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2 sm:gap-3 min-w-0">
                           <FileIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 flex-shrink-0" />
                           <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{file.name}</div>
                         </div>
                       </td>
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
                         {file.created_by_name || 'Unknown'}
                       </td>
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                      <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
                         {formatDate(file.created_at)}
                       </td>
-                      <td className="px-3 sm:px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           <button
                             onClick={(e) => {
@@ -877,7 +834,7 @@ export default function ResourcesRoute() {
                             <img 
                               src="/assets/download.svg" 
                               alt="Download" 
-                              className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                              className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                             />
                           </button>
                           {canManageFiles && (
@@ -979,138 +936,6 @@ export default function ResourcesRoute() {
                 })}
               </tbody>
             </table>
-          </div>
-        ) : (
-          /* Grid View */
-          <div className="p-6">
-            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
-            {/* Folders */}
-            {filteredContent.folders.map((folder) => {
-              const FileIcon = Folder;
-              const isSelected = selectedItem?.type === 'folder' && selectedItem.id === folder.id;
-              return (
-                <div
-                  key={folder.id}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                  onClick={() => setSelectedItem({ type: 'folder', id: folder.id })}
-                  onDoubleClick={() => navigateToFolder(folder.id, folder.name)}
-                >
-                  <FileIcon className="h-16 w-16 text-blue-500 mb-2" />
-                  <span className="text-xs text-center text-gray-900 dark:text-gray-100 truncate w-full px-1">
-                    {folder.name}
-                  </span>
-                  {canManage && isSelected && (
-                    <div className="flex gap-1 mt-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setShowEditFolderModal(true);
-                        }}
-                        className="p-1 hover:bg-gray-200 rounded"
-                        title="Rename"
-                      >
-                        <img 
-                          src="/assets/edit.svg" 
-                          alt="Edit" 
-                          className="h-3 w-3 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                        />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteFolder(folder);
-                        }}
-                        className="p-1 hover:bg-red-100 rounded"
-                        title="Delete"
-                      >
-                        <img 
-                          src="/assets/delete.svg" 
-                          alt="Delete" 
-                          className="h-3 w-3 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                        />
-                      </button>
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-
-            {/* Files */}
-            {filteredContent.files.map((file) => {
-              const FileIcon = getFileIconLarge(file.extension);
-              const isSelected = selectedItem?.type === 'file' && selectedItem.id === file.id;
-              return (
-                <div
-                  key={file.id}
-                  className={`flex flex-col items-center p-4 rounded-lg border-2 cursor-pointer transition-all ${
-                    isSelected
-                      ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                      : 'border-transparent hover:border-gray-300 dark:hover:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-800'
-                  }`}
-                  onClick={() => setSelectedItem({ type: 'file', id: file.id })}
-                  onDoubleClick={() => handlePreviewFile(file)}
-                >
-                  <FileIcon className="h-16 w-16 text-gray-500 mb-2" />
-                  <span className="text-xs text-center text-gray-900 dark:text-gray-100 truncate w-full px-1">
-                    {file.name}
-                  </span>
-                  {file.size_bytes && (
-                    <span className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                      {(file.size_bytes / 1024).toFixed(1)} KB
-                    </span>
-                  )}
-                  {isSelected && (
-                    <div className="flex gap-1 mt-2">
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handlePreviewFile(file);
-                        }}
-                        className="p-1 hover:bg-blue-100 rounded"
-                        title="Preview"
-                      >
-                        <Eye className="h-3 w-3 text-blue-600" />
-                      </button>
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDownloadFile(file);
-                        }}
-                        className="p-1 hover:bg-green-100 rounded"
-                        title="Download"
-                      >
-                        <img 
-                          src="/assets/download.svg" 
-                          alt="Download" 
-                          className="h-3 w-3 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                        />
-                      </button>
-                      {canManage && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleDeleteFile(file);
-                          }}
-                          className="p-1 hover:bg-red-100 rounded"
-                          title="Delete"
-                        >
-                          <img 
-                            src="/assets/delete.svg" 
-                            alt="Delete" 
-                            className="h-3 w-3 opacity-70 dark:invert dark:opacity-70" 
-                          />
-                        </button>
-                      )}
-                    </div>
-                  )}
-                </div>
-              );
-            })}
-            </div>
           </div>
         )}
       </div>

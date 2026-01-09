@@ -279,7 +279,7 @@ const HoverButtons = ({
                 src="/assets/repeat.svg" 
                 alt="Regenerate" 
                 className="dark:brightness-0 dark:invert" 
-                style={{ width: '19px', height: '19px' }}
+                style={{ width: '16px', height: '16px' }}
               />
             }
             isLast={isLast}
@@ -311,15 +311,15 @@ const HoverButtons = ({
             src="/assets/Copy.svg" 
             alt={isCopied ? "Copied" : "Copy"} 
             className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70"
-            style={{ width: '19px', height: '19px' }}
+            style={{ width: '16px', height: '16px' }}
           />
         }
         isLast={isLast}
         className={`ml-0 flex items-center gap-1.5 text-xs ${isSubmitting && isCreatedByUser ? 'md:opacity-0 md:group-hover:opacity-100' : ''}`}
       />
 
-      {/* Edit Button */}
-      {isEditableEndpoint && (
+      {/* Edit Button - Hidden for user messages */}
+      {isEditableEndpoint && !isCreatedByUser && (
         <HoverButton
           id={`edit-${message.messageId}`}
           onClick={onEdit}
@@ -329,14 +329,14 @@ const HoverButtons = ({
               src="/assets/edit.svg" 
               alt="Edit" 
               className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-              style={{ width: '19px', height: '19px' }}
+              style={{ width: '16px', height: '16px' }}
             />
           }
           isActive={isEditing}
           isVisible={!hideEditButton}
           isDisabled={hideEditButton}
           isLast={isLast}
-          className={isCreatedByUser ? '' : 'active'}
+          className="active"
         />
       )}
 
@@ -355,7 +355,7 @@ const HoverButtons = ({
               src="/assets/repeat.svg" 
               alt="Regenerate" 
               className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-              style={{ width: '19px', height: '19px' }}
+              style={{ width: '16px', height: '16px' }}
             />
           }
           isLast={isLast}
@@ -363,8 +363,8 @@ const HoverButtons = ({
         />
       )}
 
-      {/* Generate PDF Report Button - Show on all messages to generate PDF for selected chat */}
-      {conversationId && conversationId !== 'new' && messages && messages.length > 0 && (
+      {/* Generate PDF Report Button - Hidden for user messages */}
+      {conversationId && conversationId !== 'new' && messages && messages.length > 0 && !isCreatedByUser && (
         <HoverButton
           onClick={() => setShowPDFModal(true)}
           title="Generate PDF Report"
@@ -373,7 +373,7 @@ const HoverButtons = ({
               src="/assets/documents.svg" 
               alt="Generate PDF" 
               className="opacity-70 dark:invert dark:opacity-70" 
-              style={{ width: '19px', height: '19px' }}
+              style={{ width: '16px', height: '16px' }}
             />
           }
           isLast={isLast}
@@ -481,7 +481,7 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
     .message {
       margin-bottom: 20px;
       padding: 18px 20px;
-      border-radius: 8px;
+      border-radius: 2px;
       box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
       page-break-inside: avoid;
       break-inside: avoid;
@@ -548,7 +548,7 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
       background-color: #1e293b;
       color: #f1f5f9;
       padding: 16px;
-      border-radius: 8px;
+      border-radius: 2px;
       overflow-x: auto;
       font-size: 13px;
       line-height: 1.6;
@@ -560,7 +560,7 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
       background-color: #f1f5f9;
       color: #1e293b;
       padding: 3px 8px;
-      border-radius: 4px;
+      border-radius: 2px;
       font-size: 13px;
       font-family: 'Courier New', Courier, monospace;
       border: 1px solid #e2e8f0;
@@ -576,7 +576,7 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
     .message-content img {
       max-width: 100%;
       height: auto;
-      border-radius: 4px;
+      border-radius: 2px;
       margin: 12px 0;
       page-break-inside: avoid;
       break-inside: avoid;
@@ -613,7 +613,7 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
       table-layout: auto;
       display: table;
       border: 1px solid #d1d5db;
-      border-radius: 0.5rem;
+      border-radius: 2px;
       overflow: hidden;
       min-width: 100%;
       word-wrap: break-word;

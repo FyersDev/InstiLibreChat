@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
+import { Search } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import CreateOrganizationModal from './Modals/CreateOrganizationModal';
@@ -57,41 +58,41 @@ export default function OrganizationsView({
         )}
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full border-separate border-spacing-0">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Slug
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Users
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Created
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {organizations.length === 0 ? (
               <tr>
-                <td colSpan={6} className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                <td colSpan={6} className="px-3 py-3 text-center text-gray-500 dark:text-gray-400">
                   No organizations found
                 </td>
               </tr>
             ) : (
               organizations.map((org) => (
-                <tr key={org.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                <tr key={org.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <td className="sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       {org.logo_url?.startsWith('data:') && (
                         <img
@@ -108,10 +109,10 @@ export default function OrganizationsView({
                       <span>{org.name}</span>
                     </div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {org.slug}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
                         org.status === 'active'
@@ -122,13 +123,13 @@ export default function OrganizationsView({
                       {org.status}
                     </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {org.current_users || 0} / {org.max_users || 0}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {new Date(org.created_at).toLocaleDateString()}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm">
                     {permissionManager && permissionManager.canUpdate('organizations') && (
                       <button
                         onClick={() => {

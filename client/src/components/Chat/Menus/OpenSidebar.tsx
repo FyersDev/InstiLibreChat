@@ -33,7 +33,7 @@ export default function OpenSidebar({
           <img
             src="/assets/expander.svg"
             alt="Expand sidebar"
-            className="h-5 w-5 dark:invert"
+            className="h-[18px] w-[18px] dark:invert"
           />
         </Button>
       }

@@ -1,5 +1,4 @@
 import { useState, useRef } from 'react';
-import { Folder } from 'lucide-react';
 import * as Ariakit from '@ariakit/react';
 import { useFormContext } from 'react-hook-form';
 import { SharePointIcon, AttachmentIcon, DropdownPopup } from '@librechat/client';
@@ -105,7 +104,7 @@ export default function FileSearch({
     {
       label: localize('com_files_upload_local_machine'),
       onClick: handleLocalFileClick,
-      icon: <Folder className="icon-md" />,
+      icon: <img src="/assets/Folder.svg" alt="Folder" className="icon-sm dark:invert" />,
     },
     {
       label: localize('com_files_upload_sharepoint'),

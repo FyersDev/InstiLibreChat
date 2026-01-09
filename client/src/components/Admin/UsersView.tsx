@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { Button, useToastContext } from '@librechat/client';
+import { Search } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import AddUserModal from './Modals/AddUserModal';
@@ -132,56 +133,56 @@ export default function UsersView({
         </div>
       </div>
 
-      <div className="overflow-x-auto">
-        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-          <thead className="bg-gray-50 dark:bg-gray-800">
-            <tr>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+      <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+        <table className="min-w-full border-separate border-spacing-0">
+          <thead className="bg-gray-50 dark:bg-gray-700/50">
+            <tr className="border-b border-gray-200 dark:border-gray-700">
+              <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Email
               </th>
               {isSuperAdmin && (
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                   Organization
                 </th>
               )}
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Status
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Roles
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Permissions
               </th>
-              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Actions
               </th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-gray-850 divide-y divide-gray-200 dark:divide-gray-700">
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {users.length === 0 ? (
               <tr>
                 <td
                   colSpan={isSuperAdmin ? 7 : 6}
-                  className="px-6 py-4 text-center text-gray-500 dark:text-gray-400"
+                  className="px-3 py-3 text-center text-gray-500 dark:text-gray-400"
                 >
                   No users found
                 </td>
               </tr>
             ) : (
               users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50 dark:hover:bg-gray-800">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100">
+                <tr key={user.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                  <td className="sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     {user.full_name || user.email}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {user.email}
                   </td>
                   {isSuperAdmin && (
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                    <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                       {user.is_super_admin
                         ? 'Super Admin'
                         : user.org_role === 'admin'
@@ -191,7 +192,7 @@ export default function UsersView({
                             : 'Org User'}
                     </td>
                   )}
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-3 py-3 whitespace-nowrap">
                     {permissionManager && permissionManager.canUpdate('users') ? (
                       <select
                         value={user.status || 'pending'}
@@ -228,12 +229,12 @@ export default function UsersView({
                       </span>
                     )}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {user.is_super_admin
                       ? 'Super Admin'
                       : user.roles?.map((r: any) => r.name).join(', ') || 'No roles'}
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm">
                     <button
                       onClick={() => handleViewPermissions(user)}
                       className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
@@ -241,7 +242,7 @@ export default function UsersView({
                       View
                     </button>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
                       {permissionManager && permissionManager.canUpdate('users') && (
                         <>

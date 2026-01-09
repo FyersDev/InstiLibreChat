@@ -139,7 +139,7 @@ export default function SelectedTemplate() {
       <img 
         src="/assets/documents.svg" 
         alt="Template" 
-        className="h-3 w-3 text-text-secondary flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+        className="h-2.5 w-2.5 text-text-secondary flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
       />
       <span className="text-text-primary whitespace-nowrap" title={fullTemplateContent}>
         {displayName}

@@ -1,5 +1,6 @@
-import { useState, useEffect, useRef } from 'react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, useToastContext } from '@librechat/client';
+import { useState, useEffect, useRef, useMemo } from 'react';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, useToastContext, DataTable } from '@librechat/client';
+import type { ColumnDef } from '@tanstack/react-table';
 import { saasApi } from '~/services/saasApi';
 import { createPortal } from 'react-dom';
 import { User, Edit, Trash2, MoreVertical } from 'lucide-react';
@@ -53,6 +54,26 @@ export default function TemplatesView() {
       setSearchParams(searchParams, { replace: true });
     }
   }, [searchParams, activeTab, setSearchParams]);
+
+  // Handle clicking outside dropdown to close it
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      const target = event.target as HTMLElement;
+      // Don't close if clicking on the dropdown trigger button or dropdown menu
+      if (target.closest('.dropdown-trigger') || target.closest('.fixed')) {
+        return;
+      }
+      setSelectedItem(null);
+      setDropdownPosition(null);
+    };
+
+    if (selectedItem && dropdownPosition) {
+      document.addEventListener('mousedown', handleClickOutside);
+      return () => {
+        document.removeEventListener('mousedown', handleClickOutside);
+      };
+    }
+  }, [selectedItem, dropdownPosition]);
 
   const fetchTemplates = async () => {
     setTemplatesLoading(true);
@@ -261,6 +282,312 @@ export default function TemplatesView() {
   const currentItems = activeTab === 'templates' ? templates : personas;
   const isLoading = activeTab === 'templates' ? templatesLoading : personasLoading;
 
+  // Define columns for templates
+  const templateColumns = useMemo<ColumnDef<any, any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <img 
+              src="/assets/documents.svg" 
+              alt="Template" 
+              className="h-5 w-5 flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+            />
+            <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
+              {row.original.name}
+            </div>
+          </div>
+        ),
+        meta: { size: '200px' },
+      },
+      {
+        accessorKey: 'description',
+        header: 'Short description',
+        cell: ({ row }) => {
+          const template = row.original;
+          const templateContent = template.detailedPrompt || template.description || '';
+          let displayText = '';
+          
+          if (!templateContent) {
+            displayText = template.framework || 'No template content';
+          } else {
+            const lines = templateContent.split('\n').filter((line: string) => line.trim());
+            if (lines.length === 0) {
+              displayText = templateContent;
+            } else {
+              let role = '';
+              let task = '';
+              let format = '';
+              
+              lines.forEach((line: string) => {
+                const lowerLine = line.toLowerCase();
+                if (lowerLine.includes('role') || lowerLine.includes('act as')) {
+                  role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
+                } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
+                  task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
+                } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
+                  format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
+                }
+              });
+              
+              if (role || task || format) {
+                const parts: string[] = [];
+                if (role) parts.push(`Role: ${role}`);
+                if (task) parts.push(`Task: ${task}`);
+                if (format) parts.push(`Format: ${format}`);
+                displayText = parts.join('\n');
+              } else {
+                displayText = templateContent.length > 200 
+                  ? `${templateContent.substring(0, 200)}...` 
+                  : templateContent;
+              }
+            }
+          }
+          
+          return (
+            <div className="text-sm font-light text-gray-600 dark:text-gray-400 whitespace-pre-wrap max-w-md">
+              {displayText}
+            </div>
+          );
+        },
+        meta: { size: '400px' },
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Date created',
+        cell: ({ row }) => (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {formatDate(row.original.created_at)}
+          </div>
+        ),
+        meta: { size: '150px' },
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => {
+          const template = row.original;
+          const isSelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
+          return (
+            <div className="relative inline-block text-right pointer-events-auto">
+              <button
+                ref={(el) => {
+                  if (el) {
+                    buttonRefs.current.set(`template-${template.id}`, el);
+                  } else {
+                    buttonRefs.current.delete(`template-${template.id}`);
+                  }
+                }}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const isCurrentlySelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
+                  if (isCurrentlySelected) {
+                    setSelectedItem(null);
+                    setDropdownPosition(null);
+                  } else {
+                    const button = buttonRefs.current.get(`template-${template.id}`);
+                    if (button) {
+                      const rect = button.getBoundingClientRect();
+                      setDropdownPosition({
+                        top: rect.bottom + 4,
+                        right: window.innerWidth - rect.right,
+                      });
+                    }
+                    setSelectedItem({ type: 'template', id: template.id });
+                  }
+                }}
+                className="dropdown-trigger relative z-10 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
+                title="More options"
+              >
+                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </button>
+              {isSelected && dropdownPosition && createPortal(
+                <div
+                  className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    right: `${dropdownPosition.right}px`,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleEditTemplate(template);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDeleteTemplate(template);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <img 
+                        src="/assets/delete.svg" 
+                        alt="Delete" 
+                        className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                      />
+                      Delete
+                    </button>
+                  </div>
+                </div>,
+                document.body
+              )}
+            </div>
+          );
+        },
+        meta: { size: '80px' },
+      },
+    ],
+    [selectedItem, dropdownPosition],
+  );
+
+  // Define columns for personas
+  const personaColumns = useMemo<ColumnDef<any, any>[]>(
+    () => [
+      {
+        accessorKey: 'name',
+        header: 'Name',
+        cell: ({ row }) => (
+          <div className="flex items-center gap-3">
+            <img 
+              src="/assets/Leads.svg" 
+              alt={row.original.name} 
+              className="h-5 w-5 flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+            />
+            <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
+              {row.original.name}
+            </div>
+          </div>
+        ),
+        meta: { size: '200px' },
+      },
+      {
+        accessorKey: 'description',
+        header: 'Short description',
+        cell: ({ row }) => (
+          <div className="text-sm font-light text-gray-600 dark:text-gray-400">
+            {row.original.description || 'No description'}
+          </div>
+        ),
+        meta: { size: '400px' },
+      },
+      {
+        accessorKey: 'created_at',
+        header: 'Date created',
+        cell: ({ row }) => (
+          <div className="text-sm text-gray-500 dark:text-gray-400">
+            {formatDate(row.original.created_at)}
+          </div>
+        ),
+        meta: { size: '150px' },
+      },
+      {
+        id: 'actions',
+        header: '',
+        cell: ({ row }) => {
+          const persona = row.original;
+          const isSelected = selectedItem?.type === 'persona' && selectedItem.id === persona.id;
+          return (
+            <div className="relative inline-block text-right pointer-events-auto">
+              <button
+                ref={(el) => {
+                  if (el) {
+                    buttonRefs.current.set(`persona-${persona.id}`, el);
+                  } else {
+                    buttonRefs.current.delete(`persona-${persona.id}`);
+                  }
+                }}
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  e.preventDefault();
+                  const isCurrentlySelected = selectedItem?.type === 'persona' && selectedItem.id === persona.id;
+                  if (isCurrentlySelected) {
+                    setSelectedItem(null);
+                    setDropdownPosition(null);
+                  } else {
+                    const button = buttonRefs.current.get(`persona-${persona.id}`);
+                    if (button) {
+                      const rect = button.getBoundingClientRect();
+                      setDropdownPosition({
+                        top: rect.bottom + 4,
+                        right: window.innerWidth - rect.right,
+                      });
+                    }
+                    setSelectedItem({ type: 'persona', id: persona.id });
+                  }
+                }}
+                className="dropdown-trigger relative z-10 p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
+                title="More options"
+              >
+                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              </button>
+              {isSelected && dropdownPosition && createPortal(
+                <div
+                  className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
+                  style={{
+                    top: `${dropdownPosition.top}px`,
+                    right: `${dropdownPosition.right}px`,
+                  }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="py-1">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleEditPersona(persona);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <Edit className="h-4 w-4" />
+                      Edit
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        e.preventDefault();
+                        handleDeletePersona(persona);
+                      }}
+                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                    >
+                      <img 
+                        src="/assets/delete.svg" 
+                        alt="Delete" 
+                        className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                      />
+                      Delete
+                    </button>
+                  </div>
+                </div>,
+                document.body
+              )}
+            </div>
+          );
+        },
+        meta: { size: '80px' },
+      },
+    ],
+    [selectedItem, dropdownPosition],
+  );
+
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-850">
       {/* Tabs */}
@@ -314,12 +641,8 @@ export default function TemplatesView() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-6 py-4">
-        {isLoading ? (
-          <div className="flex items-center justify-center h-64">
-            <p className="text-gray-500 dark:text-gray-400">Loading...</p>
-          </div>
-        ) : currentItems.length === 0 ? (
+      <div className="flex-1 overflow-hidden px-6 py-4">
+        {currentItems.length === 0 && !isLoading ? (
           <div className="flex flex-col items-center justify-center h-64">
             <p className="text-gray-500 dark:text-gray-400 mb-4">
               No {activeTab === 'templates' ? 'templates' : 'personas'} created yet.
@@ -338,282 +661,14 @@ export default function TemplatesView() {
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Name
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Short description
-                  </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
-                    Date created
-                  </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
-                {activeTab === 'templates' ? (
-                  templates.map((template) => {
-                    const isSelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
-                    return (
-                      <tr
-                        key={template.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <img 
-                              src="/assets/documents.svg" 
-                              alt="Template" 
-                              className="h-5 w-5 flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                            />
-                            <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
-                              {template.name}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-light text-gray-600 dark:text-gray-400 whitespace-pre-wrap max-w-md">
-                            {(() => {
-                              const templateContent = template.detailedPrompt || template.description || '';
-                              if (!templateContent) return template.framework || 'No template content';
-                              
-                              // Format template content to show structure (Role, Task, Format)
-                              const lines = templateContent.split('\n').filter(line => line.trim());
-                              if (lines.length === 0) return templateContent;
-                              
-                              // Extract ROLE, TASK, FORMAT from the structure
-                              let role = '';
-                              let task = '';
-                              let format = '';
-                              
-                              lines.forEach((line) => {
-                                const lowerLine = line.toLowerCase();
-                                if (lowerLine.includes('role') || lowerLine.includes('act as')) {
-                                  role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
-                                } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
-                                  task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
-                                } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
-                                  format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
-                                }
-                              });
-                              
-                              // Build formatted display showing the structure
-                              if (role || task || format) {
-                                const parts: string[] = [];
-                                if (role) parts.push(`Role: ${role}`);
-                                if (task) parts.push(`Task: ${task}`);
-                                if (format) parts.push(`Format: ${format}`);
-                                return parts.join('\n');
-                              }
-                              
-                              // Fallback: show the full content (truncated if too long)
-                              return templateContent.length > 200 
-                                ? `${templateContent.substring(0, 200)}...` 
-                                : templateContent;
-                            })()}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(template.created_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="relative inline-block text-left">
-                            <button
-                              ref={(el) => {
-                                if (el) {
-                                  buttonRefs.current.set(`template-${template.id}`, el);
-                                } else {
-                                  buttonRefs.current.delete(`template-${template.id}`);
-                                }
-                              }}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const isCurrentlySelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
-                                if (isCurrentlySelected) {
-                                  setSelectedItem(null);
-                                  setDropdownPosition(null);
-                                } else {
-                                  const button = buttonRefs.current.get(`template-${template.id}`);
-                                  if (button) {
-                                    const rect = button.getBoundingClientRect();
-                                    setDropdownPosition({
-                                      top: rect.bottom + 4,
-                                      right: window.innerWidth - rect.right,
-                                    });
-                                  }
-                                  setSelectedItem({ type: 'template', id: template.id });
-                                }
-                              }}
-                              className="dropdown-trigger p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                              title="More options"
-                            >
-                              <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            </button>
-                            {isSelected && dropdownPosition && createPortal(
-                              <div
-                                className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
-                                style={{
-                                  top: `${dropdownPosition.top}px`,
-                                  right: `${dropdownPosition.right}px`,
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="py-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleEditTemplate(template);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    handleDeleteTemplate(template);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                >
-                                  <img 
-                                    src="/assets/delete.svg" 
-                                    alt="Delete" 
-                                    className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                  />
-                                  Delete
-                                </button>
-                                </div>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  personas.map((persona) => {
-                    const isSelected = selectedItem?.type === 'persona' && selectedItem.id === persona.id;
-                    return (
-                      <tr
-                        key={persona.id}
-                        className="hover:bg-gray-50 dark:hover:bg-gray-700/50"
-                      >
-                        <td className="px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <User className="h-5 w-5 text-blue-500 flex-shrink-0" />
-                            <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
-                              {persona.name}
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-light text-gray-600 dark:text-gray-400">
-                            {persona.description || 'No description'}
-                          </div>
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(persona.created_at)}
-                        </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="relative inline-block text-left">
-                            <button
-                              ref={(el) => {
-                                if (el) {
-                                  buttonRefs.current.set(`persona-${persona.id}`, el);
-                                } else {
-                                  buttonRefs.current.delete(`persona-${persona.id}`);
-                                }
-                              }}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const isCurrentlySelected = selectedItem?.type === 'persona' && selectedItem.id === persona.id;
-                                if (isCurrentlySelected) {
-                                  setSelectedItem(null);
-                                  setDropdownPosition(null);
-                                } else {
-                                  const button = buttonRefs.current.get(`persona-${persona.id}`);
-                                  if (button) {
-                                    const rect = button.getBoundingClientRect();
-                                    setDropdownPosition({
-                                      top: rect.bottom + 4,
-                                      right: window.innerWidth - rect.right,
-                                    });
-                                  }
-                                  setSelectedItem({ type: 'persona', id: persona.id });
-                                }
-                              }}
-                              className="dropdown-trigger p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-                              title="More options"
-                            >
-                              <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            </button>
-                            {isSelected && dropdownPosition && createPortal(
-                              <div
-                                className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
-                                style={{
-                                  top: `${dropdownPosition.top}px`,
-                                  right: `${dropdownPosition.right}px`,
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="py-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleEditPersona(persona);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                    e.preventDefault();
-                                    handleDeletePersona(persona);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                >
-                                  <img 
-                                    src="/assets/delete.svg" 
-                                    alt="Delete" 
-                                    className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                  />
-                                  Delete
-                                </button>
-                                </div>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
-              </tbody>
-            </table>
-          </div>
+          <DataTable
+            columns={activeTab === 'templates' ? templateColumns : personaColumns}
+            data={currentItems}
+            isLoading={isLoading}
+            enableRowSelection={false}
+            showCheckboxes={false}
+            enableSearch={false}
+          />
         )}
       </div>
 

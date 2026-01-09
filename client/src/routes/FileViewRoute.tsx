@@ -326,7 +326,7 @@ export default function FileViewRoute() {
                 backgroundColor: '#3b82f6',
                 color: '#fff',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '2px',
                 cursor: 'pointer'
               }}
             >

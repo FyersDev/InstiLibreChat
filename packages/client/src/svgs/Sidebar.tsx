@@ -1,12 +1,13 @@
 export default function Sidebar({ className }: { className?: string }) {
   return (
     <svg
-      width="20"
-      height="20"
+      width="18"
+      height="18"
       viewBox="0 0 16 16"
       fill="none"
       xmlns="http://www.w3.org/2000/svg"
       className={className}
+      style={{ width: '18px', height: '18px' }}
     >
       <path
         d="M12.7969 5.20156L10.0102 7.97656L12.7969 10.7516L11.95 11.6023L8.73594 8.40234L8.30937 7.97656L11.9508 4.35156L12.7969 5.20156Z"

@@ -89,28 +89,9 @@ function ConvoOptions({
   const dropdownItems = useMemo(
     () => [
       {
-        label: localize('com_ui_share'),
-        onClick: handleShareClick,
-        icon: <Share2 className="icon-sm mr-2 text-text-primary" />,
-        show: startupConfig && startupConfig.sharedLinksEnabled,
-        hideOnClick: false,
-        ref: shareButtonRef,
-        render: (props) => <button {...props} />,
-      },
-      {
         label: localize('com_ui_rename'),
         onClick: renameHandler,
         icon: <Pen className="icon-sm mr-2 text-text-primary" />,
-      },
-      {
-        label: localize('com_ui_duplicate'),
-        onClick: handleDuplicateClick,
-        hideOnClick: false,
-        icon: isDuplicateLoading ? (
-          <Spinner className="size-4" />
-        ) : (
-          <CopyPlus className="icon-sm mr-2 text-text-primary" />
-        ),
       },
       {
         label: localize('com_ui_delete'),
@@ -123,11 +104,7 @@ function ConvoOptions({
     ],
     [
       localize,
-      handleShareClick,
-      startupConfig,
       renameHandler,
-      handleDuplicateClick,
-      isDuplicateLoading,
       handleDeleteClick,
     ],
   );

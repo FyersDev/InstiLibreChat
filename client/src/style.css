@@ -6,11 +6,11 @@
    GLOBAL SQUARE DESIGN - REMOVE ALL ROUNDED CORNERS
    ============================================ */
 
-/* Force all elements to be square - override all border-radius */
+/* Force all elements to have 2px border radius */
 *,
 *::before,
 *::after {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Specific overrides for common elements */
@@ -60,7 +60,7 @@ h3,
 h4,
 h5,
 h6 {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Override Tailwind rounded utilities */
@@ -72,7 +72,6 @@ h6 {
 .rounded-xl,
 .rounded-2xl,
 .rounded-3xl,
-.rounded-full,
 .rounded-t,
 .rounded-r,
 .rounded-b,
@@ -81,7 +80,7 @@ h6 {
 .rounded-tr,
 .rounded-bl,
 .rounded-br {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Cards and containers */
@@ -93,7 +92,7 @@ h6 {
 [class*="Card"],
 [class*="box"],
 [class*="Box"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Buttons - all variants - Allow nav buttons to use their own styles */
@@ -102,7 +101,7 @@ h6 {
 button[class*="btn"]:not(nav button),
 [class*="button"]:not(nav button),
 [class*="Button"]:not(nav button) {
-  border-radius: var(--fyers-corner-moderatelyrounded, 2px) !important;
+  border-radius: 2px !important;
 }
 
 /* Inputs and forms */
@@ -127,7 +126,7 @@ select,
 .input-fyers,
 .select-fyers,
 .textarea-fyers {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Modals and dialogs */
@@ -138,7 +137,7 @@ select,
 [class*="dialog"],
 [class*="Dialog"],
 [role="dialog"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Dropdowns and popovers */
@@ -151,7 +150,7 @@ select,
 [class*="Popover"],
 [class*="menu"],
 [class*="Menu"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Badges and tags */
@@ -161,7 +160,7 @@ select,
 [class*="Badge"],
 [class*="tag"],
 [class*="Tag"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Alerts and notifications */
@@ -173,14 +172,14 @@ select,
 [class*="Toast"],
 [class*="notification"],
 [class*="Notification"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Avatars - make square instead of circular */
 .avatar,
 [class*="avatar"],
 [class*="Avatar"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Exception: Keep profile pictures in navigation as circular */
@@ -211,7 +210,7 @@ nav img[src*="user"] {
 img,
 [class*="image"],
 [class*="Image"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Exception: Profile pictures in navigation should be circular */
@@ -237,7 +236,7 @@ th,
 td,
 .table,
 .table-fyers {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Navigation */
@@ -253,14 +252,14 @@ nav,
 .sidebar-fyers,
 [class*="sidebar"],
 [class*="Sidebar"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Scrollbars */
 ::-webkit-scrollbar,
 ::-webkit-scrollbar-thumb,
 ::-webkit-scrollbar-track {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Tooltips */
@@ -268,14 +267,14 @@ nav,
 .tooltip-fyers,
 [class*="tooltip"],
 [class*="Tooltip"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Progress bars */
 .progress,
 [class*="progress"],
 [class*="Progress"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Chips and pills */
@@ -284,19 +283,19 @@ nav,
 [class*="Chip"],
 [class*="pill"],
 [class*="Pill"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Additional overrides for common patterns */
 [style*="border-radius"],
 [style*="borderRadius"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Override any rounded classes from component libraries */
 [class*="rounded"],
 [class*="Rounded"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Exception: Keep rounded-full for profile avatars in navigation */
@@ -305,29 +304,59 @@ nav .rounded-full {
   border-radius: 50% !important;
 }
 
-/* Make sure all pseudo-elements are square */
+/* Exception: Keep rounded-full for toggle switches */
+button[role="switch"],
+[role="switch"],
+[data-radix-switch-root],
+[data-state][role="switch"] {
+  border-radius: 9999px !important;
+}
+[data-radix-switch-root] > *,
+[role="switch"] > * {
+  border-radius: 9999px !important;
+}
+
+/* Make sure all pseudo-elements have 2px border radius */
 ::before,
 ::after {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
+}
+/* Exception: Switch pseudo-elements must remain fully rounded */
+[data-radix-switch-root]::before,
+[data-radix-switch-root]::after,
+[role="switch"]::before,
+[role="switch"]::after {
+  border-radius: 9999px !important;
 }
 
 /* Override any shadow or border utilities that might have radius */
 [class*="shadow"] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
-/* Ensure all interactive elements are square */
+/* Ensure all interactive elements have 2px border radius */
 :focus,
 :active,
 :hover,
 :visited {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Override any animation or transition that might affect border-radius */
 * {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
+
+/* Exception: Toggle switches must remain fully rounded (override global rule) */
+button[role="switch"],
+[role="switch"],
+[data-radix-switch-root],
+[data-state][role="switch"],
+[data-radix-switch-root] *,
+[role="switch"] * {
+  border-radius: 9999px !important;
+}
+
 
 /* Specific component overrides */
 [data-radix-popper-content-wrapper],
@@ -337,7 +366,7 @@ nav .rounded-full {
 [data-radix-popover-content],
 [data-radix-select-content],
 [data-radix-tooltip-content] {
-  border-radius: 0 !important;
+  border-radius: 2px !important;
 }
 
 /* Custom Variables */
@@ -470,12 +499,12 @@ nav .rounded-full {
   --lh-normal: 1.5;
   --lh-relaxed: 1.75;
   
-  /* Border Radius - SQUARE */
-  --radius-sm: 0;
-  --radius-md: 0;
-  --radius-lg: 0;
-  --radius-xl: 0;
-  --radius-2xl: 0;
+  /* Border Radius - 2px */
+  --radius-sm: 2px;
+  --radius-md: 2px;
+  --radius-lg: 2px;
+  --radius-xl: 2px;
+  --radius-2xl: 2px;
   
   /* Shadows */
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
@@ -667,8 +696,8 @@ html {
 }
 .icon-lg {
   stroke-width: 1.5;
-  height: 1.5rem;
-  width: 1.5rem;
+  height: 1.125rem;
+  width: 1.125rem;
 }
 .icon-xl {
   stroke-width: 1.5;
@@ -946,7 +975,7 @@ select {
   padding-right: 2.5rem;
   background-color: #fff;
   border-color: #8e8ea0;
-  border-radius: 0;
+  border-radius: 2px;
   border-width: 1px;
   font-size: 1rem;
   line-height: 1.5rem;
@@ -1131,7 +1160,7 @@ pre {
   width: 34px;
   height: 34px;
   padding: 0;
-  border-radius: 0;
+  border-radius: 2px;
   box-shadow:
     0 2px 8px rgba(0, 0, 0, 0.05),
     0 4px 12px rgba(0, 0, 0, 0.08),
@@ -1371,7 +1400,7 @@ pre {
   font-weight: 600;
   background-color: var(--gray-200);
   padding: 0.125rem 0.25rem;
-  border-radius: 0.35rem;
+  border-radius: 2px;
 }
 .dark .prose :where(code):not(:where([class~='not-prose'] *)):not(:where(pre *)) {
   background-color: var(--gray-600);
@@ -1401,7 +1430,7 @@ pre {
 }
 .prose :where(pre):not(:where([class~='not-prose'] *)) {
   background-color: transparent;
-  border-radius: 0.75rem;
+  border-radius: 2px;
   color: currentColor;
   font-size: 0.875em;
   font-weight: 400;
@@ -1412,7 +1441,7 @@ pre {
 }
 .prose :where(pre code):not(:where([class~='not-prose'] *)) {
   background-color: transparent;
-  border-radius: 0;
+  border-radius: 2px;
   border-width: 0;
   color: inherit;
   font-family: inherit;
@@ -1693,12 +1722,12 @@ pre[class*='language-'] {
   word-spacing: normal;
 }
 pre[class*='language-'] {
-  border-radius: 0.3em;
+  border-radius: 2px;
   overflow: auto;
 }
 :not(pre) > code.hljs,
 :not(pre) > code[class*='language-'] {
-  border-radius: 0.3em;
+  border-radius: 2px;
   padding: 0.1em;
   white-space: normal;
 }
@@ -1756,13 +1785,13 @@ button:not(nav button),
 input[type='button'],
 input[type='submit'],
 input[type='reset'] {
-  border-radius: var(--fyers-corner-moderatelyrounded, 2px) !important;
+  border-radius: 2px !important;
 }
 
 .btn {
   align-items: center;
   border-color: transparent;
-  border-radius: 0;
+  border-radius: 2px;
   border-width: 1px;
   cursor: pointer;
   display: inline-flex;
@@ -1776,7 +1805,7 @@ input[type='reset'] {
 .custom-btn {
   align-items: center;
   border-color: transparent;
-  border-radius: 0;
+  border-radius: 2px;
   border-width: 1px;
   display: inline-flex;
   font-size: 0.875rem;
@@ -1911,7 +1940,7 @@ input[type='reset'] {
 
 ::-webkit-scrollbar-thumb {
   background-color: transparent;
-  border-radius: 9999px;
+  border-radius: 2px;
 }
 
 .dark ::-webkit-scrollbar-thumb {
@@ -1920,7 +1949,7 @@ input[type='reset'] {
 
 ::-webkit-scrollbar-track {
   background-color: transparent;
-  border-radius: 9999px;
+  border-radius: 2px;
 }
 
 /* Hide scrollbars for Firefox and other browsers */
@@ -2155,7 +2184,7 @@ html {
   appearance: none;
   background-color: #fff;
   border-color: #8e8ea0;
-  border-radius: 0;
+  border-radius: 2px;
   border-width: 1px;
   font-size: 1rem;
   line-height: 1.5rem;
@@ -2467,7 +2496,7 @@ html {
 .shadow-stroke:after {
   --tw-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.1);
   --tw-shadow-colored: inset 0 0 0 1px var(--tw-shadow-color);
-  border-radius: 9999px;
+  border-radius: 2px;
   bottom: 0;
   content: '';
   left: 0;
@@ -2497,7 +2526,7 @@ html {
 .assistant-item:after {
   --tw-shadow: inset 0 0 0 1px rgba(0, 0, 0, 0.25);
   --tw-shadow-colored: inset 0 0 0 1px var(--tw-shadow-color);
-  border-radius: 9999px;
+  border-radius: 2px;
   bottom: 0;
   content: '';
   left: 0;
@@ -3005,7 +3034,7 @@ html {
 .tooltip {
   z-index: 50;
   cursor: pointer;
-  border-radius: 0.275rem;
+  border-radius: 2px;
   background-color: var(--surface-primary);
   padding-top: 0.25rem;
   padding-bottom: 0.25rem;
@@ -3043,7 +3072,7 @@ html {
   flex-direction: column;
   overflow: auto;
   overscroll-behavior: contain;
-  border-radius: 1rem;
+  border-radius: 2px;
   border-width: 1px;
   border-style: solid;
   border-color: var(--border-light);
@@ -3096,7 +3125,7 @@ html {
   scroll-margin: 0.5rem;
   align-items: center;
   gap: 0.5rem;
-  border-radius: 0.5rem;
+  border-radius: 2px;
   padding: 0.5rem;
   outline: none !important;
 }
@@ -3547,7 +3576,7 @@ h4.fyers, .h4-fyers {
 .card-fyers {
   background: var(--bg-primary);
   border: 1px solid var(--border-light-fyers);
-  border-radius: 0;
+  border-radius: 2px;
   padding: var(--spacing-xl);
   box-shadow: var(--shadow-sm);
   transition: all var(--transition-base);
@@ -3564,17 +3593,17 @@ h4.fyers, .h4-fyers {
 
 .card-sm-fyers {
   padding: var(--spacing-md);
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .card-lg-fyers {
   padding: var(--spacing-2xl);
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .box-fyers {
   background: var(--bg-primary);
-  border-radius: 0;
+  border-radius: 2px;
   padding: var(--spacing-lg);
 }
 
@@ -3593,7 +3622,7 @@ h4.fyers, .h4-fyers {
   gap: var(--spacing-sm);
   padding: var(--spacing-md) var(--spacing-lg);
   border: none;
-  border-radius: 0 !important;
+  border-radius: 2px !important;
   font-size: var(--text-base-fyers);
   font-weight: var(--font-medium);
   cursor: pointer;
@@ -3684,7 +3713,7 @@ h4.fyers, .h4-fyers {
   width: 100%;
   padding: var(--spacing-md) var(--spacing-lg);
   border: 1px solid var(--border-default-fyers);
-  border-radius: 0 !important;
+  border-radius: 2px !important;
   font-family: var(--font-primary);
   font-size: var(--text-base-fyers);
   color: var(--text-primary-fyers);
@@ -3756,7 +3785,7 @@ h4.fyers, .h4-fyers {
   width: 100%;
   border-collapse: collapse;
   background: var(--bg-primary);
-  border-radius: 0;
+  border-radius: 2px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
 }
@@ -3814,7 +3843,7 @@ h4.fyers, .h4-fyers {
   align-items: center;
   gap: var(--spacing-xs);
   padding: var(--spacing-xs) var(--spacing-md);
-  border-radius: 0;
+  border-radius: 2px;
   font-size: var(--text-xs-fyers);
   font-weight: var(--font-medium);
   white-space: nowrap;
@@ -3867,7 +3896,7 @@ h4.fyers, .h4-fyers {
 
 .alert-fyers {
   padding: var(--spacing-lg);
-  border-radius: 0;
+  border-radius: 2px;
   border-left: 4px solid;
   display: flex;
   align-items: flex-start;
@@ -3958,7 +3987,7 @@ h4.fyers, .h4-fyers {
   padding: var(--spacing-md) var(--spacing-lg);
   color: var(--text-secondary-fyers);
   text-decoration: none;
-  border-radius: 0;
+  border-radius: 2px;
   transition: all var(--transition-base);
   font-size: var(--text-base-fyers);
   cursor: pointer;
@@ -4069,7 +4098,7 @@ h4.fyers, .h4-fyers {
 
 .modal-fyers {
   background: var(--bg-primary);
-  border-radius: 0;
+  border-radius: 2px;
   box-shadow: var(--shadow-xl);
   max-width: 500px;
   width: 90%;
@@ -4150,7 +4179,7 @@ h4.fyers, .h4-fyers {
   color: var(--text-light-fyers);
   text-align: center;
   padding: var(--spacing-sm) var(--spacing-md);
-  border-radius: 0;
+  border-radius: 2px;
   position: absolute;
   z-index: 1;
   bottom: 125%;
@@ -4183,7 +4212,7 @@ h4.fyers, .h4-fyers {
 
 ::-webkit-scrollbar-thumb {
   background: transparent;
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
@@ -4207,23 +4236,23 @@ h4.fyers, .h4-fyers {
 }
 
 .rounded-fyers {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .rounded-sm-fyers {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .rounded-md-fyers {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .rounded-xl-fyers {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .rounded-full-fyers {
-  border-radius: 0;
+  border-radius: 2px;
 }
 
 .border-fyers {
