@@ -7,10 +7,10 @@ type FileUploadProps = {
   onFileSelected: (jsonData: Record<string, unknown>) => void;
   className?: string;
   containerClassName?: string;
-  successText?: string;
-  invalidText?: string;
+  successText?: string | null;
+  invalidText?: string | null;
   validator?: ((data: Record<string, unknown>) => boolean) | null;
-  text?: string;
+  text?: string | null;
   id?: string;
 };
 
@@ -24,49 +24,51 @@ const FileUpload: React.FC<FileUploadProps> = ({
   text = null,
   id = '1',
 }) => {
-  const [statusColor, setStatusColor] = useState<string>('text-gray-600');
-  const [status, setStatus] = useState<null | string>(null);
+  const [statusColor, setStatusColor] = useState('text-gray-600');
+  const [status, setStatus] = useState<null | 'success' | 'invalid'>(null);
   const localize = useLocalize();
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>): void => {
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file) {
-      return;
-    }
+    if (!file) return;
 
     const reader = new FileReader();
+
     reader.onload = (e) => {
-      const jsonData = JSON.parse(e.target?.result as string);
-      if (validator && !validator(jsonData)) {
+      try {
+        const jsonData = JSON.parse(e.target?.result as string);
+
+        if (validator && !validator(jsonData)) {
+          setStatus('invalid');
+          setStatusColor('text-red-600');
+          return;
+        }
+
+        if (validator) {
+          setStatus('success');
+          setStatusColor('text-green-500 dark:text-green-500');
+        }
+
+        onFileSelected(jsonData);
+      } catch {
         setStatus('invalid');
         setStatusColor('text-red-600');
-        return;
       }
-
-      if (validator) {
-        setStatus('success');
-        setStatusColor('text-green-500 dark:text-green-500');
-      }
-
-      onFileSelected(jsonData);
     };
+
     reader.readAsText(file);
   };
 
-  let statusText: string;
-  if (!status) {
-    statusText = text ?? localize('com_ui_import');
-  } else if (status === 'success') {
-    statusText = successText ?? localize('com_ui_upload_success');
-  } else {
-    statusText = invalidText ?? localize('com_ui_upload_invalid');
-  }
+  const statusText =
+    status === 'success'
+      ? successText ?? localize('com_ui_upload_success')
+      : status === 'invalid'
+        ? invalidText ?? localize('com_ui_upload_invalid')
+        : text ?? localize('com_ui_import');
 
   const handleClick = () => {
-    const fileInput = document.getElementById(`file-upload-${id}`) as HTMLInputElement;
-    if (fileInput) {
-      fileInput.click();
-    }
+    const fileInput = document.getElementById(`file-upload-${id}`) as HTMLInputElement | null;
+    fileInput?.click();
   };
 
   return (
@@ -81,12 +83,12 @@ const FileUpload: React.FC<FileUploadProps> = ({
         )}
         aria-label={statusText}
       >
-        <FileUp className="mr-1 flex w-[22px] items-center stroke-1" aria-hidden="true" />
-        <span className="flex text-xs">{statusText}</span>
+        <FileUp className="mr-1 w-[22px] stroke-1" aria-hidden="true" />
+        <span className="text-xs">{statusText}</span>
       </button>
+
       <input
         id={`file-upload-${id}`}
-        value=""
         type="file"
         className={cn('hidden', className)}
         accept=".json"

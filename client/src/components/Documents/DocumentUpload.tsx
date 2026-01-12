@@ -1,7 +1,7 @@
-import React, { useState, useCallback, useEffect } from 'react';
-import { FileText, AlertCircle, CheckCircle } from 'lucide-react';
+import React, { useState, useCallback } from 'react';
+import { AlertCircle } from 'lucide-react';
 import { useToastContext } from '@librechat/client';
-import { useLocalize, useUploadPermission } from '~/hooks';
+import { useLocalize } from '~/hooks';
 import { uploadDocument } from '~/data-provider/document-service';
 import { cn } from '~/utils';
 
@@ -13,104 +13,66 @@ interface DocumentUploadProps {
 export default function DocumentUpload({ onUploadSuccess, className }: DocumentUploadProps) {
   const localize = useLocalize();
   const { showToast } = useToastContext();
-  const { canUpload, loading } = useUploadPermission();
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
-
-  // Show error if user doesn't have permission
-  useEffect(() => {
-    if (!loading && !canUpload) {
-      showToast({
-        message: 'You do not have permission to upload documents. Please contact your administrator.',
-        status: 'error',
-      });
-    }
-  }, [canUpload, loading, showToast]);
 
   const handleUpload = useCallback(
     async (file: File) => {
       if (!file) return;
 
-      // Check permission before uploading
-      if (!canUpload) {
-        showToast({
-          message: 'You do not have permission to upload documents. Please contact your administrator.',
-          status: 'error',
-        });
-        return;
-      }
-
-      // Validate file type (accept common document formats)
       const allowedTypes = [
-        // Word documents
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-        'application/vnd.openxmlformats-officedocument.wordprocessingml.template', // .dotx
-        'application/vnd.ms-word.document.macroEnabled.12', // .docm
-        'application/vnd.ms-word.template.macroEnabled.12', // .dotm
-        // PowerPoint
-        'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-        // PDF
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+        'application/vnd.openxmlformats-officedocument.wordprocessingml.template',
+        'application/vnd.ms-word.document.macroEnabled.12',
+        'application/vnd.ms-word.template.macroEnabled.12',
+        'application/vnd.openxmlformats-officedocument.presentationml.presentation',
         'application/pdf',
-        // Markdown
         'text/markdown',
         'text/x-markdown',
-        // HTML
         'text/html',
         'application/xhtml+xml',
         'application/xhtml',
-        // Images
         'image/jpeg',
         'image/jpg',
         'image/png',
         'image/tiff',
         'image/bmp',
         'image/webp',
-        // CSV
         'text/csv',
         'application/csv',
-        // Excel
-        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-        'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
-        // Text
+        'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'application/vnd.ms-excel.sheet.macroEnabled.12',
         'text/plain',
-        // JSON
         'application/json',
         'text/json',
       ];
 
-      // Allowed file extensions 
       const allowedExtensions = [
-        '.docx', '.dotx', '.docm', '.dotm',  // Word
-        '.pptx',                              // PowerPoint
-        '.pdf',                               // PDF
-        '.md',                                // Markdown
-        '.html', '.htm', '.xhtml',            // HTML
-        '.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.webp',  // Images
-        '.csv',                               // CSV
-        '.xlsx', '.xlsm',                     // Excel
-        '.txt',                               // Text
-        '.json',                              // JSON
+        '.docx', '.dotx', '.docm', '.dotm',
+        '.pptx',
+        '.pdf',
+        '.md',
+        '.html', '.htm', '.xhtml',
+        '.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.webp',
+        '.csv',
+        '.xlsx', '.xlsm',
+        '.txt',
+        '.json',
       ];
 
-      // Get file extension
       const fileName = file.name.toLowerCase();
       const fileExtension = fileName.substring(fileName.lastIndexOf('.'));
-      
-      // Check if file type or extension is valid
-      const isValidType = allowedTypes.includes(file.type);
-      const isValidExtension = allowedExtensions.includes(fileExtension);
 
-
-      if (!isValidType && !isValidExtension) {
+      if (!allowedTypes.includes(file.type) && !allowedExtensions.includes(fileExtension)) {
         showToast({
-          message: 'Please select a valid document file (DOCX, DOTX, DOCM, DOTM, PPTX, PDF, MD, HTML, HTM, XHTML, JPG, JPEG, PNG, TIFF, BMP, WEBP, CSV, XLSX, XLSM, TXT, JSON)',
+          message:
+            'Please select a valid document file (PDF, DOCX, XLSX, TXT, CSV, Images, JSON, etc.)',
           status: 'error',
         });
         return;
       }
 
-      // Validate file size (max 50MB)
-      const maxSize = 50 * 1024 * 1024; // 50MB
+      const maxSize = 50 * 1024 * 1024;
       if (file.size > maxSize) {
         showToast({
           message: 'File size must be less than 50MB',
@@ -135,7 +97,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
       } catch (error) {
         console.error('Upload error:', error);
         showToast({
-          message: `Failed to upload document: ${error instanceof Error ? error.message : 'Unknown error'}`,
+          message: `Failed to upload document`,
           status: 'error',
         });
       } finally {
@@ -148,47 +110,37 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
   const handleFileChange = useCallback(
     (event: React.ChangeEvent<HTMLInputElement>) => {
       const file = event.target.files?.[0];
-      if (file) {
-        handleUpload(file);
-      }
-      // Reset input
+      if (file) handleUpload(file);
       event.target.value = '';
     },
     [handleUpload],
   );
 
-  const handleDrag = useCallback((e: React.DragEvent) => {
+  const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-  }, []);
+  };
 
-  const handleDragIn = useCallback((e: React.DragEvent) => {
+  const handleDragIn = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.dataTransfer.items && e.dataTransfer.items.length > 0) {
-      setDragActive(true);
-    }
-  }, []);
+    setDragActive(true);
+  };
 
-  const handleDragOut = useCallback((e: React.DragEvent) => {
+  const handleDragOut = (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-  }, []);
+  };
 
-  const handleDrop = useCallback(
-    (e: React.DragEvent) => {
-      e.preventDefault();
-      e.stopPropagation();
-      setDragActive(false);
-
-      if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
-        const file = e.dataTransfer.files[0];
-        handleUpload(file);
-      }
-    },
-    [handleUpload],
-  );
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    if (e.dataTransfer.files?.[0]) {
+      handleUpload(e.dataTransfer.files[0]);
+    }
+  };
 
   return (
     <div className={cn('w-full', className)}>
@@ -207,10 +159,8 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
       >
         <input
           type="file"
-          id="document-upload"
           className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
           onChange={handleFileChange}
-          disabled={isUploading || !canUpload}
           accept=".docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.jpg,.jpeg,.png,.tiff,.bmp,.webp,.csv,.xlsx,.xlsm,.txt,.json"
         />
 
@@ -218,21 +168,9 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
           {isUploading ? (
             <>
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Uploading document...</p>
-            </>
-          ) : !canUpload ? (
-            <>
-              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <AlertCircle className="w-6 h-6 text-red-500" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                  Upload Permission Required
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  You do not have permission to upload documents. Please contact your administrator.
-                </p>
-              </div>
+              <p className="text-sm text-gray-600 dark:text-gray-400">
+                Uploading document...
+              </p>
             </>
           ) : (
             <>
@@ -240,8 +178,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
                 <img src="/assets/export.svg" alt="Upload" className="w-6 h-6 dark:invert" />
               </div>
               <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                  <img src="/assets/export.svg" alt="Upload" className="w-4 h-4 dark:invert" />
+                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
                   Upload Document
                 </p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
@@ -249,7 +186,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
                 </p>
               </div>
               <div className="text-xs text-gray-400 dark:text-gray-500">
-                Supports PDF,DOCX, XLSX, TXT, CSV (Max 50MB)
+                Supports PDF, DOCX, XLSX, TXT, CSV, Images (Max 50MB)
               </div>
             </>
           )}
@@ -258,4 +195,3 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
     </div>
   );
 }
-

@@ -222,15 +222,15 @@ function OTP() {
               className="w-full h-full object-contain"
             />
           </div>
-          <span className="text-gray-900 text-base sm:text-lg lg:text-xl font-medium">
-            FIA - FYERS Intelligent Assistant
+          <span className="text-gray-900 text-2xl sm:text-2xl font-bold lg:text-4xl font-large">
+            FYERS
           </span>
         </div>
 
         {/* Center Content */}
         <div className="flex flex-1 flex-col justify-center">
           <h1 className="text-gray-900 text-2xl sm:text-3xl lg:text-5xl font-bold leading-tight mb-8 lg:mb-12 max-w-3xl">
-            Experience the all-new FYERS!
+            Experience the FYERS Intelligent Assistant
           </h1>
 
           <img
