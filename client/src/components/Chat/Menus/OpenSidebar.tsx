@@ -20,7 +20,7 @@ export default function OpenSidebar({
           data-testid="open-sidebar-button"
           aria-label={localize('com_nav_open_sidebar')}
           className={cn(
-            'rounded-xl border border-border-light bg-surface-secondary p-2 hover:bg-surface-hover',
+            'w-[35px] h-[35px] rounded-xl border border-border-light bg-surface-secondary p-2 hover:bg-surface-hover',
             className,
           )}
           onClick={() =>

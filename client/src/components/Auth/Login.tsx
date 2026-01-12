@@ -71,7 +71,7 @@ function Login() {
   };
 
     return (
-    <div className="flex flex-col lg:flex-row min-h-screen overflow-x-hidden">
+    <div className="flex min-h-screen flex-col lg:flex-row">
       {/* Left Section - Blue Gradient */}
       <div className="flex-1 bg-gradient-to-br from-[#2434E7] to-[#3B4FE8] p-6 sm:p-8 lg:p-12 flex flex-col min-h-[40vh] lg:min-h-screen">
         {/* Logo */}
@@ -172,8 +172,8 @@ function Login() {
       </div>
 
       {/* Right Section - Login Form */}
-      <div className="w-full lg:w-[480px] bg-white p-6 sm:p-8 lg:p-12 flex flex-col justify-center">
-        <div className="max-w-md mx-auto w-full">
+      <div className="w-full lg:w-[480px] flex items-start lg:items-center justify-center p-6 sm:p-8 lg:p-12">
+        <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-sm p-6 sm:p-8 lg:p-10">
           <h2 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">Login to FIA</h2>
           <p className="text-gray-600 mb-6 sm:mb-8 text-sm sm:text-base">{companyName}</p>
 
