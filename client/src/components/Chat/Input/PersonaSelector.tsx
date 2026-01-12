@@ -181,7 +181,7 @@ export default function PersonaSelector() {
       key: 'separator-create',
     },
     {
-      label: '➕ Create New Persona',
+      label: '➕ Create New Agent',
       onClick: () => {
         setIsOpen(false);
         navigate('/templates?tab=personas&action=create');
@@ -214,7 +214,7 @@ export default function PersonaSelector() {
   const buttonText = selectedPersona 
     ? ` ${selectedPersona}` 
     : personas.length > 0 
-      ? 'Pick Persona' 
+      ? 'Pick Agent' 
       : 'No Personas';
 
   if (menuItems.length === 0) {

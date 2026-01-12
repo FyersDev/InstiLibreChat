@@ -33,15 +33,20 @@ export default function TemplatesView() {
   useEffect(() => {
     const tab = searchParams.get('tab');
     const action = searchParams.get('action');
-
+  
+    // Only update tab if explicitly set in URL
     if (tab === 'personas') {
       setActiveTab('personas');
     } else if (tab === 'templates') {
       setActiveTab('templates');
     }
-
-    if (action === 'create') {
-      // Check the URL tab parameter first, then fall back to activeTab
+  
+    // Only open modal if action is 'create' AND we're not already showing a modal
+    if (action === 'create' && 
+        !showCreateTemplateModal && 
+        !showCreatePersonaModal && 
+        !showEditTemplateModal && 
+        !showEditPersonaModal) {
       const currentTab = tab || activeTab;
       if (currentTab === 'personas') {
         setShowCreatePersonaModal(true);
@@ -52,7 +57,7 @@ export default function TemplatesView() {
       searchParams.delete('action');
       setSearchParams(searchParams, { replace: true });
     }
-  }, [searchParams, activeTab, setSearchParams]);
+  }, [searchParams, setSearchParams]);
 
   const fetchTemplates = async () => {
     setTemplatesLoading(true);
@@ -118,20 +123,20 @@ export default function TemplatesView() {
       if (persona.id) {
         await saasApi.updatePersona(persona.id, persona);
         showToast({
-          message: `Persona "${persona.name}" updated successfully`,
+          message: `Agent "${persona.name}" updated successfully`,
           status: 'success',
         });
       } else {
         await saasApi.createPersona(persona);
         showToast({
-          message: `Persona "${persona.name}" created successfully`,
+          message: `Agent "${persona.name}" created successfully`,
           status: 'success',
         });
       }
       await fetchPersonas();
     } catch (error: any) {
       showToast({
-        message: error.message || (persona.id ? 'Failed to update persona' : 'Failed to create persona'),
+        message: error.message || (persona.id ? 'Failed to update Agent' : 'Failed to create Agent'),
         status: 'error',
       });
       throw error;
@@ -151,7 +156,7 @@ export default function TemplatesView() {
     try {
       await saasApi.deletePersona(id);
       showToast({
-        message: 'Persona deleted successfully',
+        message: 'Agent deleted successfully',
         status: 'success',
       });
     } catch (error: any) {
@@ -280,7 +285,7 @@ export default function TemplatesView() {
               }`}
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
-              Personas
+              Agents
             </button>
             <button
               onClick={() => {
@@ -308,7 +313,7 @@ export default function TemplatesView() {
             }}
             className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
           >
-            + Create {activeTab === 'templates' ? 'template' : 'persona'}
+            + Create {activeTab === 'templates' ? 'template' : 'agent'}
           </Button>
         </div>
       </div>
@@ -334,7 +339,7 @@ export default function TemplatesView() {
               }}
               className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
             >
-              + Create {activeTab === 'templates' ? 'template' : 'persona'}
+              + Create {activeTab === 'templates' ? 'template' : 'agent'}
             </Button>
           </div>
         ) : (
@@ -624,73 +629,150 @@ export default function TemplatesView() {
       </div>
 
       {/* Modals */}
-      {showCreateTemplateModal && (
-        <CreateTemplateModal
-          onClose={() => setShowCreateTemplateModal(false)}
-          onSave={async (template) => {
-            try {
-              await saveTemplate(template);
-              setShowCreateTemplateModal(false);
-            } catch (error) {
-              // Error is handled in modal
-            }
-          }}
-        />
-      )}
 
-      {showEditTemplateModal && selectedTemplate && (
-        <EditTemplateModal
-          template={selectedTemplate}
-          onClose={() => {
-            setShowEditTemplateModal(false);
-            setSelectedTemplate(null);
-          }}
-          onSave={async (template) => {
-            try {
-              await saveTemplate({ ...template, id: selectedTemplate.id });
-              setShowEditTemplateModal(false);
-              setSelectedTemplate(null);
-            } catch (error) {
-              // Error is handled in modal
-            }
-          }}
-        />
-      )}
 
-      {showCreatePersonaModal && (
-        <CreatePersonaModal
-          templates={templates}
-          onClose={() => setShowCreatePersonaModal(false)}
-          onSave={async (persona) => {
-            try {
-              await savePersona(persona);
-              setShowCreatePersonaModal(false);
-            } catch (error) {
-              // Error is handled in modal
-            }
-          }}
-        />
-      )}
+{/* Create Template Modal */}
+{showCreateTemplateModal && (
+  <CreateTemplateModal
+    onClose={() => {
+      setShowCreateTemplateModal(false);
+      setSelectedItem(null);
+      setDropdownPosition(null);
+    }}
+    onSave={async (template) => {
+      try {
+        await saveTemplate(template);
+        // First close modal
+        setShowCreateTemplateModal(false);
+        // Then switch tab and clear state
+        setActiveTab('templates');
+        setSelectedItem(null);
+        setDropdownPosition(null);
+      } catch (error) {
+        // Error is handled in modal
+      }
+    }}
+  />
+)}
 
-      {showEditPersonaModal && selectedPersona && (
-        <EditPersonaModal
-          persona={selectedPersona}
-          templates={templates}
-          onClose={() => {
-            setShowEditPersonaModal(false);
-            setSelectedPersona(null);
-          }}
-          onSave={async (persona) => {
-            try {
-              await savePersona({ ...persona, id: selectedPersona.id });
-              setShowEditPersonaModal(false);
-              setSelectedPersona(null);
-            } catch (error) {
-              // Error is handled in modal
-            }
-          }}
-        />
-      )}
+{/* Edit Template Modal */}
+{showEditTemplateModal && selectedTemplate && (
+  <EditTemplateModal
+    template={selectedTemplate}
+    onClose={() => {
+      setShowEditTemplateModal(false);
+      setSelectedTemplate(null);
+      setSelectedItem(null);
+      setDropdownPosition(null);
+    }}
+    onSave={async (template) => {
+      try {
+        await saveTemplate({ ...template, id: selectedTemplate.id });
+        setShowEditTemplateModal(false);
+        setSelectedTemplate(null);
+        setActiveTab('templates');
+        setSelectedItem(null);
+        setDropdownPosition(null);
+      } catch (error) {
+        // Error is handled in modal
+      }
+    }}
+  />
+)}
+
+{/* Create Persona Modal */}
+{showCreatePersonaModal && (
+  <CreatePersonaModal
+    templates={templates}
+    onClose={() => {
+      setShowCreatePersonaModal(false);
+      setSelectedItem(null);
+      setDropdownPosition(null);
+    }}
+    onSave={async (persona) => {
+      try {
+        await savePersona(persona);
+        // First close modal
+        setShowCreatePersonaModal(false);
+        // Then switch tab and clear state
+        setActiveTab('personas');
+        setSelectedItem(null);
+        setDropdownPosition(null);
+      } catch (error) {
+        // Error is handled in modal
+      }
+    }}
+  />
+)}
+
+{/* Edit Persona Modal */}
+{showEditPersonaModal && selectedPersona && (
+  <EditPersonaModal
+    persona={selectedPersona}
+    templates={templates}
+    onClose={() => {
+      setShowEditPersonaModal(false);
+      setSelectedPersona(null);
+      setSelectedItem(null);
+      setDropdownPosition(null);
+    }}
+    onSave={async (persona) => {
+      try {
+        await savePersona({ ...persona, id: selectedPersona.id });
+        setShowEditPersonaModal(false);
+        setSelectedPersona(null);
+        setActiveTab('personas');
+        setSelectedItem(null);
+        setDropdownPosition(null);
+      } catch (error) {
+        // Error is handled in modal
+      }
+    }}
+  />
+)}
+
+{showCreatePersonaModal && (
+  <CreatePersonaModal
+    templates={templates}
+    onClose={() => setShowCreatePersonaModal(false)}
+    onSave={async (persona) => {
+      try {
+        await savePersona(persona);
+        setShowCreatePersonaModal(false);
+        // Switch to personas tab to show the newly created persona
+        setActiveTab('personas');
+        setSelectedItem(null);
+        setDropdownPosition(null);
+      } catch (error) {
+        // Error is handled in modal
+      }
+    }}
+  />
+)}
+
+{showEditPersonaModal && selectedPersona && (
+  <EditPersonaModal
+    persona={selectedPersona}
+    templates={templates}
+    onClose={() => {
+      setShowEditPersonaModal(false);
+      setSelectedPersona(null);
+    }}
+    onSave={async (persona) => {
+      try {
+        await savePersona({ ...persona, id: selectedPersona.id });
+        setShowEditPersonaModal(false);
+        setSelectedPersona(null);
+        // Ensure we stay on personas tab
+        setActiveTab('personas');
+        setSelectedItem(null);
+        setDropdownPosition(null);
+      } catch (error) {
+        // Error is handled in modal
+      }
+    }}
+  />
+)}
     </div>
   );
 }
@@ -1403,7 +1485,7 @@ function CreatePersonaModal({
       await onSave(persona);
       onClose();
     } catch (error: any) {
-      setError(error.message || 'Failed to create persona');
+      setError(error.message || 'Failed to create agent');
     } finally {
       setLoading(false);
     }
@@ -1413,7 +1495,7 @@ function CreatePersonaModal({
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Create Persona</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Create Agents</DialogTitle>
         </DialogHeader>
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
@@ -1435,14 +1517,14 @@ function CreatePersonaModal({
           {/* Predefined Personas - Above description */}
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Predefined Persona (optional)
+              Select Predefined Agent (optional)
             </label>
             <select
               value={formData.selectedPredefinedId}
               onChange={(e) => handlePredefinedSelect(e.target.value)}
               className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
             >
-              <option value="">-- Select Predefined Persona (Optional) --</option>
+              <option value="">-- Select Predefined Agent (Optional) --</option>
               {PREDEFINED_PERSONAS.map((persona, idx) => (
                 <option key={idx} value={idx.toString()}>
                   {persona.name}
@@ -1451,7 +1533,7 @@ function CreatePersonaModal({
             </select>
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                Persona template will be auto-filled below. Just edit the variables like {`{{variable_name}}`} with your values.
+                Agent template will be auto-filled below. Just edit the variables like {`{{variable_name}}`} with your values.
               </p>
             )}
           </div>
@@ -1547,7 +1629,7 @@ function CreatePersonaModal({
               Cancel
             </Button>
               <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-            {loading ? 'Creating...' : 'Save Persona'}
+            {loading ? 'Creating...' : 'Save Agents'}
           </Button>
           </div>
         </form>
@@ -1659,7 +1741,7 @@ function EditPersonaModal({
       await onSave(updatedPersona);
       onClose();
     } catch (error: any) {
-      setError(error.message || 'Failed to update persona');
+      setError(error.message || 'Failed to update agent');
     } finally {
       setLoading(false);
     }
@@ -1669,7 +1751,7 @@ function EditPersonaModal({
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
         <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Edit Persona</DialogTitle>
+          <DialogTitle className="text-xl font-semibold">Edit Agents</DialogTitle>
         </DialogHeader>
         {error && (
           <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
@@ -1803,7 +1885,7 @@ function EditPersonaModal({
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
-              {loading ? 'Updating...' : 'Update Persona'}
+              {loading ? 'Updating...' : 'Update Agent'}
             </Button>
           </div>
         </form>
