@@ -80,10 +80,26 @@ const Conversations: FC<ConversationsProps> = ({
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
   const convoHeight = isSmallScreen ? 44 : 34;
 
-  const filteredConversations = useMemo(
-    () => rawConversations.filter(Boolean) as TConversation[],
-    [rawConversations],
-  );
+  // const filteredConversations = useMemo(
+  //   () => rawConversations.filter(Boolean) as TConversation[],
+  //   [rawConversations],
+  // );
+  const filteredConversations = useMemo(() => {
+  return (rawConversations.filter((c) => {
+    if (!c) return false;
+
+    // 1️⃣ hide draft chats
+    if (!c.title || c.title === 'New Chat') return false;
+
+    // 2️⃣ hide chats that haven't received an assistant reply
+    const created = new Date(c.createdAt).getTime();
+    const updated = new Date(c.updatedAt).getTime();
+    if (updated <= created) return false;
+
+    return true;
+  }) as TConversation[]);
+}, [rawConversations]);
+
 
   const groupedConversations = useMemo(
     () => groupConversationsByDate(filteredConversations),

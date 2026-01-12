@@ -11,7 +11,7 @@ function OTP() {
   const { showToast } = useToastContext();
   const { startupConfig } = useOutletContext<TLoginLayoutContext>();
   const email = searchParams.get('email') || '';
-  const companyName = startupConfig?.appTitle || 'FYERS Securities Pvt Ltd.';
+  const companyName = startupConfig?.appTitle || 'FIA - FYERS Intelligent Assistant.';
   
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);

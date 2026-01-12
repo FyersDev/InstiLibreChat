@@ -11,7 +11,7 @@ function Login() {
   const { startupConfig } = useOutletContext<TLoginLayoutContext>();
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const companyName = startupConfig?.appTitle || 'FYERS Securities Pvt Ltd.';
+  const companyName = startupConfig?.appTitle || 'FIA - FYERS Intelligent Assistant.';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

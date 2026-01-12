@@ -1,6 +1,6 @@
 import { useEffect, useRef } from 'react';
 import { Spinner } from '@librechat/client';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { Constants, EModelEndpoint } from 'librechat-data-provider';
 import { useGetModelsQuery } from 'librechat-data-provider/react-query';
 import type { TPreset } from 'librechat-data-provider';
@@ -18,6 +18,7 @@ export default function ChatRoute() {
   const { data: startupConfig } = useGetStartupConfig();
   const { isAuthenticated, user } = useAuthRedirect();
   const navigate = useNavigate();
+  const location = useLocation();
 
   const setIsTemporary = useRecoilCallback(
     ({ set }) =>
@@ -34,34 +35,89 @@ export default function ChatRoute() {
   const { hasSetConversation, conversation } = store.useCreateConversationAtom(index);
   const { newConversation } = useNewConvo();
   const hasHandledError = useRef(false);
+  const previousConvoIdRef = useRef(conversationId);
+  const isNewChatRef = useRef(conversationId === Constants.NEW_CONVO || conversationId === 'new');
 
   const modelsQuery = useGetModelsQuery({
     enabled: isAuthenticated,
     refetchOnMount: 'always',
   });
+  
+  // Only fetch existing conversation if it's NOT a new chat
+  const shouldFetchInitialConvo =
+    isAuthenticated && 
+    conversationId !== Constants.NEW_CONVO && 
+    conversationId !== 'new' && 
+    !hasSetConversation.current;
+
   const initialConvoQuery = useGetConvoIdQuery(conversationId, {
-    enabled:
-      isAuthenticated && conversationId !== Constants.NEW_CONVO && !hasSetConversation.current,
+    enabled: shouldFetchInitialConvo,
   });
+  
   const endpointsQuery = useGetEndpointsQuery({ enabled: isAuthenticated });
   const assistantListMap = useAssistantListMap();
 
   const isTemporaryChat = conversation && conversation.expiredAt ? true : false;
 
-  // Handle deleted conversations: if query fails and conversationId is not NEW_CONVO, redirect to new chat
+  // Track if we're on a new chat and prevent unwanted navigation
   useEffect(() => {
-    // Reset error handling flag when conversationId changes
-    if (hasHandledError.current && conversationId !== Constants.NEW_CONVO && conversationId !== 'new') {
+    const currentIsNewChat = conversationId === Constants.NEW_CONVO || conversationId === 'new';
+    
+    if (currentIsNewChat) {
+      isNewChatRef.current = true;
+      // Clear localStorage when entering new chat to prevent restoration
+      localStorage.removeItem('lastConversationId');
+      sessionStorage.removeItem('lastConversationId');
+      logger.log('conversation', 'Entered new chat, cleared localStorage/sessionStorage');
+    } else {
+      isNewChatRef.current = false;
+      // Save the conversation ID when leaving new chat
+      if (previousConvoIdRef.current === Constants.NEW_CONVO || previousConvoIdRef.current === 'new') {
+        localStorage.setItem('lastConversationId', conversationId);
+      }
+    }
+  }, [conversationId]);
+
+  // Reset state when conversationId changes
+  useEffect(() => {
+    if (previousConvoIdRef.current !== conversationId) {
+      logger.log('conversation', 'conversationId changed', {
+        previous: previousConvoIdRef.current,
+        current: conversationId,
+        isNewChat: isNewChatRef.current,
+      });
+      previousConvoIdRef.current = conversationId;
       hasHandledError.current = false;
+      
+      // Reset conversation if moving to a new chat
+      if (conversationId === Constants.NEW_CONVO || conversationId === 'new') {
+        hasSetConversation.current = false;
+        logger.log('conversation', 'Reset hasSetConversation for new chat');
+      }
+    }
+  }, [conversationId]);
+
+  // Prevent navigation away from new chat if URL somehow gets changed
+  useEffect(() => {
+    if (isNewChatRef.current && (conversationId !== Constants.NEW_CONVO && conversationId !== 'new')) {
+      logger.warn('conversation', 'Detected unwanted navigation away from new chat', {
+        current: conversationId,
+        expected: Constants.NEW_CONVO,
+      });
+      // Force back to new chat
+      navigate('/c/new', { replace: true });
+    }
+  }, [conversationId, navigate]);
+
+  // Handle deleted conversations or fetch errors
+  useEffect(() => {
+    if (!shouldFetchInitialConvo) {
+      return;
     }
 
     if (
       initialConvoQuery.isError &&
       initialConvoQuery.isFetched &&
-      conversationId !== Constants.NEW_CONVO &&
-      conversationId !== 'new' &&
-      isAuthenticated &&
-      !hasSetConversation.current &&
       !hasHandledError.current
     ) {
       hasHandledError.current = true;
@@ -69,11 +125,11 @@ export default function ChatRoute() {
         conversationId,
         error: initialConvoQuery.error,
       });
-      // Clear the stored conversation ID from localStorage
-      const storedConvoId = localStorage.getItem('lastConversationId');
-      if (storedConvoId === conversationId) {
-        localStorage.removeItem('lastConversationId');
-      }
+      
+      // Clear all stored conversation IDs
+      localStorage.removeItem('lastConversationId');
+      sessionStorage.removeItem('lastConversationId');
+      
       // Navigate to new conversation
       navigate('/c/new', { replace: true });
     }
@@ -82,11 +138,11 @@ export default function ChatRoute() {
     initialConvoQuery.isFetched,
     initialConvoQuery.error,
     conversationId,
-    isAuthenticated,
-    hasSetConversation,
+    shouldFetchInitialConvo,
     navigate,
   ]);
 
+  // Update temporary chat state
   useEffect(() => {
     if (conversationId !== Constants.NEW_CONVO && !isTemporaryChat) {
       setIsTemporary(false);
@@ -95,13 +151,11 @@ export default function ChatRoute() {
     }
   }, [conversationId, isTemporaryChat, setIsTemporary]);
 
-  /** This effect is mainly for the first conversation state change on first load of the page.
-   *  Adjusting this may have unintended consequences on the conversation state.
-   */
+  // Initialize conversation
   useEffect(() => {
     const shouldSetConvo =
       (startupConfig && !hasSetConversation.current && !modelsQuery.data?.initial) ?? false;
-    /* Early exit if startupConfig is not loaded and conversation is already set and only initial models have loaded */
+    
     if (!shouldSetConvo) {
       return;
     }
@@ -121,7 +175,6 @@ export default function ChatRoute() {
       logger.log('conversation', 'ChatRoute initialConvoQuery', initialConvoQuery.data);
       newConversation({
         template: initialConvoQuery.data,
-        /* this is necessary to load all existing settings */
         preset: initialConvoQuery.data as TPreset,
         modelsData: modelsQuery.data,
         keepLatestMessage: true,
@@ -154,7 +207,7 @@ export default function ChatRoute() {
       });
       hasSetConversation.current = true;
     }
-    /* Creates infinite render if all dependencies included due to newConversation invocations exceeding call stack before hasSetConversation.current becomes truthy */
+    
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     startupConfig,
@@ -180,10 +233,12 @@ export default function ChatRoute() {
   if (conversation?.conversationId === Constants.SEARCH) {
     return null;
   }
+  
   // if conversationId not match
   if (conversation?.conversationId !== conversationId && !conversation) {
     return null;
   }
+  
   // if conversationId is null
   if (!conversationId) {
     return null;
