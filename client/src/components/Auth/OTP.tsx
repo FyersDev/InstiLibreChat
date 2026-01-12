@@ -276,6 +276,9 @@ function OTP() {
                   inputMode="numeric"
                   maxLength={1}
                   value={digit}
+                  autoComplete='off'
+                  autoSave='off'
+                  autoCorrect='off'
                   onChange={(e) =>
                     handleOtpChange(index, e.target.value)
                   }

@@ -327,7 +327,7 @@ export default function TemplatesView() {
         ) : currentItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-64">
             <p className="text-gray-500 dark:text-gray-400 mb-4">
-              No {activeTab === 'templates' ? 'templates' : 'personas'} created yet.
+              No {activeTab === 'templates' ? 'templates' : 'agents'} created yet.
             </p>
             <Button
               onClick={() => {
