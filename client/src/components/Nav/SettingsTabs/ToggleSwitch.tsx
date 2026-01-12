@@ -55,9 +55,21 @@ const RecoilToggle: React.FC<
         checked={switchState}
         onCheckedChange={handleCheckedChange}
         disabled={disabled}
-        className="ml-4"
         data-testid={switchId}
         aria-labelledby={labelId}
+        className="
+          ml-4 relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full
+          border-2 border-transparent transition-colors duration-200
+          focus:outline-none focus:ring-2 focus:ring-[#2434E7]
+          data-[state=checked]:bg-[#2434E7]
+          data-[state=unchecked]:bg-gray-300
+        "
+        thumbClassName="
+          pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow
+          ring-0 transition duration-200
+          data-[state=checked]:translate-x-5
+          data-[state=unchecked]:translate-x-0
+        "
       />
     </div>
   );
@@ -97,9 +109,21 @@ const JotaiToggle: React.FC<
         checked={switchState}
         onCheckedChange={handleCheckedChange}
         disabled={disabled}
-        className="ml-4"
         data-testid={switchId}
         aria-labelledby={labelId}
+        className="
+          ml-4 relative inline-flex h-6 w-11 shrink-0 cursor-pointer rounded-full
+          border-2 border-transparent transition-colors duration-200
+          focus:outline-none focus:ring-2 focus:ring-[#2434E7]
+          data-[state=checked]:bg-[#2434E7]
+          data-[state=unchecked]:bg-gray-300
+        "
+        thumbClassName="
+          pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow
+          ring-0 transition duration-200
+          data-[state=checked]:translate-x-5
+          data-[state=unchecked]:translate-x-0
+        "
       />
     </div>
   );
