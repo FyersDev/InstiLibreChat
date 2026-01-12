@@ -5,6 +5,7 @@ import type { Plugin } from 'vite';
 import { defineConfig } from 'vite';
 import { compression } from 'vite-plugin-compression2';
 import { nodePolyfills } from 'vite-plugin-node-polyfills';
+import { builtinModules } from 'module';
 import { VitePWA } from 'vite-plugin-pwa';
 
 // https://vitejs.dev/config/
@@ -40,7 +41,13 @@ export default defineConfig(({ command }) => ({
   envPrefix: ['VITE_', 'SCRIPT_', 'DOMAIN_', 'ALLOW_'],
   plugins: [
     react(),
-    nodePolyfills(),
+    nodePolyfills({
+      globals: {
+        Buffer: true,
+        global: true,
+        process: true,
+      },
+    }),
     VitePWA({
       injectRegister: 'auto', // 'auto' | 'manual' | 'disabled'
       registerType: 'autoUpdate', // 'prompt' | 'autoUpdate'
@@ -259,10 +266,6 @@ export default defineConfig(({ command }) => ({
         if (warning.message.includes('Error when using sourcemap')) {
           return;
         }
-        // Suppress PostCSS warnings about :is() selector transformations
-        if (warning.message.includes('can not be transformed to an equivalent selector without \':is()\'')) {
-          return;
-        }
         warn(warning);
       },
     },
@@ -274,6 +277,15 @@ export default defineConfig(({ command }) => ({
       $fonts: path.resolve(__dirname, 'public/fonts'),
       'micromark-extension-math': 'micromark-extension-llm-math',
     },
+  },
+  optimizeDeps: {
+    // Force re-optimization when dependencies change
+    force: false,
+    // Exclude problematic dependencies that cause chunk issues
+    exclude: [
+      // Exclude workspace packages that are already built
+      '@librechat/client',
+    ],
   },
 }));
 
