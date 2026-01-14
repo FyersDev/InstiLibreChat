@@ -813,7 +813,7 @@ export default function ResourcesRoute() {
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
-                          <button
+                          {/* <button
                             onClick={(e) => {
                               e.stopPropagation();
                               handlePreviewFile(file);
@@ -822,7 +822,7 @@ export default function ResourcesRoute() {
                             title="Preview"
                           >
                             <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                          </button>
+                          </button> */}
                           <button
                             onClick={(e) => {
                               e.stopPropagation();

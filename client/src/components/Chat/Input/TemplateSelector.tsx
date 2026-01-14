@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { ChevronDown, Plus } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { ChevronDown } from 'lucide-react';
 import * as Ariakit from '@ariakit/react';
 import { DropdownPopup } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
@@ -21,18 +21,96 @@ export default function TemplateSelector() {
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
+  const hasInitialized = useRef(false);
 
+  // Fetch templates once on mount
   useEffect(() => {
+    if (hasInitialized.current) return;
+    hasInitialized.current = true;
+
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        console.log('[TemplateSelector] Fetching templates from backend...');
+        const response = await saasApi.getTemplates();
+        console.log('[TemplateSelector] Raw API response:', response);
+        
+        // Handle paginated response format: {data: Array, page, limit, total, total_pages}
+        let templatesArray: any[] = [];
+        if (response) {
+          if (Array.isArray(response)) {
+            templatesArray = response;
+          } else {
+            const responseAny = response as any;
+            if (responseAny.data && Array.isArray(responseAny.data)) {
+              templatesArray = responseAny.data;
+            }
+          }
+        }
+        
+        if (templatesArray.length > 0) {
+          const parsedTemplates: SavedTemplate[] = templatesArray.map((item: any) => {
+            // Try multiple fields to get detailedPrompt
+            let detailedPrompt = '';
+            if (item.content?.custom) {
+              detailedPrompt = typeof item.content.custom === 'string' 
+                ? item.content.custom 
+                : JSON.stringify(item.content.custom);
+            } else if (item.content && typeof item.content === 'string') {
+              detailedPrompt = item.content;
+            } else if (item.detailedPrompt) {
+              detailedPrompt = item.detailedPrompt;
+            } else if (item.description) {
+              detailedPrompt = item.description;
+            } else if (item.framework) {
+              detailedPrompt = item.framework;
+            }
+            
+            return {
+              name: item.name || item.template || 'Unnamed Template',
+              description: item.description || '',
+              detailedPrompt: detailedPrompt || item.name || '',
+              framework: item.framework || '',
+              content: item.content || {}
+            };
+          });
+          
+          console.log('[TemplateSelector] Parsed templates:', parsedTemplates);
+          setTemplates(parsedTemplates);
+        } else {
+          console.warn('[TemplateSelector] No templates found in response:', response);
+          setTemplates([]);
+        }
+      } catch (error) {
+        console.error('[TemplateSelector] Error fetching templates:', error);
+        setTemplates([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
     fetchData();
   }, []);
 
-  // Get selected template from localStorage to show in button
-  const updateSelectedTemplate = useCallback(() => {
+  // Load and sync selected template - only when conversationId changes
+  useEffect(() => {
     const convoId = conversationId || Constants.NEW_CONVO;
-    // Try actual conversationId first, then fallback to NEW_CONVO
+    loadTemplateFromStorage(convoId);
+
+    const handleTemplateUpdate = () => {
+      loadTemplateFromStorage(convoId);
+    };
+
+    window.addEventListener('templateUpdated', handleTemplateUpdate);
+    
+    return () => {
+      window.removeEventListener('templateUpdated', handleTemplateUpdate);
+    };
+  }, [conversationId]);
+
+  const loadTemplateFromStorage = useCallback((convoId: string) => {
     let templateData = localStorage.getItem(`template_data_${convoId}`);
     
-    // If no data found for actual conversationId and we're not on NEW_CONVO, also check NEW_CONVO
     if (!templateData && convoId !== Constants.NEW_CONVO) {
       templateData = localStorage.getItem(`template_data_${Constants.NEW_CONVO}`);
     }
@@ -47,80 +125,7 @@ export default function TemplateSelector() {
     } else {
       setSelectedTemplate(null);
     }
-  }, [conversationId]);
-
-  useEffect(() => {
-    updateSelectedTemplate();
-    
-    // Listen for custom events to update selection
-    const handleTemplateUpdate = () => updateSelectedTemplate();
-    window.addEventListener('templateUpdated', handleTemplateUpdate);
-    
-    return () => {
-      window.removeEventListener('templateUpdated', handleTemplateUpdate);
-    };
-  }, [updateSelectedTemplate, isOpen]);
-
-  const fetchData = async () => {
-    setLoading(true);
-    try {
-      console.log('[TemplateSelector] Fetching templates from backend...');
-      const response = await saasApi.getTemplates();
-      console.log('[TemplateSelector] Raw API response:', response);
-      
-      // Handle paginated response format: {data: Array, page, limit, total, total_pages}
-      let templatesArray: any[] = [];
-      if (response) {
-        if (Array.isArray(response)) {
-          templatesArray = response;
-        } else {
-          const responseAny = response as any;
-          if (responseAny.data && Array.isArray(responseAny.data)) {
-            templatesArray = responseAny.data;
-          }
-        }
-      }
-      
-      if (templatesArray.length > 0) {
-        const parsedTemplates: SavedTemplate[] = templatesArray.map((item: any) => {
-          // Try multiple fields to get detailedPrompt
-          let detailedPrompt = '';
-          if (item.content?.custom) {
-            detailedPrompt = typeof item.content.custom === 'string' 
-              ? item.content.custom 
-              : JSON.stringify(item.content.custom);
-          } else if (item.content && typeof item.content === 'string') {
-            detailedPrompt = item.content;
-          } else if (item.detailedPrompt) {
-            detailedPrompt = item.detailedPrompt;
-          } else if (item.description) {
-            detailedPrompt = item.description;
-          } else if (item.framework) {
-            detailedPrompt = item.framework;
-          }
-          
-          return {
-            name: item.name || item.template || 'Unnamed Template',
-            description: item.description || '',
-            detailedPrompt: detailedPrompt || item.name || '',
-            framework: item.framework || '',
-            content: item.content || {}
-          };
-        });
-        
-        console.log('[TemplateSelector] Parsed templates:', parsedTemplates);
-        setTemplates(parsedTemplates);
-      } else {
-        console.warn('[TemplateSelector] No templates found in response:', response);
-        setTemplates([]);
-      }
-    } catch (error) {
-      console.error('[TemplateSelector] Error fetching templates:', error);
-      setTemplates([]);
-    } finally {
-      setLoading(false);
-    }
-  };
+  }, []);
 
   const handleSelectTemplate = async (template: SavedTemplate) => {
     const convoId = conversationId || Constants.NEW_CONVO;
@@ -156,70 +161,74 @@ export default function TemplateSelector() {
     setIsOpen(false);
   };
 
+  const formatTemplateContent = (content: string): string => {
+    // Split by lines and extract key parts
+    const lines = content.split('\n').filter(line => line.trim());
+    if (lines.length === 0) return content;
+    
+    // Try to extract ROLE, TASK, FORMAT from the structure
+    let role = '';
+    let task = '';
+    let format = '';
+    
+    lines.forEach((line) => {
+      const lowerLine = line.toLowerCase();
+      if (lowerLine.includes('role') || lowerLine.includes('act as')) {
+        role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
+      } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
+        task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
+      } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
+        format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
+      }
+    });
+    
+    // Build compact display
+    const parts: string[] = [];
+    if (role) parts.push(`Role: ${role.substring(0, 20)}`);
+    if (task) parts.push(`Task: ${task.substring(0, 30)}`);
+    if (format) parts.push(`Format: ${format}`);
+    
+    if (parts.length > 0) {
+      return parts.join(' | ');
+    }
+    
+    // Fallback: show first line or truncated content
+    return lines[0]?.substring(0, 50) || content.substring(0, 50);
+  };
+
+  const getIsTemplateSelected = (template: SavedTemplate): boolean => {
+    const convoId = conversationId || Constants.NEW_CONVO;
+    let templateDataStr = localStorage.getItem(`template_data_${convoId}`);
+    
+    if (!templateDataStr && convoId !== Constants.NEW_CONVO) {
+      templateDataStr = localStorage.getItem(`template_data_${Constants.NEW_CONVO}`);
+    }
+    
+    if (templateDataStr) {
+      try {
+        const templateData = JSON.parse(templateDataStr);
+        return (templateData.template || templateData.name) === template.name;
+      } catch (e) {
+        return false;
+      }
+    }
+    
+    return false;
+  };
+
   const menuItems = [
     ...templates.map((template) => {
       // Show template structure/content instead of just name
       const templateContent = template.detailedPrompt || template.description || template.name;
-      // Format template content to show structure in a compact way
-      const formatTemplateContent = (content: string): string => {
-        // Split by lines and extract key parts
-        const lines = content.split('\n').filter(line => line.trim());
-        if (lines.length === 0) return content;
-        
-        // Try to extract ROLE, TASK, FORMAT from the structure
-        let role = '';
-        let task = '';
-        let format = '';
-        
-        lines.forEach((line, idx) => {
-          const lowerLine = line.toLowerCase();
-          if (lowerLine.includes('role') || lowerLine.includes('act as')) {
-            role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
-          } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
-            task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
-          } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
-            format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
-          }
-        });
-        
-        // Build compact display
-        const parts: string[] = [];
-        if (role) parts.push(`Role: ${role.substring(0, 20)}`);
-        if (task) parts.push(`Task: ${task.substring(0, 30)}`);
-        if (format) parts.push(`Format: ${format}`);
-        
-        if (parts.length > 0) {
-          return parts.join(' | ');
-        }
-        
-        // Fallback: show first line or truncated content
-        return lines[0]?.substring(0, 50) || content.substring(0, 50);
-      };
-      
       const formattedContent = formatTemplateContent(templateContent);
-      const displayLabel = `${template.name}${selectedTemplate === template.name ? ' ✓' : ''} - ${formattedContent}`;
-      
-      // Check if this template is currently selected (by comparing with localStorage)
-      const convoId = conversationId || Constants.NEW_CONVO;
-      let isSelected = false;
-      let templateDataStr = localStorage.getItem(`template_data_${convoId}`);
-      if (!templateDataStr && convoId !== Constants.NEW_CONVO) {
-        templateDataStr = localStorage.getItem(`template_data_${Constants.NEW_CONVO}`);
-      }
-      if (templateDataStr) {
-        try {
-          const templateData = JSON.parse(templateDataStr);
-          isSelected = (templateData.template || templateData.name) === template.name;
-        } catch (e) {
-          // Ignore parse errors
-        }
-      }
+      const isSelected = getIsTemplateSelected(template);
+      const displayLabel = `${template.name}${isSelected ? ' ✓' : ''} - ${formattedContent}`;
       
       return {
         label: displayLabel,
-      onClick: () => handleSelectTemplate(template),
+        onClick: () => handleSelectTemplate(template),
         icon: isSelected ? '✓' : '',
-      key: `template-${template.name}`,
+        key: `template-${template.name}`,
       };
     }),
     {
@@ -238,7 +247,7 @@ export default function TemplateSelector() {
       separate: true,
       key: 'separator',
     }, {
-      label: '🗑️ Clear',
+      label: ' Reset to default',
       onClick: handleClearTemplate,
       key: 'clear-template',
     }] : []),

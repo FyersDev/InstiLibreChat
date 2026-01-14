@@ -4,8 +4,8 @@ import { saasApi } from '~/services/saasApi';
 import { PermissionManager, type Permission } from '~/utils/permissions';
 import OrganizationsView from './OrganizationsView';
 import UsersView from './UsersView';
-import RolesView from './RolesView';
-import PermissionsView from './PermissionsView';
+// import RolesView from './RolesView';
+// import PermissionsView from './PermissionsView';
 
 interface UserInfo {
   id: string;
@@ -42,7 +42,7 @@ export default function AdminDashboard({ userInfo }: AdminDashboardProps) {
     // If superadmin, grant ALL permissions automatically
     if (isSuperAdmin) {
       // Create all possible permissions for superadmin
-      const resources = ['organizations', 'users', 'roles', 'permissions'];
+      const resources = ['organizations', 'users'];
       const actions = ['read', 'create', 'update', 'delete'];
       
       perms = resources.flatMap(resource =>
@@ -164,11 +164,11 @@ export default function AdminDashboard({ userInfo }: AdminDashboardProps) {
   useEffect(() => {
     if (activeTab === 'Organizations') fetchOrganizations();
     else if (activeTab === 'Users') fetchUsers(selectedOrgFilter || null);
-    else if (activeTab === 'Roles') fetchRoles(selectedRoleOrgFilter || null);
-    else if (activeTab === 'Permissions') fetchPermissions();
+    // else if (activeTab === 'Roles') fetchRoles(selectedRoleOrgFilter || null);
+    // else if (activeTab === 'Permissions') fetchPermissions();
   }, [activeTab, isSuperAdmin, userOrgId, selectedOrgFilter, selectedRoleOrgFilter]);
 
-  const tabs = ['Organizations', 'Users', 'Roles', 'Permissions'];
+  const tabs = ['Organizations', 'Users'];
 
   return (
     <div className="h-full flex flex-col bg-white dark:bg-gray-850">
@@ -206,14 +206,20 @@ export default function AdminDashboard({ userInfo }: AdminDashboardProps) {
 
         {!loading && !error && (
           <>
-            {activeTab === 'Organizations' && (
-              <OrganizationsView
-                organizations={organizations}
-                isSuperAdmin={isSuperAdmin}
-                permissionManager={permissionManager}
-                onRefresh={fetchOrganizations}
-              />
-            )}
+           {activeTab === 'Organizations' && (
+            <OrganizationsView
+              organizations={organizations}
+              isSuperAdmin={isSuperAdmin}
+              permissionManager={permissionManager}
+              onRefresh={fetchOrganizations}
+              onOpenUsers={(orgId) => {
+                setSelectedOrgFilter(orgId);   
+                setActiveTab('Users');         
+                fetchUsers(orgId);            
+              }}
+            />
+          )}
+
             {activeTab === 'Users' && (
               <UsersView
                 users={users}
@@ -226,7 +232,7 @@ export default function AdminDashboard({ userInfo }: AdminDashboardProps) {
                 onRefresh={(orgFilterId) => fetchUsers(orgFilterId || null)}
               />
             )}
-            {activeTab === 'Roles' && (
+            {/* {activeTab === 'Roles' && (
               <RolesView
                 roles={roles}
                 isSuperAdmin={isSuperAdmin}
@@ -238,7 +244,7 @@ export default function AdminDashboard({ userInfo }: AdminDashboardProps) {
                 onRefresh={(orgFilterId) => fetchRoles(orgFilterId || null)}
               />
             )}
-            {activeTab === 'Permissions' && <PermissionsView permissions={permissions} />}
+            {activeTab === 'Permissions' && <PermissionsView permissions={permissions} />} */}
           </>
         )}
       </div>

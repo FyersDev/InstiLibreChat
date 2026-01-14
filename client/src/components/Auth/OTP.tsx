@@ -230,11 +230,11 @@ function OTP() {
         {/* Center Content */}
         <div className="flex flex-1 flex-col justify-center">
           <h1 className="text-gray-900 text-2xl sm:text-3xl lg:text-5xl font-bold leading-tight mb-8 lg:mb-12 max-w-3xl">
-            Experience the FYERS Intelligent Assistant
+          Research intelligence built for institutional decision-making.
           </h1>
 
           <img
-            src="/assets/fyers-login-illustration.png"
+            src="/assets/Fia Login.png"
             alt="FYERS platform preview"
             className="w-full max-w-[900px] h-[260px] sm:h-[320px] lg:h-[420px] object-contain"
           />

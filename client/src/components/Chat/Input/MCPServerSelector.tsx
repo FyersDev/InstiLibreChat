@@ -45,7 +45,20 @@ export default function MCPServerSelector() {
     console.log('[MCP Selector] Available servers after filtering:', servers);
     return servers;
   }, [startupConfig?.mcpServers]);
-
+  useEffect(() => {
+    // Only set defaults once when MCP loads and nothing is selected
+    if (
+      availableServers.length > 0 &&
+      (!mcpValues || mcpValues.length === 0)
+    ) {
+      // Pick first 4 servers (or fewer if less than 4 exist)
+      const defaults = availableServers.slice(0, 4);
+  
+      console.log('[MCP Selector] Setting default MCP servers:', defaults);
+      batchToggleServers(defaults);
+    }
+  }, [availableServers, mcpValues, batchToggleServers]);
+  
   const handleToggleServer = (serverName: string) => {
     const currentValues = mcpValues || [];
     if (currentValues.includes(serverName)) {

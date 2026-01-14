@@ -1,6 +1,3 @@
-import path from 'path';
-import { URL } from 'url';
-
 const imageExtensionRegex = /\.(jpg|jpeg|png|gif|bmp|tiff|svg|webp)$/i;
 
 /**
@@ -12,12 +9,12 @@ const imageExtensionRegex = /\.(jpg|jpeg|png|gif|bmp|tiff|svg|webp)$/i;
  */
 export function getImageBasename(urlString: string) {
   try {
-    const url = new URL(urlString);
-    const basename = path.basename(url.pathname);
+    const url = new URL(urlString); // ✅ Web API (works in browser + Node)
+    const pathname = url.pathname;
+    const basename = pathname.substring(pathname.lastIndexOf('/') + 1);
 
     return imageExtensionRegex.test(basename) ? basename : '';
   } catch {
-    // If URL parsing fails, return an empty string
     return '';
   }
 }
@@ -31,10 +28,10 @@ export function getImageBasename(urlString: string) {
  */
 export function getFileBasename(urlString: string) {
   try {
-    const url = new URL(urlString);
-    return path.basename(url.pathname);
+    const url = new URL(urlString); // ✅ Web API
+    const pathname = url.pathname;
+    return pathname.substring(pathname.lastIndexOf('/') + 1);
   } catch {
-    // If URL parsing fails, return an empty string
     return '';
   }
 }

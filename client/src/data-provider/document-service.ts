@@ -17,10 +17,10 @@ export interface DocumentListItem {
   document_id: number;
   name: string;
   file_path: string;
-  status: string;
   uploaded_at: string | null;
   processed_at?: string | null;
   owner?: string | null;
+  status?: string | null;
 }
 
 export interface DocumentListResponse {

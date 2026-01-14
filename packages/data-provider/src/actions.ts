@@ -1,7 +1,5 @@
 import { z } from 'zod';
-import { URL } from 'url';
 import _axios from 'axios';
-import crypto from 'crypto';
 import { load } from 'js-yaml';
 import type { ActionMetadata, ActionMetadataRuntime } from './types/agents';
 import type { FunctionTool, Schema, Reference } from './types/assistants';
@@ -46,8 +44,78 @@ type RequestBodyObject = Omit<OpenAPIV3.RequestBodyObject, 'content'> & {
   content: MediaTypeObject;
 };
 
-export function sha1(input: string) {
-  return crypto.createHash('sha1').update(input).digest('hex');
+/**
+ * ✅ Pure JS SHA-1 (sync, browser-safe, Node-safe)
+ */
+export function sha1(input: string): string {
+  function rotl(n: number, s: number) {
+    return (n << s) | (n >>> (32 - s));
+  }
+
+  function toHex(i: number) {
+    return ('00000000' + i.toString(16)).slice(-8);
+  }
+
+  const msg = unescape(encodeURIComponent(input));
+  const msgLen = msg.length;
+
+  const words: number[] = [];
+  for (let i = 0; i < msgLen; i++) {
+    words[i >> 2] |= msg.charCodeAt(i) << (24 - (i % 4) * 8);
+  }
+
+  words[msgLen >> 2] |= 0x80 << (24 - (msgLen % 4) * 8);
+  words[((msgLen + 8) >> 6) * 16 + 15] = msgLen * 8;
+
+  let h0 = 0x67452301;
+  let h1 = 0xefcdab89;
+  let h2 = 0x98badcfe;
+  let h3 = 0x10325476;
+  let h4 = 0xc3d2e1f0;
+
+  for (let i = 0; i < words.length; i += 16) {
+    const w = new Array(80);
+    for (let j = 0; j < 16; j++) w[j] = words[i + j] | 0;
+    for (let j = 16; j < 80; j++) w[j] = rotl(w[j - 3] ^ w[j - 8] ^ w[j - 14] ^ w[j - 16], 1);
+
+    let a = h0;
+    let b = h1;
+    let c = h2;
+    let d = h3;
+    let e = h4;
+
+    for (let j = 0; j < 80; j++) {
+      let f: number, k: number;
+      if (j < 20) {
+        f = (b & c) | (~b & d);
+        k = 0x5a827999;
+      } else if (j < 40) {
+        f = b ^ c ^ d;
+        k = 0x6ed9eba1;
+      } else if (j < 60) {
+        f = (b & c) | (b & d) | (c & d);
+        k = 0x8f1bbcdc;
+      } else {
+        f = b ^ c ^ d;
+        k = 0xca62c1d6;
+      }
+
+      const temp = (rotl(a, 5) + f + e + k + w[j]) | 0;
+      e = d;
+      d = c;
+      c = rotl(b, 30);
+      b = a;
+      a = temp;
+    }
+
+    h0 = (h0 + a) | 0;
+    h1 = (h1 + b) | 0;
+    h2 = (h2 + c) | 0;
+    h3 = (h3 + d) | 0;
+    h4 = (h4 + e) | 0;
+  }
+
+  return [h0, h1, h2, h3, h4].map(toHex).join('');
 }
 
 export function createURL(domain: string, path: string) {
@@ -62,24 +130,15 @@ const schemaTypeHandlers: Record<string, (schema: OpenAPISchema) => z.ZodTypeAny
     if (schema.enum) {
       return z.enum(schema.enum as [string, ...string[]]);
     }
-
     let stringSchema = z.string();
-    if (schema.minLength !== undefined) {
-      stringSchema = stringSchema.min(schema.minLength);
-    }
-    if (schema.maxLength !== undefined) {
-      stringSchema = stringSchema.max(schema.maxLength);
-    }
+    if (schema.minLength !== undefined) stringSchema = stringSchema.min(schema.minLength);
+    if (schema.maxLength !== undefined) stringSchema = stringSchema.max(schema.maxLength);
     return stringSchema;
   },
   number: (schema) => {
     let numberSchema = z.number();
-    if (schema.minimum !== undefined) {
-      numberSchema = numberSchema.min(schema.minimum);
-    }
-    if (schema.maximum !== undefined) {
-      numberSchema = numberSchema.max(schema.maximum);
-    }
+    if (schema.minimum !== undefined) numberSchema = numberSchema.min(schema.minimum);
+    if (schema.maximum !== undefined) numberSchema = numberSchema.max(schema.maximum);
     return numberSchema;
   },
   integer: (schema) => (schemaTypeHandlers.number(schema) as z.ZodNumber).int(),
@@ -87,25 +146,19 @@ const schemaTypeHandlers: Record<string, (schema: OpenAPISchema) => z.ZodTypeAny
   array: (schema) => {
     if (schema.items) {
       const zodSchema = openAPISchemaToZod(schema.items as OpenAPISchema);
-      if (zodSchema) {
-        return z.array(zodSchema);
-      }
-
-      return z.array(z.unknown());
+      return z.array(zodSchema ?? z.unknown());
     }
     return z.array(z.unknown());
   },
   object: (schema) => {
-    const shape: { [key: string]: z.ZodTypeAny } = {};
+    const shape: Record<string, z.ZodTypeAny> = {};
     if (schema.properties) {
       Object.entries(schema.properties).forEach(([key, value]) => {
         const zodSchema = openAPISchemaToZod(value as OpenAPISchema);
-        shape[key] = zodSchema || z.unknown();
-        if (schema.required && schema.required.includes(key)) {
-          shape[key] = shape[key].describe(value.description || '');
-        } else {
-          shape[key] = shape[key].optional().describe(value.description || '');
-        }
+        shape[key] = zodSchema ?? z.unknown();
+        shape[key] = schema.required?.includes(key)
+          ? shape[key].describe(value.description || '')
+          : shape[key].optional().describe(value.description || '');
       });
     }
     return z.object(shape);
@@ -113,14 +166,10 @@ const schemaTypeHandlers: Record<string, (schema: OpenAPISchema) => z.ZodTypeAny
 };
 
 function openAPISchemaToZod(schema: OpenAPISchema): z.ZodTypeAny | undefined {
-  if (schema.type === 'object' && Object.keys(schema.properties || {}).length === 0) {
-    return undefined;
-  }
-
+  if (schema.type === 'object' && Object.keys(schema.properties || {}).length === 0) return undefined;
   const handler = schemaTypeHandlers[schema.type as string] || (() => z.unknown());
   return handler(schema);
 }
-
 /**
  * Class representing a function signature.
  */

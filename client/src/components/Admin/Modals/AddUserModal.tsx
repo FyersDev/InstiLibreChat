@@ -51,16 +51,21 @@ export default function AddUserModal({
         console.log('🎭 AddUserModal - Unique roles:', { count: uniqueRoles.length });
         
         // Filter roles based on user type
-        const filteredRoles = isSuperAdmin
-          ? uniqueRoles
-          : uniqueRoles.filter((role: any) => {
-              if (role.type === 'system') return true;
-              if (!role.org_id || !userOrgId) return false;
-              const roleOrgId = typeof role.org_id === 'string' ? role.org_id : String(role.org_id);
-              const userOrgIdStr = typeof userOrgId === 'string' ? userOrgId : String(userOrgId);
-              return roleOrgId === userOrgIdStr;
-            });
-        console.log('🎭 AddUserModal - Filtered roles:', { count: filteredRoles.length, filteredRoles });
+        const filteredRoles = uniqueRoles.filter((role: any) => {
+          // ❌ Never expose system roles in user assignment UI
+          if (role.type === 'system') return false;
+        
+          // Super admin can see all non-system roles
+          if (isSuperAdmin) return true;
+        
+          // Org admin: only roles from their own org
+          if (!role.org_id || !userOrgId) return false;
+        
+          const roleOrgId = String(role.org_id);
+          const userOrgIdStr = String(userOrgId);
+          return roleOrgId === userOrgIdStr;
+        });        
+        console.log(' AddUserModal - Filtered roles:', { count: filteredRoles.length, filteredRoles });
         setAvailableRoles(filteredRoles);
       } catch (error) {
         console.error('❌ Error fetching roles:', error);

@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
-import { Search } from 'lucide-react';
+import { Button, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import CreateOrganizationModal from './Modals/CreateOrganizationModal';
@@ -11,6 +10,9 @@ interface OrganizationsViewProps {
   isSuperAdmin: boolean;
   permissionManager: PermissionManager | null;
   onRefresh: () => void;
+
+  // ✅ NEW: open users tab + load users for selected org
+  onOpenUsers: (organizationId: string) => void;
 }
 
 export default function OrganizationsView({
@@ -18,6 +20,7 @@ export default function OrganizationsView({
   isSuperAdmin,
   permissionManager,
   onRefresh,
+  onOpenUsers,
 }: OrganizationsViewProps) {
   const { showToast } = useToastContext();
   const [showAddOrgModal, setShowAddOrgModal] = useState(false);
@@ -48,6 +51,7 @@ export default function OrganizationsView({
     <div>
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Organizations</h2>
+
         {isSuperAdmin && permissionManager && permissionManager.canCreate('organizations') && (
           <Button
             onClick={() => setShowAddOrgModal(true)}
@@ -82,6 +86,7 @@ export default function OrganizationsView({
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
             {organizations.length === 0 ? (
               <tr>
@@ -91,7 +96,11 @@ export default function OrganizationsView({
               </tr>
             ) : (
               organizations.map((org) => (
-                <tr key={org.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
+                <tr
+                  key={org.id}
+                  onClick={() => onOpenUsers(org.id)} // ✅ OPEN USERS TAB
+                  className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
+                >
                   <td className="sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       {org.logo_url?.startsWith('data:') && (
@@ -101,17 +110,18 @@ export default function OrganizationsView({
                           className="h-8 w-8 object-contain rounded border border-gray-200 dark:border-gray-700"
                           onError={(e) => {
                             console.error('Failed to load logo for org:', org.id);
-                            // Hide image if it fails to load
                             (e.target as HTMLImageElement).style.display = 'none';
                           }}
                         />
                       )}
-                      <span>{org.name}</span>
+                      <span className="hover:underline">{org.name}</span>
                     </div>
                   </td>
+
                   <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {org.slug}
                   </td>
+
                   <td className="px-3 py-3 whitespace-nowrap">
                     <span
                       className={`px-2 py-1 text-xs rounded-full ${
@@ -123,16 +133,20 @@ export default function OrganizationsView({
                       {org.status}
                     </span>
                   </td>
+
                   <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {org.current_users || 0} / {org.max_users || 0}
                   </td>
+
                   <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                     {new Date(org.created_at).toLocaleDateString()}
                   </td>
+
                   <td className="px-3 py-3 whitespace-nowrap text-sm">
                     {permissionManager && permissionManager.canUpdate('organizations') && (
                       <button
-                        onClick={() => {
+                        onClick={(e) => {
+                          e.stopPropagation(); // ✅ prevent opening users
                           setSelectedOrg(org);
                           setShowEditOrgModal(true);
                         }}
@@ -141,10 +155,13 @@ export default function OrganizationsView({
                         Edit
                       </button>
                     )}
-                    {/* Only superadmin can delete organizations */}
+
                     {isSuperAdmin && permissionManager && permissionManager.canDelete('organizations') && (
                       <button
-                        onClick={() => handleDeleteOrg(org)}
+                        onClick={(e) => {
+                          e.stopPropagation(); // ✅ prevent opening users
+                          handleDeleteOrg(org);
+                        }}
                         className="text-red-600 hover:text-red-900 dark:text-red-400 dark:hover:text-red-300"
                       >
                         Delete
@@ -185,4 +202,3 @@ export default function OrganizationsView({
     </div>
   );
 }
-

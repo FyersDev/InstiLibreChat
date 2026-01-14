@@ -270,7 +270,7 @@ const HoverButtons = ({
   if (error === true) {
     return (
       <div className="visible flex justify-center self-end lg:justify-start">
-        {regenerateEnabled && (
+        {/* {regenerateEnabled && (
           <HoverButton
             onClick={regenerate}
             title={localize('com_ui_regenerate')}
@@ -284,7 +284,7 @@ const HoverButtons = ({
             }
             isLast={isLast}
           />
-        )}
+        )} */}
       </div>
     );
   }
@@ -346,7 +346,7 @@ const HoverButtons = ({
       )}
 
       {/* Regenerate Button */}
-      {regenerateEnabled && (
+      {/* {regenerateEnabled && (
         <HoverButton
           onClick={regenerate}
           title={localize('com_ui_regenerate')}
@@ -361,10 +361,10 @@ const HoverButtons = ({
           isLast={isLast}
           className="active"
         />
-      )}
+      )} */}
 
       {/* Generate PDF Report Button - Hidden for user messages */}
-      {conversationId && conversationId !== 'new' && messages && messages.length > 0 && !isCreatedByUser && (
+      {/* {conversationId && conversationId !== 'new' && messages && messages.length > 0 && !isCreatedByUser && (
         <HoverButton
           onClick={() => setShowPDFModal(true)}
           title="Generate PDF Report"
@@ -379,7 +379,7 @@ const HoverButtons = ({
           isLast={isLast}
           className="active"
         />
-      )}
+      )} */}
 
       {/* Continue Button */}
       {continueSupported && (
@@ -393,13 +393,13 @@ const HoverButtons = ({
       )}
 
       {/* PDF Modal */}
-      {showPDFModal && conversationId && messages && (
+      {/* {showPDFModal && conversationId && messages && (
         <SavePDFModal
           conversationId={conversationId}
           pdfContent={generatePDFContentFromSelectedMessage(message, messages, fileMap)}
           onClose={() => setShowPDFModal(false)}
         />
-      )}
+      )} */}
     </div>
   );
 };

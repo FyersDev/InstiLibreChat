@@ -61,9 +61,9 @@ export const useEndpoints = ({
     const result: EModelEndpoint[] = [];
     for (let i = 0; i < endpoints.length; i++) {
       // Only allow bedrock endpoints - comment out all other endpoints
-      if (endpoints[i] !== EModelEndpoint.bedrock) {
-        continue;
-      }
+      //if (endpoints[i] !== EModelEndpoint.bedrock) {
+      //  continue;
+      //}
       // if (endpoints[i] === EModelEndpoint.agents && !hasAgentAccess) {
       //   continue;
       // }

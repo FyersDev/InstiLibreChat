@@ -34,27 +34,26 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
 
   return (
     <>
-      <TooltipAnchor
-        render={
-          <button
-            disabled={isDisabled}
-            onClick={handleClick}
-            id="tools-dropdown-button"
-            aria-label="Select Documents"
-            className={cn(
-              'flex items-center justify-center rounded-lg px-0.5 py-2 bg-white dark:bg-gray-800 transition-colors hover:bg-gray-50 dark:hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
-              isDisabled && 'opacity-50 cursor-not-allowed hover:bg-transparent',
-            )}
-          >
-            <span className="text-sm font-normal text-[#2434E7] whitespace-nowrap">
-              Select Documents
-            </span>
-          </button>
-        }
-        id="tools-dropdown-button"
-        description={localize('com_ui_tools')}
-        disabled={isDisabled}
-      />
+     <TooltipAnchor
+  render={
+    <button
+      disabled={isDisabled}
+      onClick={handleClick}
+      id="tools-dropdown-button"
+      aria-label="Select Documents"
+      className={cn(
+        'flex items-center justify-center rounded-lg px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 whitespace-nowrap',
+        'bg-[#F7F7F8] hover:bg-[#F7F7F8] dark:bg-[#2A2A2A] dark:hover:bg-[#2A2A2A]',
+        isDisabled && 'opacity-50 cursor-not-allowed hover:bg-[#F7F7F8] dark:hover:bg-[#2A2A2A]',
+      )}
+    >
+      Select Documents
+    </button>
+  }
+  id="tools-dropdown-button"
+  description={localize('com_ui_tools')}
+  disabled={isDisabled}
+/>
       <DocumentSelector
         isOpen={showDocumentSelector}
         onOpenChange={setShowDocumentSelector}

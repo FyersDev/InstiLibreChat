@@ -151,12 +151,13 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
         <h1 
           className="text-[32px] font-semibold leading-[40px] text-[#2A2A2A] dark:text-white text-center"
         >
-          Analyse the markets with FIA
+          {/* Analyse the markets with FIA */}
+          What can I help you with ?
         </h1>
         
         {/* Subtitle */}
         <div className="text-[16px] font-normal leading-[24px] text-[#666666] dark:text-gray-400 text-center max-w-2xl">
-          Get institutional-grade insights, analyse documents, and explore <br/>market data with the power of AI.
+          {/* Get institutional-grade insights, analyse documents, and explore <br/>market data with the power of AI. */}
         </div>
       </div>
     </div>

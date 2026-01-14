@@ -35,6 +35,7 @@ interface FileNode {
   storage_key?: string;
   created_by_name?: string;
   uploaded_at?: string;
+  status?: string;
 }
 
 export default function DocumentSelector({
@@ -99,7 +100,7 @@ export default function DocumentSelector({
   const currentFolder = useMemo(() => {
     const reportsFolder = findReportsFolder(allFolders);
     const reportsFolderId = reportsFolder?.id;
-    
+
     // Helper function to recursively filter out Reports folder
     const filterReportsFolder = (folders: FolderNode[]): FolderNode[] => {
       return folders
@@ -109,7 +110,7 @@ export default function DocumentSelector({
           children: folder.children ? filterReportsFolder(folder.children) : undefined,
         }));
     };
-    
+
     if (!currentFolderId) {
       // Root level - return all root folders except Reports
       const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
@@ -118,6 +119,7 @@ export default function DocumentSelector({
         files: [] as FileNode[],
       };
     }
+
     const folder = findFolder(allFolders, currentFolderId);
     const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
     return {
@@ -125,7 +127,6 @@ export default function DocumentSelector({
       files: folder?.files || [],
     };
   }, [currentFolderId, allFolders]);
-
 
   const loadFolders = useCallback(async () => {
     setLoading(true);
@@ -139,7 +140,7 @@ export default function DocumentSelector({
       // Check if user is superadmin (handle both boolean true and string "true")
       const isSuperAdmin = userInfo?.is_super_admin === true || userInfo?.is_super_admin === 'true' || userInfo?.is_super_admin === 1;
       const userOrgId = userInfo?.org_id || null;
-      
+
       // For non-superadmins, org_id is required
       if (!isSuperAdmin) {
         if (!userOrgId) {
@@ -149,10 +150,9 @@ export default function DocumentSelector({
           return;
         }
       }
-      
+
       // Determine which org_id to use
       let orgIdToUse: string | null = null;
-      
       if (isSuperAdmin) {
         // For superadmins, try to use their org_id if available
         // If not available, try to get the first organization
@@ -173,7 +173,7 @@ export default function DocumentSelector({
       } else {
         orgIdToUse = userOrgId;
       }
-      
+
       // If still no org_id and we need one, show error
       if (!orgIdToUse) {
         if (isSuperAdmin) {
@@ -185,7 +185,7 @@ export default function DocumentSelector({
         setLoading(false);
         return;
       }
-      
+
       const data = await saasApi.getFolderTree(orgIdToUse);
       setAllFolders(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -213,11 +213,9 @@ export default function DocumentSelector({
     if (isOpen && !loading) {
       const convoId = conversationId || Constants.NEW_CONVO;
       let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
-      
       if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
         documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
       }
-      
       if (documentDataStr) {
         try {
           const documentData = JSON.parse(documentDataStr);
@@ -283,7 +281,7 @@ export default function DocumentSelector({
       document_id: file.document_id,
       name: file.name,
       file_path: file.storage_key || file.name,
-      status: 'Completed', // Assume completed if in folder structure
+      status: file.status || 'Completed',
       uploaded_at: file.uploaded_at || file.created_at,
       owner: file.created_by_name || 'System',
     };
@@ -312,7 +310,7 @@ export default function DocumentSelector({
   const handleConfirm = useCallback(() => {
     const allDocs = getAllDocuments(allFolders);
     const selected = allDocs.filter((doc) => selectedDocuments.has(doc.document_id.toString()));
-    
+
     // Store selected documents in localStorage for document_search MCP
     if (conversationId) {
       const documentsToStore = selected.map(doc => ({
@@ -321,14 +319,12 @@ export default function DocumentSelector({
         file_path: doc.file_path,
         status: doc.status,
       }));
-      
       console.log('[DocumentSelector] Storing documents in localStorage:', {
         conversationId,
         key: `persona_documents_${conversationId}`,
         documents: documentsToStore,
         document_ids: documentsToStore.map(d => d.document_id),
       });
-      
       localStorage.setItem(
         `persona_documents_${conversationId}`,
         JSON.stringify({
@@ -336,10 +332,9 @@ export default function DocumentSelector({
           timestamp: Date.now(),
         }),
       );
-      
       // Dispatch custom event to notify other components (like SelectedDocuments)
       window.dispatchEvent(new Event('documentsUpdated'));
-      
+
       // Auto-select document-search MCP when documents are selected
       if (selected.length > 0) {
         const currentMCPValues = mcpServerManager.mcpValues || [];
@@ -354,7 +349,6 @@ export default function DocumentSelector({
         }
       }
     }
-    
     onConfirm(selected);
     onOpenChange(false);
   }, [allFolders, selectedDocuments, conversationId, onConfirm, onOpenChange, mcpServerManager, getAllDocuments]);
@@ -455,7 +449,6 @@ export default function DocumentSelector({
               {error}
             </div>
           )}
-
           <div className="flex-1 overflow-y-auto min-h-0">
             {loading ? (
               <div className="flex items-center justify-center h-64">
@@ -470,19 +463,19 @@ export default function DocumentSelector({
                 <table className="w-full table-fixed border-separate border-spacing-0">
                   <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700/50 z-10">
                     <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '40%' }}>
+                      <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '35%' }}>
                         Name
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '15%' }}>
+                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '13%' }}>
                         Owner
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '12%' }}>
+                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '10%' }}>
                         Format
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '18%' }}>
+                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '15%' }}>
                         Upload date
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '15%' }}>
+                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '12%' }}>
                         Status
                       </th>
                     </tr>
@@ -536,18 +529,23 @@ export default function DocumentSelector({
                         </tr>
                       );
                     })}
-                    {/* Documents - selectable */}
+                    {/* Documents - selectable only if Completed */}
                     {currentFiles.map((file) => {
                       if (!file.document_id) return null;
                       const isSelected = selectedDocuments.has(file.document_id.toString());
+                      const fileStatus = file.status || 'Completed';
+                      const isCompleted = fileStatus.toLowerCase() === 'completed' || fileStatus.toLowerCase() === 'indexed';
+                      const isDisabled = !isCompleted;
+                      
                       return (
                         <tr
                           key={file.document_id}
                           className={cn(
-                            'group transition-colors cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
+                            'group transition-colors',
+                            isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
                             isSelected && 'bg-blue-50 dark:bg-blue-900/20',
                           )}
-                          onClick={() => handleToggleSelection(file.document_id!)}
+                          onClick={() => !isDisabled && handleToggleSelection(file.document_id!)}
                         >
                           <td className={cn(
                             'sticky left-0 py-4 px-6 transition-colors',
@@ -559,12 +557,13 @@ export default function DocumentSelector({
                               <div
                                 className={cn(
                                   'w-5 h-5 border-2 rounded flex items-center justify-center flex-shrink-0',
+                                  isDisabled ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700' :
                                   isSelected
                                     ? 'border-blue-500 bg-blue-500'
                                     : 'border-gray-300 dark:border-gray-600',
                                 )}
                               >
-                                {isSelected && <Check className="h-3 w-3 text-white" />}
+                                {isSelected && !isDisabled && <Check className="h-3 w-3 text-white" />}
                               </div>
                               <div className="flex items-center gap-2 min-w-0">
                                 <img 
@@ -602,10 +601,10 @@ export default function DocumentSelector({
                             <span
                               className={cn(
                                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
-                                getStatusColor('Completed'),
+                                getStatusColor(fileStatus),
                               )}
                             >
-                              Completed
+                              {fileStatus.charAt(0).toUpperCase() + fileStatus.slice(1).toLowerCase()}
                             </span>
                           </td>
                         </tr>

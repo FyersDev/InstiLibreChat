@@ -63,7 +63,7 @@ export async function translateKeyPhrase({ key, baselineTranslation, translation
     const requestOptions: a.Anthropic.MessageCreateParamsNonStreaming = {
       model,
       temperature: 0.3,
-      max_tokens: 1024,
+      max_tokens: 4000,
       system,
       stop_sequences: ['\n\nHuman:', '\n\nAssistant', '</function_calls>'],
       messages: [message],

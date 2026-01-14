@@ -250,14 +250,14 @@ export default function useSSE(
         }
       }
 
-      console.log('error in server stream.');
+      console.log("bedrock message", e);
+      console.log('bedrock message details', e.data);
       (startupConfig?.balance?.enabled ?? false) && balanceQuery.refetch();
 
       let data: TResData | undefined = undefined;
       try {
         data = JSON.parse(e.data) as TResData;
       } catch (error) {
-        console.error(error);
         console.log(e);
         setIsSubmitting(false);
       }
