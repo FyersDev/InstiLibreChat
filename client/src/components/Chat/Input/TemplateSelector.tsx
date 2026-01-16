@@ -219,12 +219,11 @@ export default function TemplateSelector() {
   const menuItems = [
     ...templates.map((template) => {
       const isSelected = getIsTemplateSelected(template);
-      const displayLabel = `${template.name}${isSelected ? ' ✓' : ''}`;
       
       return {
-        label: displayLabel,
+        label: template.name,
         onClick: () => handleSelectTemplate(template),
-        icon: isSelected ? '✓' : '',
+        icon: isSelected ? '✓' : undefined,
         key: `template-${template.name}`,
       };
     }),
@@ -244,7 +243,7 @@ export default function TemplateSelector() {
       separate: true,
       key: 'separator',
     }, {
-      label: ' Reset to default',
+      label: 'Reset to default',
       onClick: handleClearTemplate,
       key: 'clear-template',
     }] : []),
@@ -284,24 +283,25 @@ export default function TemplateSelector() {
   }
 
   return (
-    <div className="relative">
-      <DropdownPopup
-        portal={false}
-        menuId="template-selector"
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        trigger={
-          <Ariakit.MenuButton
-            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
-          >
-            <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
-            <span>{buttonText}</span>
-            <ChevronDown className="h-4 w-4" />
-          </Ariakit.MenuButton>
-        }
-        items={menuItems}
-        className="absolute left-0 top-full mt-2 min-w-[200px] z-50"
-      />
-    </div>
+    <DropdownPopup
+      portal={true}
+      modal={true}
+      sameWidth={true}
+      gutter={4}
+      menuId="template-selector"
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      trigger={
+        <Ariakit.MenuButton
+          style={{ height: '34px' }}
+          className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
+        >
+          <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+          <span>{buttonText}</span>
+          <ChevronDown className="h-4 w-4" />
+        </Ariakit.MenuButton>
+      }
+      items={menuItems}
+    />
   );
 }

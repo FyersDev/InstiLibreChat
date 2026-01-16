@@ -66,7 +66,7 @@ export default function OrganizationsView({
         <table className="min-w-full border-separate border-spacing-0">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name
               </th>
               <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -101,7 +101,7 @@ export default function OrganizationsView({
                   onClick={() => onOpenUsers(org.id)} // ✅ OPEN USERS TAB
                   className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
                 >
-                  <td className="sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     <div className="flex items-center gap-3">
                       {org.logo_url?.startsWith('data:') && (
                         <img
@@ -118,7 +118,7 @@ export default function OrganizationsView({
                     </div>
                   </td>
 
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {org.slug}
                   </td>
 
@@ -134,11 +134,11 @@ export default function OrganizationsView({
                     </span>
                   </td>
 
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {org.current_users || 0} / {org.max_users || 0}
                   </td>
 
-                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                     {new Date(org.created_at).toLocaleDateString()}
                   </td>
 

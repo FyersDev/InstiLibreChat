@@ -872,26 +872,26 @@ export default function ResourcesRoute() {
                                 >
                                   <div className="py-1">
                                     {canRenameFolder && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          // Set the folder to edit directly
-                                          setFolderToEdit(folder);
-                                          setShowEditFolderModal(true);
-                                          setSelectedItem(null);
-                                          setDropdownPosition(null);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                      >
-                                        <img 
-                                          src="/assets/edit.svg" 
-                                          alt="Edit" 
-                                          className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                        />
-                                        Rename
-                                      </button>
+                                    <button
+                                      type="button"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        e.preventDefault();
+                                        // Set the folder to edit directly
+                                        setFolderToEdit(folder);
+                                        setShowEditFolderModal(true);
+                                        setSelectedItem(null);
+                                        setDropdownPosition(null);
+                                      }}
+                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    >
+                                      <img 
+                                        src="/assets/edit.svg" 
+                                        alt="Edit" 
+                                        className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                                      />
+                                      Rename
+                                    </button>
                                     )}
                                     <button
                                       type="button"

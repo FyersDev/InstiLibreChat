@@ -41,10 +41,10 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
       onClick={handleClick}
       id="tools-dropdown-button"
       aria-label="Select Documents"
+      style={{ height: '34px' }}
       className={cn(
-        'flex items-center justify-center rounded-lg px-2 py-1.5 border border-gray-300 dark:border-gray-600 text-gray-900 dark:text-gray-100 font-medium text-sm transition-colors focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50 whitespace-nowrap',
-        'bg-[#F7F7F8] hover:bg-[#F7F7F8] dark:bg-[#2A2A2A] dark:hover:bg-[#2A2A2A]',
-        isDisabled && 'opacity-50 cursor-not-allowed hover:bg-[#F7F7F8] dark:hover:bg-[#2A2A2A]',
+        'flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover',
+        isDisabled && 'opacity-50 cursor-not-allowed',
       )}
     >
       Select Documents

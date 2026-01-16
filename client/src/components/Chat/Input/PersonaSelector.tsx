@@ -196,7 +196,7 @@ export default function PersonaSelector() {
       separate: true,
       key: 'separator',
     }, {
-      label: '🗑️ Reset to default',
+      label: 'Reset to default',
       onClick: handleClearPersona,
       key: 'clear-persona',
     }] : []),
@@ -236,24 +236,25 @@ export default function PersonaSelector() {
   }
 
   return (
-    <div className="relative">
-      <DropdownPopup
-        portal={false}
-        menuId="persona-selector"
-        isOpen={isOpen}
-        setIsOpen={setIsOpen}
-        trigger={
-          <Ariakit.MenuButton
-            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
-          >
-            <User className="h-4 w-4" />
-            <span>{buttonText}</span>
-            <ChevronDown className="h-4 w-4" />
-          </Ariakit.MenuButton>
-        }
-        items={menuItems}
-        className="absolute left-0 top-full mt-2 min-w-[200px] z-50"
-      />
-    </div>
+    <DropdownPopup
+      portal={true}
+      modal={true}
+      sameWidth={true}
+      gutter={4}
+      menuId="persona-selector"
+      isOpen={isOpen}
+      setIsOpen={setIsOpen}
+      trigger={
+        <Ariakit.MenuButton
+          style={{ height: '34px' }}
+          className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
+        >
+          <User className="h-4 w-4" />
+          <span>{buttonText}</span>
+          <ChevronDown className="h-4 w-4" />
+        </Ariakit.MenuButton>
+      }
+      items={menuItems}
+    />
   );
 }
