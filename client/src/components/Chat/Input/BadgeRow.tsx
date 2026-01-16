@@ -20,9 +20,8 @@ import ToolDialogs from './ToolDialogs';
 import FileSearch from './FileSearch';
 import Artifacts from './Artifacts';
 import WebSearch from './WebSearch';
-import SelectedDocuments from '../../Documents/SelectedDocuments';
-import SelectedPersona from '../../Personas/SelectedPersona';
-import SelectedTemplate from '../../Templates/SelectedTemplate';
+import PersonaSelector from './PersonaSelector';
+import TemplateSelector from './TemplateSelector';
 import store from '~/store';
 
 interface BadgeRowProps {
@@ -370,9 +369,8 @@ function BadgeRow({
             <CodeInterpreter />
             <FileSearch />
             <Artifacts />
-            <SelectedPersona />
-            <SelectedTemplate />
-            <SelectedDocuments />
+            <PersonaSelector />
+            <TemplateSelector />
           </>
         )}
         {ghostBadge && (

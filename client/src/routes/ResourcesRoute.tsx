@@ -19,6 +19,7 @@ interface FolderNode {
   parent_id?: string;
   children?: FolderNode[];
   files?: FileNode[];
+  created_by?: string;
   created_by_name?: string;
   created_at: string;
 }
@@ -31,6 +32,7 @@ interface FileNode {
   size_bytes?: number;
   created_at: string;
   storage_key?: string;
+  created_by?: string;
   created_by_name?: string;
 }
 
@@ -79,6 +81,7 @@ export default function ResourcesRoute() {
   const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showEditFolderModal, setShowEditFolderModal] = useState(false);
+  const [folderToEdit, setFolderToEdit] = useState<FolderNode | null>(null);
   const [showUploadFileModal, setShowUploadFileModal] = useState(false);
   const [showEditFileModal, setShowEditFileModal] = useState(false);
   const [permissionManager, setPermissionManager] = useState<PermissionManager | null>(null);
@@ -91,6 +94,7 @@ export default function ResourcesRoute() {
 
   const isSuperAdmin = userInfo?.is_super_admin || false;
   const userOrgId = userInfo?.org_id || null;
+  const isOrgAdmin = userInfo?.org_role === 'admin';
 
   useEffect(() => {
     loadUserInfo();
@@ -294,13 +298,80 @@ export default function ResourcesRoute() {
 
   // Get current folder and its contents
   const currentFolder = useMemo(() => {
+    const currentUserId = (userInfo?.user_id || userInfo?.id)?.toString();
+    
+    // Helper function to check if folder should be shown
+    const shouldShowFolder = (folder: FolderNode): boolean => {
+      const folderNameLower = folder.name.toLowerCase();
+      
+      // "FYERS Resources" is ALWAYS visible to all users (universal folder)
+      if (folderNameLower === 'fyers resources') {
+        return true;
+      }
+      
+      // "Resources" folder is ALWAYS shown (default folder for user uploads from chatbox)
+      // It will be created automatically on first upload if it doesn't exist
+      if (folderNameLower === 'resources') {
+        return true;
+      }
+      
+      // Super admins see ALL folders in their organization
+      if (isSuperAdmin) {
+        return true;
+      }
+      
+      // Org admins see ALL folders in their organization
+      if (isOrgAdmin) {
+        return true;
+      }
+      
+      // Regular users see only folders they created
+      const folderCreatedBy = folder.created_by?.toString();
+      return folderCreatedBy === currentUserId;
+    };
+
+    // Helper function to filter folders recursively
+    const filterFoldersByUser = (folders: FolderNode[]): FolderNode[] => {
+      return folders
+        .filter(shouldShowFolder)
+        .map(folder => ({
+          ...folder,
+          children: folder.children ? filterFoldersByUser(folder.children) : undefined,
+          // File visibility rules:
+          // - "FYERS Resources": All users see ALL files (universal folder)
+          // - Other folders: Org admins see all files, regular users see only their own
+          files: folder.files ? folder.files.filter(file => {
+            const folderNameLower = folder.name.toLowerCase();
+            // FYERS Resources is universal - all users see all files
+            if (folderNameLower === 'fyers resources') {
+              return true;
+            }
+            // Super admins see all files
+            if (isSuperAdmin) {
+              return true;
+            }
+            // Org admins see all files in their org
+            if (isOrgAdmin) {
+              return true;
+            }
+            // Regular users see only their own files
+            const fileCreatedBy = file.created_by?.toString();
+            return fileCreatedBy === currentUserId;
+          }) : undefined,
+        }));
+    };
+
     // If Reports tab is active, show Reports folder content
     if (activeTab === 'reports') {
       const reportsFolder = findReportsFolder(allFolders);
       if (reportsFolder) {
         return {
-          folders: reportsFolder.children || [],
-          files: reportsFolder.files || [],
+          folders: filterFoldersByUser(reportsFolder.children || []),
+          files: (reportsFolder.files || []).filter(file => {
+            if (isSuperAdmin || isOrgAdmin) return true;
+            const fileCreatedBy = file.created_by?.toString();
+            return fileCreatedBy === currentUserId;
+          }),
         };
       }
       return {
@@ -325,21 +396,56 @@ export default function ResourcesRoute() {
     };
     
     if (!currentFolderId) {
-      // Root level - return all root folders except Reports
+      // Root level - return all root folders except Reports, filtered by user
+      // Backend already filters by org_id, so all folders here are from the same organization
       const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
+      console.log('[ResourcesRoute] Root folders from backend (same org):', filteredRootFolders.map(f => ({ name: f.name, id: f.id, created_by: f.created_by })));
+      console.log('[ResourcesRoute] Current user:', { currentUserId, isOrgAdmin, isSuperAdmin });
+      const userFilteredFolders = filterFoldersByUser(filteredRootFolders);
+      console.log('[ResourcesRoute] Folders visible to user:', userFilteredFolders.map(f => ({ name: f.name, id: f.id })));
       return {
-        folders: filterReportsFolder(filteredRootFolders),
+        folders: userFilteredFolders,
         files: [] as FileNode[],
       };
     }
     const folder = findFolder(allFolders, currentFolderId);
-    // Filter out Reports folder from subfolders recursively
-    const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
+    if (!folder) {
+      return {
+        folders: [],
+        files: [],
+      };
+    }
+    
+    // Filter out Reports folder from subfolders recursively and filter by user
+    const filteredChildren = folder.children ? filterFoldersByUser(filterReportsFolder(folder.children)) : [];
+    
+    // File visibility for current folder:
+    // - "FYERS Resources": All users see all files (universal)
+    // - Other folders: Org admins see all files, regular users see only their own
+    const folderNameLower = folder.name.toLowerCase();
+    const userFilteredFiles = folderNameLower === 'fyers resources'
+      ? (folder.files || []) // FYERS Resources: all users see all files
+      : isOrgAdmin 
+        ? (folder.files || []) // Org admins see all files
+        : (folder.files || []).filter(file => file.created_by === currentUserId); // Regular users see their own
+    
+    // Debug logging for org admins
+    if (isOrgAdmin) {
+      console.log('Org Admin - Folder files:', {
+        folderName: folder.name,
+        folderId: folder.id,
+        totalFilesInFolder: folder.files?.length || 0,
+        filesAfterFilter: userFilteredFiles.length,
+        allFoldersCount: allFolders.length,
+        isOrgAdmin,
+      });
+    }
+    
     return {
       folders: filteredChildren,
-      files: folder?.files || [],
+      files: userFilteredFiles,
     };
-  }, [currentFolderId, allFolders, activeTab]);
+  }, [currentFolderId, allFolders, activeTab, userInfo, isOrgAdmin]);
 
   // Filter folders and files based on search query
   const filteredContent = useMemo(() => {
@@ -378,6 +484,11 @@ export default function ResourcesRoute() {
   };
 
   const handleDeleteFolder = async (folder: FolderNode) => {
+    const folderNameLower = folder.name.toLowerCase();
+    const isFyersResources = folderNameLower === 'fyers resources';
+    const isResources = folderNameLower === 'resources';
+    
+    // Users can delete Fyers Resources folder but cannot rename it
     if (!confirm(`Delete folder "${folder.name}" and all its contents?`)) return;
     try {
       await saasApi.deleteFolder(folder.id);
@@ -456,8 +567,6 @@ export default function ResourcesRoute() {
     }
   };
 
-
-  const isOrgAdmin = userInfo?.org_role === 'admin';
   const hasFolderPermission = permissionManager?.canCreate('folders') || false;
   const hasFilePermission = permissionManager?.canCreate('files') || false;
   const hasFileUpdatePermission = permissionManager?.canUpdate('files') || false;
@@ -669,6 +778,25 @@ export default function ResourcesRoute() {
                 {/* Folders */}
                 {filteredContent.folders.map((folder) => {
                   const folderFileCount = folder.files?.length || 0;
+                  const folderNameLower = folder.name.toLowerCase();
+                  const isFyersResources = folderNameLower === 'fyers resources';
+                  const isResources = folderNameLower === 'resources';
+                  const currentUserId = userInfo?.user_id || userInfo?.id;
+                  
+                  // FYERS Resources folder restrictions:
+                  // - Only super admin can rename/delete FYERS Resources folder
+                  // Resources folder (for user uploads) can be deleted by users when empty
+                  // Other folders follow normal permissions
+                  const canModifyFolder = isFyersResources
+                    ? isSuperAdmin // Only super admin can modify FYERS Resources
+                    : isSuperAdmin || isOrgAdmin || folder.created_by === currentUserId; // Others follow normal rules
+                  
+                  // Check if folder can be renamed
+                  // - FYERS Resources: only superadmin can rename
+                  // - Resources: users cannot rename (it's the default folder)
+                  const canRenameFolder = isFyersResources 
+                    ? isSuperAdmin // Only super admin can rename FYERS Resources
+                    : !isResources && canModifyFolder; // Resources folder cannot be renamed by anyone
                   return (
                     <tr
                       key={folder.id}
@@ -698,7 +826,7 @@ export default function ResourcesRoute() {
                       </td>
                       <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
-                          {canManage && (
+                          {canModifyFolder && (
                             <div className="relative">
                               <button
                                 ref={(el) => {
@@ -743,24 +871,28 @@ export default function ResourcesRoute() {
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="py-1">
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        setShowEditFolderModal(true);
-                                        setSelectedItem(null);
-                                        setDropdownPosition(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                    >
-                                      <img 
-                                        src="/assets/edit.svg" 
-                                        alt="Edit" 
-                                        className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                      />
-                                      Rename
-                                    </button>
+                                    {canRenameFolder && (
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          // Set the folder to edit directly
+                                          setFolderToEdit(folder);
+                                          setShowEditFolderModal(true);
+                                          setSelectedItem(null);
+                                          setDropdownPosition(null);
+                                        }}
+                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                      >
+                                        <img 
+                                          src="/assets/edit.svg" 
+                                          alt="Edit" 
+                                          className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+                                        />
+                                        Rename
+                                      </button>
+                                    )}
                                     <button
                                       type="button"
                                       onClick={(e) => {
@@ -793,6 +925,18 @@ export default function ResourcesRoute() {
                 {/* Files */}
                 {filteredContent.files.map((file) => {
                   const FileIcon = getFileIcon(file.extension);
+                  const currentUserId = userInfo?.user_id || userInfo?.id;
+                  
+                  // File modification permissions:
+                  // - Files in "FYERS Resources": only super admin can delete
+                  // - Files in other folders: super admin, org admins, or file creator can delete
+                  const currentFolderObj = findFolder(allFolders, currentFolderId);
+                  const currentFolderNameLower = currentFolderObj?.name.toLowerCase() || '';
+                  const isInFyersResources = currentFolderNameLower === 'fyers resources';
+                  
+                  const canModifyFile = isInFyersResources
+                    ? isSuperAdmin // Only super admin can delete files in FYERS Resources
+                    : (isSuperAdmin || isOrgAdmin || file.created_by === currentUserId); // Normal rules for other folders
                   return (
                     <tr
                       key={file.id}
@@ -837,7 +981,7 @@ export default function ResourcesRoute() {
                               className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                             />
                           </button>
-                          {canManageFiles && (
+                          {canModifyFile && (
                             <div className="relative">
                               <button
                                 ref={(el) => {
@@ -860,7 +1004,7 @@ export default function ResourcesRoute() {
                                     if (button) {
                                       const rect = button.getBoundingClientRect();
                                       setDropdownPosition({
-                                        top: rect.bottom + 4, // Position below button
+                                        top: rect.bottom + 4,
                                         right: window.innerWidth - rect.right,
                                       });
                                     }
@@ -882,28 +1026,8 @@ export default function ResourcesRoute() {
                                   onClick={(e) => e.stopPropagation()}
                                 >
                                   <div className="py-1">
-                                    {(isSuperAdmin || isOrgAdmin || hasFileUpdatePermission) && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          localStorage.setItem('editing_file_id', String(file.id));
-                                          setShowEditFileModal(true);
-                                          setSelectedItem(null);
-                                          setDropdownPosition(null);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                      >
-                                        <img 
-                                          src="/assets/edit.svg" 
-                                          alt="Edit" 
-                                          className="h-4 w-4 opacity-70 dark:invert dark:opacity-70" 
-                                        />
-                                        Rename
-                                      </button>
-                                    )}
-                                    {(isSuperAdmin || isOrgAdmin || hasFileDeletePermission) && (
+                                    {/* Rename option removed - users cannot rename documents */}
+                                    {canModifyFile && (
                                       <button
                                         type="button"
                                         onClick={(e) => {
@@ -946,22 +1070,25 @@ export default function ResourcesRoute() {
           parentId={currentFolderId || undefined}
           orgId={isSuperAdmin ? selectedOrgId : userOrgId}
           onClose={() => setShowCreateFolderModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowCreateFolderModal(false);
-            loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
+            // Reload folders to show the newly created folder
+            await loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
           }}
         />
       )}
 
-      {showEditFolderModal && (
+      {showEditFolderModal && folderToEdit && (
         <EditFolderModal
-          folder={selectedItem?.type === 'folder' ? (findFolder(allFolders, typeof selectedItem.id === 'string' ? selectedItem.id : null) || { id: '', name: '', path: '' }) : { id: '', name: '', path: '' }}
+          folder={folderToEdit}
           onClose={() => {
             setShowEditFolderModal(false);
+            setFolderToEdit(null);
             setSelectedItem(null);
           }}
           onSuccess={() => {
             setShowEditFolderModal(false);
+            setFolderToEdit(null);
             setSelectedItem(null);
             // Reload folders to get updated names
             loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
@@ -974,10 +1101,14 @@ export default function ResourcesRoute() {
           folderId={currentFolderId || undefined}
           orgId={isSuperAdmin ? selectedOrgId : userOrgId}
           folders={allFolders}
+          isSuperAdmin={isSuperAdmin}
+          isOrgAdmin={isOrgAdmin}
+          currentUserId={(userInfo?.user_id || userInfo?.id)?.toString()}
           onClose={() => setShowUploadFileModal(false)}
-          onSuccess={() => {
+          onSuccess={async () => {
             setShowUploadFileModal(false);
-            loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
+            // Reload folders to show newly uploaded files
+            await loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
           }}
         />
       )}

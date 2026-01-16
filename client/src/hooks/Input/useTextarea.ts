@@ -42,7 +42,7 @@ export default function useTextarea({
   const checkHealth = useInteractionHealthCheck();
   const enterToSend = useRecoilValue(store.enterToSend);
 
-  const { index, conversation, isSubmitting, filesLoading, latestMessage, setFilesLoading } =
+  const { index, conversation, isSubmitting, filesLoading, latestMessage, setFilesLoading, getMessages } =
     useChatContext();
   const [activePrompt, setActivePrompt] = useRecoilState(store.activePromptByIndex(index));
 
@@ -101,9 +101,12 @@ export default function useTextarea({
           ? getEntityName({ name: entityName, isAgent, localize })
           : getSender(conversation as TEndpointOption);
 
-      return `${localize('com_endpoint_message_new', {
-        0: sender ? sender : localize('com_endpoint_ai'),
-      })}`;
+      // Check if there are messages to determine Ask vs Reply
+      const messages = getMessages();
+      const hasMessages = Array.isArray(messages) && messages.length > 0;
+      const actionWord = hasMessages ? 'Reply' : 'Ask';
+      
+      return `${actionWord} ${sender ? sender : localize('com_endpoint_ai')}`;
     };
 
     const placeholder = getPlaceholderText();
@@ -138,6 +141,8 @@ export default function useTextarea({
     conversation,
     latestMessage,
     isNotAppendable,
+    getMessages,
+    isSubmitting,
   ]);
 
   const handleKeyDown = useCallback(

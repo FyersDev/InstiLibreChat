@@ -19,20 +19,41 @@ export default function EditFolderModal({ folder, onClose, onSuccess }: EditFold
 
   useEffect(() => {
     setFormData({ name: folder.name || '' });
+    // Debug: Log folder info to help diagnose issues
+    if (folder.id) {
+      console.log('EditFolderModal - Folder info:', {
+        id: folder.id,
+        name: folder.name,
+        created_by: folder.created_by,
+      });
+    }
   }, [folder]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Validate folder ID exists
+    if (!folder.id) {
+      setError('Invalid folder: missing folder ID');
+      console.error('EditFolderModal - Folder ID is missing:', folder);
+      return;
+    }
+    
     setLoading(true);
     setError(null);
 
     try {
+      console.log('EditFolderModal - Updating folder:', { id: folder.id, name: formData.name });
       await saasApi.updateFolder(folder.id, {
         name: formData.name,
       });
       onSuccess();
+      onClose();
     } catch (err: any) {
-      setError(err.message || 'Failed to update folder');
+      console.error('Error updating folder:', err);
+      // Extract error message from various possible formats
+      const errorMessage = err?.message || err?.error || err?.response?.data?.message || 'Failed to update folder';
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }

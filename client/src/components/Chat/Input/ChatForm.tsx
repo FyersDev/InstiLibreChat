@@ -74,7 +74,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     filesLoading,
     newConversation,
     handleStopGenerating,
-    getMessages,
   } = useChatContext();
   const {
     addedIndex,
@@ -99,14 +98,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     () => (chatDirection != null ? chatDirection?.toLowerCase() === 'rtl' : false),
     [chatDirection],
   );
-  
-  // Determine placeholder text based on whether there are messages in the conversation
-  const placeholderText = useMemo(() => {
-    const messages = getMessages();
-    const hasMessages = messages && messages.length > 0;
-    return hasMessages ? 'Reply FIA' : 'Ask FIA';
-  }, [getMessages]);
-  
   const invalidAssistant = useMemo(
     () =>
       isAssistantsEndpoint(endpoint) &&
@@ -206,7 +197,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const baseClasses = useMemo(
     () =>
       cn(
-        'px-1.5 py-3 m-0 w-full resize-none font-inter',
+        'px-1.5 pt-3 pb-1 m-0 w-full resize-none font-inter',
         'placeholder-gray-400 dark:placeholder-gray-500',
         'bg-white dark:bg-gray-800',
         'text-gray-900 dark:text-gray-100',
@@ -228,7 +219,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           !isSubmitting &&
           conversation?.messages?.length === 0
           ? 'transition-all duration-200 sm:mb-28'
-          : 'sm:mb-10',
+          : 'sm:mb-6',
       )}
     >
       <div className="relative flex h-full flex-1 items-stretch md:flex-col">
@@ -275,7 +266,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                 <div className="relative flex-1">
                   <TextareaAutosize
                     {...registerProps}
-                    placeholder={placeholderText}
                     ref={(e) => {
                       ref(e);
                       (textAreaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current =
@@ -327,7 +317,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
             )}
             <div
               className={cn(
-                '@container items-between flex gap-2 pb-2 px-3',
+                '@container items-between flex gap-2 pt-1 pb-1 px-3',
                 isRTL ? 'flex-row-reverse' : 'flex-row',
               )}
             >

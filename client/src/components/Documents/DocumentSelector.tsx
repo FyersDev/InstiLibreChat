@@ -21,6 +21,7 @@ interface FolderNode {
   parent_id?: string;
   children?: FolderNode[];
   files?: FileNode[];
+  created_by?: string;
   created_by_name?: string;
   created_at: string;
 }
@@ -33,6 +34,7 @@ interface FileNode {
   size_bytes?: number;
   created_at: string;
   storage_key?: string;
+  created_by?: string;
   created_by_name?: string;
   uploaded_at?: string;
   status?: string;
@@ -100,33 +102,96 @@ export default function DocumentSelector({
   const currentFolder = useMemo(() => {
     const reportsFolder = findReportsFolder(allFolders);
     const reportsFolderId = reportsFolder?.id;
+    
+    // Get current user info for filtering
+    const currentUserId = (userInfo?.user_id || userInfo?.id)?.toString();
+    const isSuperAdmin = userInfo?.is_super_admin === true || userInfo?.is_super_admin === 'true' || userInfo?.is_super_admin === 1;
+    const isOrgAdmin = userInfo?.org_role === 'admin';
 
-    // Helper function to recursively filter out Reports folder
-    const filterReportsFolder = (folders: FolderNode[]): FolderNode[] => {
+    // Helper function to check if folder should be shown
+    const shouldShowFolder = (folder: FolderNode): boolean => {
+      const folderNameLower = folder.name.toLowerCase();
+      
+      // "FYERS Resources" is ALWAYS visible to all users (universal folder)
+      if (folderNameLower === 'fyers resources') {
+        return true;
+      }
+      
+      // "Resources" folder is ALWAYS shown (default folder for user uploads)
+      if (folderNameLower === 'resources') {
+        return true;
+      }
+      
+      // Super admins see ALL folders
+      if (isSuperAdmin) {
+        return true;
+      }
+      
+      // Org admins see ALL folders in their organization
+      if (isOrgAdmin) {
+        return true;
+      }
+      
+      // Regular users see only folders they created
+      const folderCreatedBy = folder.created_by?.toString();
+      return folderCreatedBy === currentUserId;
+    };
+
+    // Helper function to filter folders by user and exclude Reports
+    const filterFolders = (folders: FolderNode[]): FolderNode[] => {
       return folders
-        .filter(f => f.id !== reportsFolderId)
+        .filter(f => f.id !== reportsFolderId && shouldShowFolder(f))
         .map(folder => ({
           ...folder,
-          children: folder.children ? filterReportsFolder(folder.children) : undefined,
+          children: folder.children ? filterFolders(folder.children) : undefined,
+          // File visibility: FYERS Resources shows all, others filtered by user
+          files: folder.files ? folder.files.filter(file => {
+            const folderNameLower = folder.name.toLowerCase();
+            // FYERS Resources is universal - all users see all files
+            if (folderNameLower === 'fyers resources') {
+              return true;
+            }
+            // Super admins see all files
+            if (isSuperAdmin) {
+              return true;
+            }
+            // Org admins see all files in their org
+            if (isOrgAdmin) {
+              return true;
+            }
+            // Regular users see only their own files
+            const fileCreatedBy = file.created_by?.toString();
+            return fileCreatedBy === currentUserId;
+          }) : undefined,
         }));
     };
 
     if (!currentFolderId) {
-      // Root level - return all root folders except Reports
+      // Root level - return filtered root folders
       const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
       return {
-        folders: filterReportsFolder(filteredRootFolders),
+        folders: filterFolders(filteredRootFolders),
         files: [] as FileNode[],
       };
     }
 
     const folder = findFolder(allFolders, currentFolderId);
-    const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
+    const filteredChildren = folder?.children ? filterFolders(folder.children) : [];
+    
+    // Filter files in current folder
+    const filteredFiles = folder?.files ? folder.files.filter(file => {
+      const folderNameLower = folder.name.toLowerCase();
+      if (folderNameLower === 'fyers resources') return true;
+      if (isSuperAdmin || isOrgAdmin) return true;
+      const fileCreatedBy = file.created_by?.toString();
+      return fileCreatedBy === currentUserId;
+    }) : [];
+    
     return {
       folders: filteredChildren,
-      files: folder?.files || [],
+      files: filteredFiles,
     };
-  }, [currentFolderId, allFolders]);
+  }, [currentFolderId, allFolders, userInfo]);
 
   const loadFolders = useCallback(async () => {
     setLoading(true);
@@ -621,8 +686,7 @@ export default function DocumentSelector({
           <Button
             type="button"
             onClick={handleConfirm}
-            disabled={selectedDocuments.size === 0}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white disabled:opacity-50 disabled:cursor-not-allowed rounded-lg font-medium"
+            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
           >
             Confirm selection
           </Button>

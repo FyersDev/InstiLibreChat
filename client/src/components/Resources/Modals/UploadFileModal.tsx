@@ -10,6 +10,9 @@ interface UploadFileModalProps {
   folderId?: string;
   orgId?: string | null;
   folders?: any[]; // Folder tree for selection
+  isSuperAdmin?: boolean;
+  isOrgAdmin?: boolean;
+  currentUserId?: string;
   onClose: () => void;
   onSuccess: () => void;
 }
@@ -19,18 +22,25 @@ interface FlatFolder {
   name: string;
   path: string;
   level: number;
+  created_by?: string;
 }
 
-export default function UploadFileModal({ folderId, orgId, folders = [], onClose, onSuccess }: UploadFileModalProps) {
+export default function UploadFileModal({ folderId, orgId, folders = [], isSuperAdmin = false, isOrgAdmin: isOrgAdminProp, currentUserId: currentUserIdProp, onClose, onSuccess }: UploadFileModalProps) {
   const { showToast } = useToastContext();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  
+  // Use props if provided, otherwise get from localStorage
+  const userInfoStr = localStorage.getItem('userInfo');
+  const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null;
+  const currentUserId = currentUserIdProp || (userInfo?.user_id || userInfo?.id)?.toString();
+  const isOrgAdmin = isOrgAdminProp !== undefined ? isOrgAdminProp : (userInfo?.org_role === 'admin');
 
   // Flatten folder tree for dropdown
-  const flattenFolders = (folderNodes: any[], level = 0): FlatFolder[] => {
+  const flattenFolders = (folderNodes: any[], level = 0, parentFolder?: any): FlatFolder[] => {
     let result: FlatFolder[] = [];
     folderNodes.forEach((folder) => {
       result.push({
@@ -38,9 +48,10 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
         name: folder.name,
         path: folder.path || folder.name,
         level,
+        created_by: folder.created_by,
       });
       if (folder.children && folder.children.length > 0) {
-        result = result.concat(flattenFolders(folder.children, level + 1));
+        result = result.concat(flattenFolders(folder.children, level + 1, folder));
       }
     });
     return result;
@@ -48,14 +59,46 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
 
   const flatFolders = flattenFolders(folders);
 
-  // Filter out "reports" folder from the list
+  // Filter folders for upload dropdown:
+  // 1. Always show "Resources" folder (default for user uploads)
+  // 2. Show "FYERS Resources" only for super admin
+  // 3. Show user's own folders
+  // 4. Org admins can upload to all folders (except FYERS Resources unless superadmin)
+  // 5. Filter out "Reports" folder
   const filteredFolders = flatFolders.filter(
-    (folder) => folder.name.toLowerCase() !== 'reports'
+    (folder: any) => {
+      const nameLower = folder.name.toLowerCase();
+      
+      // Always filter out "Reports" folder
+      if (nameLower === 'reports') return false;
+      
+      // Always show "Resources" folder (default folder for user uploads)
+      if (nameLower === 'resources') return true;
+      
+      // Show "FYERS Resources" only for super admin
+      if (nameLower === 'fyers resources') {
+        return isSuperAdmin;
+      }
+      
+      // Super admins see all folders
+      if (isSuperAdmin) {
+        return true;
+      }
+      
+      // Org admins can upload to all folders in their org
+      if (isOrgAdmin) {
+        return true;
+      }
+      
+      // Regular users can only upload to their own folders + Resources
+      const folderCreatedBy = folder.created_by?.toString();
+      return folderCreatedBy === currentUserId;
+    }
   );
 
-  // Find the "resources" folder to set as default
+  // Find the "Resources" folder to set as default (NOT "FYERS Resources")
   const resourcesFolder = filteredFolders.find(
-    (folder) => folder.name.toLowerCase() === 'resources' || folder.level === 0
+    (folder) => folder.name.toLowerCase() === 'resources'
   );
 
   // Sort folders to put "resources" first
@@ -144,6 +187,19 @@ export default function UploadFileModal({ folderId, orgId, folders = [], onClose
         status: 'error',
       });
       return;
+    }
+
+    // Validate that non-super-admin users cannot upload to "FYERS Resources"
+    if (!isSuperAdmin && selectedFolderId) {
+      const selectedFolder = flatFolders.find(f => f.id === selectedFolderId);
+      if (selectedFolder && selectedFolder.name.toLowerCase() === 'fyers resources') {
+        setError('Only super administrators can upload files to "FYERS Resources" folder');
+        showToast({
+          message: 'Only super administrators can upload files to "FYERS Resources" folder',
+          status: 'error',
+        });
+        return;
+      }
     }
 
     setLoading(true);

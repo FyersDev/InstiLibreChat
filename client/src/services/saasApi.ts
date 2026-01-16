@@ -522,12 +522,13 @@ export const saasApi = {
   },
 
   async updateFolder(id: string, data: any) {
-    const response = await fetch(`${API_BASE_URL}/folders/${id}`, {
+    const url = `${API_BASE_URL}/folders/${id}`;
+    const response = await fetch(url, {
       method: 'PUT',
       headers: getAuthHeaders(),
       body: JSON.stringify(data),
     });
-    return handleResponse(response);
+    return handleResponse(response, { url, method: 'PUT', body: JSON.stringify(data) });
   },
 
   async deleteFolder(id: string) {
