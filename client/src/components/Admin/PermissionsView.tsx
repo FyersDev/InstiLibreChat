@@ -20,7 +20,7 @@ export default function PermissionsView({ permissions }: PermissionsViewProps) {
 
       <div className="space-y-6">
         {Object.entries(groupedPermissions).map(([resource, perms]) => (
-          <div key={resource} className="border border-gray-200 dark:border-gray-600 rounded-lg p-4">
+          <div key={resource} className="border border-gray-200 dark:border-gray-700 rounded-lg p-4 bg-white dark:bg-gray-800">
             <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-3 capitalize">
               {resource}
             </h3>

@@ -236,25 +236,25 @@ export default function PersonaSelector() {
   }
 
   return (
-    <DropdownPopup
+      <DropdownPopup
       portal={true}
       modal={true}
       sameWidth={true}
       gutter={4}
-      menuId="persona-selector"
-      isOpen={isOpen}
-      setIsOpen={setIsOpen}
-      trigger={
-        <Ariakit.MenuButton
+        menuId="persona-selector"
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        trigger={
+          <Ariakit.MenuButton
           style={{ height: '34px' }}
           className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
-        >
-          <User className="h-4 w-4" />
-          <span>{buttonText}</span>
-          <ChevronDown className="h-4 w-4" />
-        </Ariakit.MenuButton>
-      }
-      items={menuItems}
-    />
+          >
+            <User className="h-4 w-4" />
+            <span>{buttonText}</span>
+            <ChevronDown className="h-4 w-4" />
+          </Ariakit.MenuButton>
+        }
+        items={menuItems}
+      />
   );
 }

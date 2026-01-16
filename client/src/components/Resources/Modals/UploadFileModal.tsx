@@ -60,11 +60,9 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
   const flatFolders = flattenFolders(folders);
 
   // Filter folders for upload dropdown:
-  // 1. Always show "Resources" folder (default for user uploads)
-  // 2. Show "FYERS Resources" only for super admin
-  // 3. Show user's own folders
-  // 4. Org admins can upload to all folders (except FYERS Resources unless superadmin)
-  // 5. Filter out "Reports" folder
+  // Backend already filters by user_id, we only need to:
+  // 1. Filter out "Reports" folder
+  // 2. Filter out "FYERS Resources" for non-super-admins
   const filteredFolders = flatFolders.filter(
     (folder: any) => {
       const nameLower = folder.name.toLowerCase();
@@ -72,27 +70,13 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
       // Always filter out "Reports" folder
       if (nameLower === 'reports') return false;
       
-      // Always show "Resources" folder (default folder for user uploads)
-      if (nameLower === 'resources') return true;
-      
       // Show "FYERS Resources" only for super admin
       if (nameLower === 'fyers resources') {
         return isSuperAdmin;
       }
       
-      // Super admins see all folders
-      if (isSuperAdmin) {
-        return true;
-      }
-      
-      // Org admins can upload to all folders in their org
-      if (isOrgAdmin) {
-        return true;
-      }
-      
-      // Regular users can only upload to their own folders + Resources
-      const folderCreatedBy = folder.created_by?.toString();
-      return folderCreatedBy === currentUserId;
+      // Show all other folders (backend already filtered by user access)
+      return true;
     }
   );
 

@@ -102,96 +102,34 @@ export default function DocumentSelector({
   const currentFolder = useMemo(() => {
     const reportsFolder = findReportsFolder(allFolders);
     const reportsFolderId = reportsFolder?.id;
-    
-    // Get current user info for filtering
-    const currentUserId = (userInfo?.user_id || userInfo?.id)?.toString();
-    const isSuperAdmin = userInfo?.is_super_admin === true || userInfo?.is_super_admin === 'true' || userInfo?.is_super_admin === 1;
-    const isOrgAdmin = userInfo?.org_role === 'admin';
 
-    // Helper function to check if folder should be shown
-    const shouldShowFolder = (folder: FolderNode): boolean => {
-      const folderNameLower = folder.name.toLowerCase();
-      
-      // "FYERS Resources" is ALWAYS visible to all users (universal folder)
-      if (folderNameLower === 'fyers resources') {
-        return true;
-      }
-      
-      // "Resources" folder is ALWAYS shown (default folder for user uploads)
-      if (folderNameLower === 'resources') {
-        return true;
-      }
-      
-      // Super admins see ALL folders
-      if (isSuperAdmin) {
-        return true;
-      }
-      
-      // Org admins see ALL folders in their organization
-      if (isOrgAdmin) {
-        return true;
-      }
-      
-      // Regular users see only folders they created
-      const folderCreatedBy = folder.created_by?.toString();
-      return folderCreatedBy === currentUserId;
-    };
-
-    // Helper function to filter folders by user and exclude Reports
-    const filterFolders = (folders: FolderNode[]): FolderNode[] => {
+    // Helper function to recursively filter out Reports folder
+    const filterReportsFolder = (folders: FolderNode[]): FolderNode[] => {
       return folders
-        .filter(f => f.id !== reportsFolderId && shouldShowFolder(f))
+        .filter(f => f.id !== reportsFolderId)
         .map(folder => ({
           ...folder,
-          children: folder.children ? filterFolders(folder.children) : undefined,
-          // File visibility: FYERS Resources shows all, others filtered by user
-          files: folder.files ? folder.files.filter(file => {
-            const folderNameLower = folder.name.toLowerCase();
-            // FYERS Resources is universal - all users see all files
-            if (folderNameLower === 'fyers resources') {
-              return true;
-            }
-            // Super admins see all files
-            if (isSuperAdmin) {
-              return true;
-            }
-            // Org admins see all files in their org
-            if (isOrgAdmin) {
-              return true;
-            }
-            // Regular users see only their own files
-            const fileCreatedBy = file.created_by?.toString();
-            return fileCreatedBy === currentUserId;
-          }) : undefined,
+          children: folder.children ? filterReportsFolder(folder.children) : undefined,
         }));
     };
 
     if (!currentFolderId) {
-      // Root level - return filtered root folders
+      // Root level - return all root folders except Reports
+      // Backend already filters by user_id
       const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
       return {
-        folders: filterFolders(filteredRootFolders),
+        folders: filterReportsFolder(filteredRootFolders),
         files: [] as FileNode[],
       };
     }
 
     const folder = findFolder(allFolders, currentFolderId);
-    const filteredChildren = folder?.children ? filterFolders(folder.children) : [];
-    
-    // Filter files in current folder
-    const filteredFiles = folder?.files ? folder.files.filter(file => {
-      const folderNameLower = folder.name.toLowerCase();
-      if (folderNameLower === 'fyers resources') return true;
-      if (isSuperAdmin || isOrgAdmin) return true;
-      const fileCreatedBy = file.created_by?.toString();
-      return fileCreatedBy === currentUserId;
-    }) : [];
-    
+    const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
     return {
       folders: filteredChildren,
-      files: filteredFiles,
+      files: folder?.files || [],
     };
-  }, [currentFolderId, allFolders, userInfo]);
+  }, [currentFolderId, allFolders]);
 
   const loadFolders = useCallback(async () => {
     setLoading(true);
@@ -552,10 +490,10 @@ export default function DocumentSelector({
                       return (
                         <tr
                           key={folder.id}
-                          className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 cursor-pointer"
+                          className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
                           onClick={() => navigateToFolder(folder.id, folder.name)}
                         >
-                          <td className="sticky left-0 py-4 px-6 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50">
+                          <td className="px-3 py-3 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                                 <img src="/assets/Folder.svg" alt="Folder" className="h-4 w-4 dark:invert" />
@@ -572,24 +510,24 @@ export default function DocumentSelector({
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <td className="px-3 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
                               {folder.created_by_name || 'System'}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">—</span>
+                          <td className="px-3 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="px-3 py-3">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
                                 {formatDate(folder.created_at)}
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">—</span>
+                          <td className="px-3 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
                           </td>
                         </tr>
                       );
@@ -613,7 +551,7 @@ export default function DocumentSelector({
                           onClick={() => !isDisabled && handleToggleSelection(file.document_id!)}
                         >
                           <td className={cn(
-                            'sticky left-0 py-4 px-6 transition-colors',
+                            'px-3 py-3 transition-colors',
                             'bg-white dark:bg-gray-800',
                             'group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50',
                             isSelected && 'bg-blue-50 dark:bg-blue-900/20'
@@ -644,25 +582,25 @@ export default function DocumentSelector({
                               </div>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <td className="px-3 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
                               {file.created_by_name || 'System'}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
-                            <span className="text-sm text-gray-700 dark:text-gray-300">
+                          <td className="px-3 py-3">
+                            <span className="text-sm text-gray-500 dark:text-gray-400">
                               {getFileExtension(file.name)}
                             </span>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="px-3 py-3">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-700 dark:text-gray-300">
+                              <span className="text-sm text-gray-500 dark:text-gray-400">
                                 {formatDate(file.uploaded_at || file.created_at)}
                               </span>
                             </div>
                           </td>
-                          <td className="py-4 px-6">
+                          <td className="px-3 py-3">
                             <span
                               className={cn(
                                 'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',

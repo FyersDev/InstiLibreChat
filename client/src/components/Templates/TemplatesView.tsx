@@ -343,34 +343,34 @@ export default function TemplatesView() {
             </Button>
           </div>
         ) : (
-          <div className="rounded-xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-850 overflow-hidden shadow-sm">
-            <table className="w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-gray-800">
-                <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+          <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+            <table className="min-w-full border-separate border-spacing-0">
+              <thead className="bg-gray-50 dark:bg-gray-700/50">
+                <tr className="border-b border-gray-200 dark:border-gray-700">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Name
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Short description
                   </th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Date created
                   </th>
-                  <th scope="col" className="relative px-6 py-3">
-                    <span className="sr-only">Actions</span>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {activeTab === 'templates' ? (
                   templates.map((template) => {
                     const isSelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
                     return (
                       <tr
                         key={template.id}
-                        className="group hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                             <img 
                               src="/assets/documents.svg" 
@@ -382,8 +382,8 @@ export default function TemplatesView() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-light text-gray-600 dark:text-gray-400 whitespace-pre-wrap max-w-md">
+                        <td className="px-3 py-3">
+                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap max-w-md">
                             {(() => {
                               const templateContent = template.detailedPrompt || template.description || '';
                               if (!templateContent) return template.framework || 'No template content';
@@ -424,10 +424,10 @@ export default function TemplatesView() {
                             })()}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(template.created_at)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm">
                           <div className="relative inline-block text-left">
                             <button
                               ref={(el) => {
@@ -516,9 +516,9 @@ export default function TemplatesView() {
                     return (
                       <tr
                         key={persona.id}
-                        className="group hover:bg-gray-50 dark:hover:bg-gray-700/50"
+                        className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                       >
-                        <td className="px-6 py-4 whitespace-nowrap">
+                        <td className="px-3 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                           <img
                             src="/assets/Leads.svg"
@@ -530,15 +530,15 @@ export default function TemplatesView() {
                             </div>
                           </div>
                         </td>
-                        <td className="px-6 py-4">
-                          <div className="text-sm font-light text-gray-600 dark:text-gray-400">
+                        <td className="px-3 py-3">
+                          <div className="text-sm text-gray-500 dark:text-gray-400">
                             {persona.description || 'No description'}
                           </div>
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
                           {formatDate(persona.created_at)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        <td className="px-3 py-3 whitespace-nowrap text-sm">
                           <div className="relative inline-block text-left">
                             <button
                               ref={(el) => {

@@ -915,14 +915,14 @@ export default function ScreenerRoute() {
                 </div>
 
                 {/* Results Table */}
-                <div className="overflow-x-auto border border-gray-200 dark:border-gray-700 rounded-lg">
-                  <table className="min-w-full w-full border-collapse bg-white dark:bg-gray-800">
-                    <thead>
-                      <tr className="border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900">
+                <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+                  <table className="min-w-full border-separate border-spacing-0">
+                    <thead className="bg-gray-50 dark:bg-gray-700/50">
+                      <tr className="border-b border-gray-200 dark:border-gray-700">
                         {headers.map((header, index) => (
                           <th
                             key={index}
-                            className={`py-3 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300 align-top ${
+                            className={`px-3 py-3 text-sm font-medium text-gray-700 dark:text-gray-300 align-top ${
                               index === 0 ? 'text-left' : 'text-center'
                             } ${index === headers.length - 1 ? 'text-right' : ''}`}
                           >
@@ -931,11 +931,11 @@ export default function ScreenerRoute() {
                         ))}
                       </tr>
                     </thead>
-                    <tbody>
+                    <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                       {results.map((result, rowIndex) => (
                           <tr
                           key={rowIndex}
-                            className="border-b border-gray-100 dark:border-gray-800 hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
+                            className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
                           >
                           {headers.map((header, colIndex) => {
                             const value = result[header.name];
@@ -946,7 +946,7 @@ export default function ScreenerRoute() {
                             return (
                               <td
                                 key={colIndex}
-                                className={`py-3 px-4 text-gray-700 dark:text-gray-300 align-top ${
+                                className={`px-3 py-3 text-sm text-gray-500 dark:text-gray-400 align-top ${
                                   isFirstColumn ? 'text-left' : 'text-center'
                                 } ${isLastColumn ? 'text-right' : ''}`}
                               >

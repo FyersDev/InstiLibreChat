@@ -298,80 +298,16 @@ export default function ResourcesRoute() {
 
   // Get current folder and its contents
   const currentFolder = useMemo(() => {
-    const currentUserId = (userInfo?.user_id || userInfo?.id)?.toString();
-    
-    // Helper function to check if folder should be shown
-    const shouldShowFolder = (folder: FolderNode): boolean => {
-      const folderNameLower = folder.name.toLowerCase();
-      
-      // "FYERS Resources" is ALWAYS visible to all users (universal folder)
-      if (folderNameLower === 'fyers resources') {
-        return true;
-      }
-      
-      // "Resources" folder is ALWAYS shown (default folder for user uploads from chatbox)
-      // It will be created automatically on first upload if it doesn't exist
-      if (folderNameLower === 'resources') {
-        return true;
-      }
-      
-      // Super admins see ALL folders in their organization
-      if (isSuperAdmin) {
-        return true;
-      }
-      
-      // Org admins see ALL folders in their organization
-      if (isOrgAdmin) {
-        return true;
-      }
-      
-      // Regular users see only folders they created
-      const folderCreatedBy = folder.created_by?.toString();
-      return folderCreatedBy === currentUserId;
-    };
-
-    // Helper function to filter folders recursively
-    const filterFoldersByUser = (folders: FolderNode[]): FolderNode[] => {
-      return folders
-        .filter(shouldShowFolder)
-        .map(folder => ({
-          ...folder,
-          children: folder.children ? filterFoldersByUser(folder.children) : undefined,
-          // File visibility rules:
-          // - "FYERS Resources": All users see ALL files (universal folder)
-          // - Other folders: Org admins see all files, regular users see only their own
-          files: folder.files ? folder.files.filter(file => {
-            const folderNameLower = folder.name.toLowerCase();
-            // FYERS Resources is universal - all users see all files
-            if (folderNameLower === 'fyers resources') {
-              return true;
-            }
-            // Super admins see all files
-            if (isSuperAdmin) {
-              return true;
-            }
-            // Org admins see all files in their org
-            if (isOrgAdmin) {
-              return true;
-            }
-            // Regular users see only their own files
-            const fileCreatedBy = file.created_by?.toString();
-            return fileCreatedBy === currentUserId;
-          }) : undefined,
-        }));
-    };
+    // Backend now filters folders by user_id, so we don't need client-side user filtering
+    // We only need to filter out the Reports folder from the Documents tab
 
     // If Reports tab is active, show Reports folder content
     if (activeTab === 'reports') {
       const reportsFolder = findReportsFolder(allFolders);
       if (reportsFolder) {
         return {
-          folders: filterFoldersByUser(reportsFolder.children || []),
-          files: (reportsFolder.files || []).filter(file => {
-            if (isSuperAdmin || isOrgAdmin) return true;
-            const fileCreatedBy = file.created_by?.toString();
-            return fileCreatedBy === currentUserId;
-          }),
+          folders: reportsFolder.children || [],
+          files: reportsFolder.files || [],
         };
       }
       return {
@@ -396,18 +332,16 @@ export default function ResourcesRoute() {
     };
     
     if (!currentFolderId) {
-      // Root level - return all root folders except Reports, filtered by user
-      // Backend already filters by org_id, so all folders here are from the same organization
-      const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
-      console.log('[ResourcesRoute] Root folders from backend (same org):', filteredRootFolders.map(f => ({ name: f.name, id: f.id, created_by: f.created_by })));
-      console.log('[ResourcesRoute] Current user:', { currentUserId, isOrgAdmin, isSuperAdmin });
-      const userFilteredFolders = filterFoldersByUser(filteredRootFolders);
-      console.log('[ResourcesRoute] Folders visible to user:', userFilteredFolders.map(f => ({ name: f.name, id: f.id })));
+      // Root level - return all root folders except Reports
+      // Backend already filters by user_id, so we only show what the user has access to
+      const rootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
       return {
-        folders: userFilteredFolders,
-        files: [] as FileNode[],
+        folders: rootFolders,
+        files: [],
       };
     }
+    
+    // Inside a folder
     const folder = findFolder(allFolders, currentFolderId);
     if (!folder) {
       return {
@@ -416,36 +350,11 @@ export default function ResourcesRoute() {
       };
     }
     
-    // Filter out Reports folder from subfolders recursively and filter by user
-    const filteredChildren = folder.children ? filterFoldersByUser(filterReportsFolder(folder.children)) : [];
-    
-    // File visibility for current folder:
-    // - "FYERS Resources": All users see all files (universal)
-    // - Other folders: Org admins see all files, regular users see only their own
-    const folderNameLower = folder.name.toLowerCase();
-    const userFilteredFiles = folderNameLower === 'fyers resources'
-      ? (folder.files || []) // FYERS Resources: all users see all files
-      : isOrgAdmin 
-        ? (folder.files || []) // Org admins see all files
-        : (folder.files || []).filter(file => file.created_by === currentUserId); // Regular users see their own
-    
-    // Debug logging for org admins
-    if (isOrgAdmin) {
-      console.log('Org Admin - Folder files:', {
-        folderName: folder.name,
-        folderId: folder.id,
-        totalFilesInFolder: folder.files?.length || 0,
-        filesAfterFilter: userFilteredFiles.length,
-        allFoldersCount: allFolders.length,
-        isOrgAdmin,
-      });
-    }
-    
     return {
-      folders: filteredChildren,
-      files: userFilteredFiles,
+      folders: folder.children ? filterReportsFolder(folder.children) : [],
+      files: folder.files || [],
     };
-  }, [currentFolderId, allFolders, activeTab, userInfo, isOrgAdmin]);
+  }, [currentFolderId, allFolders, activeTab]);
 
   // Filter folders and files based on search query
   const filteredContent = useMemo(() => {

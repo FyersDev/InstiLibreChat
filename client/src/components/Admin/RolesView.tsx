@@ -107,7 +107,7 @@ export default function RolesView({
         <table className="min-w-full border-separate border-spacing-0">
           <thead className="bg-gray-50 dark:bg-gray-700/50">
             <tr className="border-b border-gray-200 dark:border-gray-700">
-              <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+              <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                 Name
               </th>
               <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
@@ -139,7 +139,7 @@ export default function RolesView({
             ) : (
               roles.map((role) => (
                 <tr key={role.id} className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors">
-                  <td className="sticky left-0 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
+                  <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                     {role.name}
                   </td>
                   <td className="px-3 py-3 whitespace-nowrap">
