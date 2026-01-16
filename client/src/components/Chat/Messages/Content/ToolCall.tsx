@@ -161,6 +161,12 @@ export default function ToolCall({
     return null;
   }
 
+  // Hide tool calls unless VITE_SHOW_TOOL_CALLS is set to 'true'
+  const showToolCalls = import.meta.env.VITE_SHOW_TOOL_CALLS === 'true';
+  if (!showToolCalls) {
+    return null;
+  }
+
   return (
     <>
       <div className="relative my-2.5 flex h-5 shrink-0 items-center gap-2.5">

@@ -111,12 +111,12 @@ export default function SelectedDocuments() {
       <HoverCardTrigger asChild>
     <div
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border border-border-light bg-surface-secondary px-2 py-1 text-xs',
+        'flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-secondary px-2 py-1.5 text-sm',
             'hover:bg-surface-hover transition-colors cursor-default'
       )}
     >
-      <Check className="h-3 w-3 text-text-secondary flex-shrink-0" />
-      <FileText className="h-3 w-3 text-text-secondary flex-shrink-0" />
+      <Check className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
+      <FileText className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
       <span className="text-text-primary whitespace-nowrap">
         {documentCount} {documentCount === 1 ? 'doc' : 'docs'}
       </span>
@@ -126,17 +126,20 @@ export default function SelectedDocuments() {
         className="ml-0.5 flex-shrink-0 rounded p-0.5 hover:bg-surface-hover"
         aria-label="Remove all documents"
       >
-        <X className="h-3 w-3 text-text-secondary" />
+        <X className="h-3.5 w-3.5 text-text-secondary" />
       </button>
     </div>
       </HoverCardTrigger>
       <HoverCardPortal>
-        <HoverCardContent side="bottom" className="w-auto max-w-md">
-          <div className="space-y-1">
+        <HoverCardContent side="bottom" className="max-w-md">
+          <div className="space-y-1 max-w-full">
             {selectedDocuments.map((doc, index) => (
-              <p key={index} className="text-xs text-text-secondary whitespace-nowrap">
-                • {doc.filename || doc.name || 'Unknown'}
-              </p>
+              <div key={index} className="flex gap-1.5 text-xs text-text-secondary max-w-full">
+                <span className="flex-shrink-0">•</span>
+                <span className="break-words overflow-wrap-anywhere min-w-0 flex-1">
+                  {doc.filename || doc.name || 'Unknown'}
+                </span>
+              </div>
             ))}
           </div>
         </HoverCardContent>

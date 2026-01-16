@@ -50,7 +50,6 @@ export default function SelectedPersona() {
         setPersonaName('');
       }
     } else {
-      console.log('[SelectedPersona] No persona data found in localStorage');
       setPersonaName('');
     }
   }, [conversationId]);
@@ -65,11 +64,6 @@ export default function SelectedPersona() {
         loadSelectedPersona();
       });
     };
-    
-    // Poll localStorage for instant updates
-    const intervalId = setInterval(() => {
-      loadSelectedPersona();
-    }, 200);
     
     window.addEventListener('personaUpdated', handleCustomStorageChange);
     
@@ -86,7 +80,6 @@ export default function SelectedPersona() {
     window.addEventListener('storage', handleStorageChange);
     
     return () => {
-      clearInterval(intervalId);
       window.removeEventListener('personaUpdated', handleCustomStorageChange);
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -113,12 +106,12 @@ export default function SelectedPersona() {
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border border-border-light bg-surface-secondary px-2 py-1 text-xs',
+        'flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-secondary px-2 py-1.5 text-sm',
         'hover:bg-surface-hover transition-colors'
       )}
     >
-      <Check className="h-3 w-3 text-text-secondary flex-shrink-0" />
-      <User className="h-3 w-3 text-text-secondary flex-shrink-0" />
+      <Check className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
+      <User className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
       <span className="text-text-primary whitespace-nowrap" title={personaName}>
         {displayName}
       </span>
@@ -128,7 +121,7 @@ export default function SelectedPersona() {
         className="ml-0.5 flex-shrink-0 rounded p-0.5 hover:bg-surface-hover"
         aria-label="Remove persona"
       >
-        <X className="h-3 w-3 text-text-secondary" />
+        <X className="h-3.5 w-3.5 text-text-secondary" />
       </button>
     </div>
   );

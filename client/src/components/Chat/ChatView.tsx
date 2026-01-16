@@ -112,7 +112,7 @@ function ChatView({ index = 0 }: { index?: number }) {
                   >
                     <ChatForm index={index} />
                     {/* MCP, Template, and Persona selectors above footer */}
-                    <div className="mt-4 mb-16 flex w-full items-center justify-center gap-3">
+                    <div className="mt-4 mb-9 flex w-full items-center justify-center gap-3">
                       <MCPServerSelector />
                       <TemplateSelector />
                       <PersonaSelector />

@@ -55,7 +55,6 @@ export default function SelectedTemplate() {
         setTemplateName('');
       }
     } else {
-      console.log('[SelectedTemplate] No template data found in localStorage');
       setTemplateName('');
     }
   }, [conversationId]);
@@ -70,11 +69,6 @@ export default function SelectedTemplate() {
         loadSelectedTemplate();
       });
     };
-    
-    // Poll localStorage for instant updates
-    const intervalId = setInterval(() => {
-      loadSelectedTemplate();
-    }, 200);
     
     window.addEventListener('templateUpdated', handleCustomStorageChange);
     
@@ -91,7 +85,6 @@ export default function SelectedTemplate() {
     window.addEventListener('storage', handleStorageChange);
     
     return () => {
-      clearInterval(intervalId);
       window.removeEventListener('templateUpdated', handleCustomStorageChange);
       window.removeEventListener('storage', handleStorageChange);
     };
@@ -131,15 +124,15 @@ export default function SelectedTemplate() {
   return (
     <div
       className={cn(
-        'flex items-center gap-1.5 rounded-lg border border-border-light bg-surface-secondary px-2 py-1 text-xs',
+        'flex items-center gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-surface-secondary px-2 py-1.5 text-sm',
         'hover:bg-surface-hover transition-colors'
       )}
     >
-      <Check className="h-3 w-3 text-text-secondary flex-shrink-0" />
+      <Check className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
       <img 
         src="/assets/documents.svg" 
         alt="Template" 
-        className="h-2.5 w-2.5 text-text-secondary flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
+        className="h-3.5 w-3.5 text-text-secondary flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
       />
       <span className="text-text-primary whitespace-nowrap" title={fullTemplateContent}>
         {displayName}
@@ -150,7 +143,7 @@ export default function SelectedTemplate() {
         className="ml-0.5 flex-shrink-0 rounded p-0.5 hover:bg-surface-hover"
         aria-label="Remove template"
       >
-        <X className="h-3 w-3 text-text-secondary" />
+        <X className="h-3.5 w-3.5 text-text-secondary" />
       </button>
     </div>
   );

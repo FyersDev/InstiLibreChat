@@ -74,6 +74,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     filesLoading,
     newConversation,
     handleStopGenerating,
+    getMessages,
   } = useChatContext();
   const {
     addedIndex,
@@ -98,6 +99,14 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     () => (chatDirection != null ? chatDirection?.toLowerCase() === 'rtl' : false),
     [chatDirection],
   );
+  
+  // Determine placeholder text based on whether there are messages in the conversation
+  const placeholderText = useMemo(() => {
+    const messages = getMessages();
+    const hasMessages = messages && messages.length > 0;
+    return hasMessages ? 'Reply FIA' : 'Ask FIA';
+  }, [getMessages]);
+  
   const invalidAssistant = useMemo(
     () =>
       isAssistantsEndpoint(endpoint) &&
@@ -266,7 +275,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                 <div className="relative flex-1">
                   <TextareaAutosize
                     {...registerProps}
-                    placeholder="Ask FIA"
+                    placeholder={placeholderText}
                     ref={(e) => {
                       ref(e);
                       (textAreaRef as React.MutableRefObject<HTMLTextAreaElement | null>).current =

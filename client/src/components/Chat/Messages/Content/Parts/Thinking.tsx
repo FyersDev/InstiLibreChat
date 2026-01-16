@@ -146,6 +146,12 @@ const Thinking: React.ElementType = memo(({ children }: { children: React.ReactN
     return null;
   }
 
+  // Hide thinking sections unless VITE_SHOW_TOOL_CALLS is set to 'true'
+  const showToolCalls = import.meta.env.VITE_SHOW_TOOL_CALLS === 'true';
+  if (!showToolCalls) {
+    return null;
+  }
+
   return (
     <div className="group/thinking-container">
       <div className="sticky top-0 z-10 mb-4 bg-presentation pb-2 pt-2">

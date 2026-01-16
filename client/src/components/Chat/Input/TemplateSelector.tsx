@@ -218,11 +218,8 @@ export default function TemplateSelector() {
 
   const menuItems = [
     ...templates.map((template) => {
-      // Show template structure/content instead of just name
-      const templateContent = template.detailedPrompt || template.description || template.name;
-      const formattedContent = formatTemplateContent(templateContent);
       const isSelected = getIsTemplateSelected(template);
-      const displayLabel = `${template.name}${isSelected ? ' ✓' : ''} - ${formattedContent}`;
+      const displayLabel = `${template.name}${isSelected ? ' ✓' : ''}`;
       
       return {
         label: displayLabel,

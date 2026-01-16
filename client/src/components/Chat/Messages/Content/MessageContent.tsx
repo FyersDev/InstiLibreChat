@@ -20,6 +20,13 @@ const DELAYED_ERROR_TIMEOUT = 5500;
 const UNFINISHED_DELAY = 250;
 
 const parseThinkingContent = (text: string) => {
+  // Safety check for undefined/null text
+  if (!text || typeof text !== 'string') {
+    return {
+      thinkingContent: '',
+      regularContent: '',
+    };
+  }
   const thinkingMatch = text.match(/:::thinking([\s\S]*?):::/);
   return {
     thinkingContent: thinkingMatch ? thinkingMatch[1].trim() : '',
@@ -102,6 +109,11 @@ const DisplayMessage = ({ text, isCreatedByUser, message, showCursor }: TDisplay
   );
 
   const content = useMemo(() => {
+    // Safety check for undefined/null text
+    if (!text || typeof text !== 'string') {
+      return null;
+    }
+    
     // Parse new structured JSON format: { documents: [...], template: {...}, persona: {...}, query: "..." }
     if (isCreatedByUser && text.trim().startsWith('{')) {
       let documentNames = '';

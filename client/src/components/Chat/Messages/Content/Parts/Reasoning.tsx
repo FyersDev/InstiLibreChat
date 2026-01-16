@@ -66,6 +66,12 @@ const Reasoning = memo(({ reasoning, isLast }: ReasoningProps) => {
     return null;
   }
 
+  // Hide reasoning/thoughts unless VITE_SHOW_TOOL_CALLS is set to 'true'
+  const showToolCalls = import.meta.env.VITE_SHOW_TOOL_CALLS === 'true';
+  if (!showToolCalls) {
+    return null;
+  }
+
   return (
     <div className="group/reasoning">
       <div className="group/thinking-container">
