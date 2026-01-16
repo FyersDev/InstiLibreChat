@@ -31,7 +31,7 @@ export default function EditFileModal({ file, onClose, onSuccess }: EditFileModa
       const extension = file.name.split('.').pop() || '';
       const newName = extension ? `${nameWithoutExt}.${extension}` : nameWithoutExt;
 
-      await saasApi.updateFile(file.id, {
+      await saasApi.updateFile(Number(file.id), {
         name: newName,
       });
       onSuccess();
