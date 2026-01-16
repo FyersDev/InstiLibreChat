@@ -113,22 +113,23 @@ export default function DocumentSelector({
         }));
     };
 
+    let folders: FolderNode[];
+    let files: FileNode[];
+
+    // Show current folder contents only
     if (!currentFolderId) {
       // Root level - return all root folders except Reports
-      // Backend already filters by user_id
       const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
-      return {
-        folders: filterReportsFolder(filteredRootFolders),
-        files: [] as FileNode[],
-      };
+      folders = filterReportsFolder(filteredRootFolders);
+      files = [] as FileNode[];
+    } else {
+      const folder = findFolder(allFolders, currentFolderId);
+      const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
+      folders = filteredChildren;
+      files = folder?.files || [];
     }
 
-    const folder = findFolder(allFolders, currentFolderId);
-    const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
-    return {
-      folders: filteredChildren,
-      files: folder?.files || [],
-    };
+    return { folders, files };
   }, [currentFolderId, allFolders]);
 
   const loadFolders = useCallback(async () => {
@@ -399,12 +400,23 @@ export default function DocumentSelector({
   // Get all files from current folder view
   const currentFiles = currentFolder.files || [];
 
+  // Get selected documents with their names
+  const selectedDocumentsList = useMemo(() => {
+    const allDocs = getAllDocuments(allFolders);
+    return allDocs.filter((doc) => selectedDocuments.has(doc.document_id.toString()));
+  }, [selectedDocuments, allFolders, getAllDocuments]);
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden" showCloseButton={false}>
         <DialogHeader className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
           <div className="flex items-center justify-between">
-            <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">Select documents</DialogTitle>
+            <DialogTitle 
+              className="text-xl font-semibold text-gray-900 dark:text-gray-100"
+              title={selectedDocumentsList.length > 0 ? selectedDocumentsList.map(doc => doc.name).join('\n') : ''}
+            >
+              Select documents
+            </DialogTitle>
             <div className="flex items-center gap-2">
               <button
                 onClick={loadFolders}
@@ -427,22 +439,24 @@ export default function DocumentSelector({
 
         {/* Breadcrumbs */}
         <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-          <div className="flex items-center gap-2 text-sm">
-            {breadcrumbs.map((crumb, index) => (
-              <div key={crumb.id || 'home'} className="flex items-center gap-2">
-                {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400" />}
-                <button
-                  onClick={() => navigateToFolder(crumb.id, crumb.name)}
-                  className={cn(
-                    'px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300',
-                    index === breadcrumbs.length - 1 ? 'font-semibold' : ''
-                  )}
-                >
-                  {index === 0 ? <Home className="h-4 w-4 inline mr-1" /> : null}
-                  {crumb.name}
-                </button>
-              </div>
-            ))}
+          <div className="flex items-center gap-2 text-sm flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
+            <div className="flex items-center gap-2 whitespace-nowrap">
+              {breadcrumbs.map((crumb, index) => (
+                <div key={crumb.id || 'home'} className="flex items-center gap-2">
+                  {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />}
+                  <button
+                    onClick={() => navigateToFolder(crumb.id, crumb.name)}
+                    className={cn(
+                      'px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 whitespace-nowrap',
+                      index === breadcrumbs.length - 1 ? 'font-semibold' : ''
+                    )}
+                  >
+                    {index === 0 ? <Home className="h-4 w-4 inline mr-1" /> : null}
+                    {crumb.name}
+                  </button>
+                </div>
+              ))}
+            </div>
           </div>
         </div>
 
@@ -462,25 +476,36 @@ export default function DocumentSelector({
                 This folder is empty
               </div>
             ) : (
-              <div className="border border-gray-200 dark:border-gray-700 rounded-lg overflow-hidden mx-6 my-4">
+              <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mx-6 my-4">
                 <table className="w-full table-fixed border-separate border-spacing-0">
-                  <thead className="sticky top-0 bg-gray-50 dark:bg-gray-700/50 z-10">
+                  <colgroup>
+                    <col style={{ width: '40%' }} />
+                    <col style={{ width: currentFiles.length > 0 ? '15%' : '30%' }} />
+                    {currentFiles.length > 0 && <col style={{ width: '10%' }} />}
+                    <col style={{ width: currentFiles.length > 0 ? '20%' : '30%' }} />
+                    {currentFiles.length > 0 && <col style={{ width: '15%' }} />}
+                  </colgroup>
+                  <thead className="bg-gray-50 dark:bg-gray-700/50">
                     <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="sticky left-0 bg-gray-50 dark:bg-gray-700/50 text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '35%' }}>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                         Name
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '13%' }}>
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                         Owner
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '10%' }}>
-                        Format
-                      </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '15%' }}>
+                      {currentFiles.length > 0 && (
+                        <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Format
+                        </th>
+                      )}
+                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                         Upload date
                       </th>
-                      <th className="text-left py-3 px-6 text-sm font-medium text-gray-700 dark:text-gray-300" style={{ width: '12%' }}>
-                        Status
-                      </th>
+                      {currentFiles.length > 0 && (
+                        <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                          Status
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
@@ -493,7 +518,7 @@ export default function DocumentSelector({
                           className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
                           onClick={() => navigateToFolder(folder.id, folder.name)}
                         >
-                          <td className="px-3 py-3 bg-white dark:bg-gray-800 group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50 transition-colors">
+                          <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
                                 <img src="/assets/Folder.svg" alt="Folder" className="h-4 w-4 dark:invert" />
@@ -510,25 +535,21 @@ export default function DocumentSelector({
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {folder.created_by_name || 'System'}
-                            </span>
+                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {folder.created_by_name || 'System'}
                           </td>
-                          <td className="px-3 py-3">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
-                          </td>
-                          <td className="px-3 py-3">
+                          {currentFiles.length > 0 && (
+                            <td className="px-3 py-3"></td>
+                          )}
+                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                {formatDate(folder.created_at)}
-                              </span>
+                              <span>{formatDate(folder.created_at)}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">—</span>
-                          </td>
+                          {currentFiles.length > 0 && (
+                            <td className="px-3 py-3"></td>
+                          )}
                         </tr>
                       );
                     })}
@@ -550,12 +571,7 @@ export default function DocumentSelector({
                           )}
                           onClick={() => !isDisabled && handleToggleSelection(file.document_id!)}
                         >
-                          <td className={cn(
-                            'px-3 py-3 transition-colors',
-                            'bg-white dark:bg-gray-800',
-                            'group-hover:bg-gray-50 dark:group-hover:bg-gray-800/50',
-                            isSelected && 'bg-blue-50 dark:bg-blue-900/20'
-                          )}>
+                          <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                             <div className="flex items-center gap-3">
                               <div
                                 className={cn(
@@ -582,28 +598,22 @@ export default function DocumentSelector({
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {file.created_by_name || 'System'}
-                            </span>
+                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {file.created_by_name || 'System'}
                           </td>
-                          <td className="px-3 py-3">
-                            <span className="text-sm text-gray-500 dark:text-gray-400">
-                              {getFileExtension(file.name)}
-                            </span>
+                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
+                            {getFileExtension(file.name)}
                           </td>
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm text-gray-500 dark:text-gray-400">
-                                {formatDate(file.uploaded_at || file.created_at)}
-                              </span>
+                              <span>{formatDate(file.uploaded_at || file.created_at)}</span>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
+                          <td className="px-3 py-3 whitespace-nowrap">
                             <span
                               className={cn(
-                                'inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium',
+                                'px-2 py-1 text-xs rounded-full',
                                 getStatusColor(fileStatus),
                               )}
                             >

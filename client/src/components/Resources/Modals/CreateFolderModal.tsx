@@ -41,18 +41,7 @@ export default function CreateFolderModal({ parentId, orgId, onClose, onSuccess 
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-6">
         <DialogHeader className="mb-4">
-          <DialogTitle 
-            className="text-xl font-semibold"
-            style={{
-              borderWidth: '0px',
-              borderStyle: 'none',
-              borderImage: 'none',
-              boxShadow: 'none',
-              backgroundColor: 'rgba(255, 255, 255, 1)',
-              borderRadius: '0px',
-              boxSizing: 'content-box',
-            }}
-          >
+          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
             {parentId ? 'Create New Folder Inside' : 'Create New Folder'}
           </DialogTitle>
           {parentId && (

@@ -316,6 +316,8 @@ export default function TemplatePersonaSelector() {
 
   // Build menu items with sections: Templates, Separator, Personas, Clear All
   const menuItems = [
+    // Templates section header
+    ...(templates.length > 0 ? [{ label: 'Templates', isHeader: true }] : []),
     // Templates section - show template structure/content
     ...templates.map((template) => {
       // Check if this template is currently selected (by comparing with localStorage)
@@ -334,59 +336,19 @@ export default function TemplatePersonaSelector() {
         }
       }
       
-      // Show template structure/content instead of just name
-      const templateContent = template.detailedPrompt || template.description || template.name;
-      // Format template content to show structure in a compact way
-      const formatTemplateContent = (content: string): string => {
-        // Split by lines and extract key parts
-        const lines = content.split('\n').filter(line => line.trim());
-        if (lines.length === 0) return content;
-        
-        // Try to extract ROLE, TASK, FORMAT from the structure
-        let role = '';
-        let task = '';
-        let format = '';
-        
-        lines.forEach((line) => {
-          const lowerLine = line.toLowerCase();
-          if (lowerLine.includes('role') || lowerLine.includes('act as')) {
-            role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
-          } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
-            task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
-          } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
-            format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
-          }
-        });
-        
-        // Build compact display
-        const parts: string[] = [];
-        if (role) parts.push(`Role: ${role.substring(0, 20)}`);
-        if (task) parts.push(`Task: ${task.substring(0, 30)}`);
-        if (format) parts.push(`Format: ${format}`);
-        
-        if (parts.length > 0) {
-          return parts.join(' | ');
-        }
-        
-        // Fallback: show first line or truncated content
-        return lines[0]?.substring(0, 50) || content.substring(0, 50);
-      };
-      
-      const formattedContent = formatTemplateContent(templateContent);
-      const displayLabel = `${template.name}${isSelected ? ' ✓' : ''} - ${formattedContent}`;
-      
       return {
-        label: displayLabel,
-      onClick: () => {
-        console.log('[TemplatePersonaSelector] Template clicked:', template);
-        handleSelectTemplate(template);
-      },
-        icon: isSelected ? '✓' : '',
+        label: template.name,
+        onClick: () => {
+          console.log('[TemplatePersonaSelector] Template clicked:', template);
+          handleSelectTemplate(template);
+        },
         key: `template-${template.name}`,
       };
     }),
     // Separator between templates and personas
     ...(templates.length > 0 && personas.length > 0 ? [{ separate: true }] : []),
+    // Personas section header
+    ...(personas.length > 0 ? [{ label: 'Personas', isHeader: true }] : []),
     // Personas section
     ...personas.map((persona) => {
       // Check if this persona is currently selected (by comparing with localStorage)
@@ -406,12 +368,11 @@ export default function TemplatePersonaSelector() {
       }
       
       return {
-        label: ` ${persona.name}${isSelected ? ' ✓' : ''}`,
-      onClick: () => {
-        console.log('[TemplatePersonaSelector] Persona clicked:', persona);
-        handleSelectPersona(persona);
-      },
-        icon: isSelected ? '✓' : '',
+        label: persona.name,
+        onClick: () => {
+          console.log('[TemplatePersonaSelector] Persona clicked:', persona);
+          handleSelectPersona(persona);
+        },
         key: `persona-${persona.name}`,
       };
     }),
@@ -419,7 +380,7 @@ export default function TemplatePersonaSelector() {
     ...((templates.length > 0 || personas.length > 0) && (selectedTemplate || selectedPersona) ? [{ separate: true }] : []),
     // Clear all option (only show if something is selected)
     ...((selectedTemplate || selectedPersona) ? [{
-      label: '🗑️ Clear All',
+      label: 'Clear All',
       onClick: handleClearAll,
     }] : []),
   ];
@@ -475,12 +436,14 @@ export default function TemplatePersonaSelector() {
     <div className="relative">
       <DropdownPopup
         portal={false}
+        anchor={{ x: 'start', y: 'bottom' }}
         menuId="template-persona-selector"
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         trigger={
           <Ariakit.MenuButton
-            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
+            style={{ height: '34px' }}
+            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
           >
             <img src="/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 dark:invert" />
             <span>{buttonText}</span>
@@ -488,7 +451,8 @@ export default function TemplatePersonaSelector() {
           </Ariakit.MenuButton>
         }
         items={menuItems}
-        className="absolute left-0 top-full mt-2 min-w-[200px] z-50"
+        className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
+        itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
       />
     </div>
   );

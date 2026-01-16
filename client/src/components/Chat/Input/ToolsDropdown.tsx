@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect, useMemo } from 'react';
 import { TooltipAnchor } from '@librechat/client';
 import { useLocalize } from '~/hooks';
 import { useChatContext } from '~/Providers';
@@ -11,12 +11,62 @@ interface ToolsDropdownProps {
   disabled?: boolean;
 }
 
+interface StoredDocument {
+  filename?: string;
+  name?: string;
+  document_id: number;
+  file_path?: string;
+  status?: string;
+}
+
 const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
   const localize = useLocalize();
   const isDisabled = disabled ?? false;
   const [showDocumentSelector, setShowDocumentSelector] = useState(false);
   const { conversation } = useChatContext();
   const conversationId = conversation?.conversationId ?? Constants.NEW_CONVO;
+  const [selectedDocuments, setSelectedDocuments] = useState<StoredDocument[]>([]);
+
+  const loadSelectedDocuments = useCallback(() => {
+    const convoId = conversationId || Constants.NEW_CONVO;
+    let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
+    
+    if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
+      documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
+    }
+    
+    if (documentDataStr) {
+      try {
+        const documentData = JSON.parse(documentDataStr);
+        if (documentData.documents && Array.isArray(documentData.documents)) {
+          setSelectedDocuments(documentData.documents as StoredDocument[]);
+        } else {
+          setSelectedDocuments([]);
+        }
+      } catch (error) {
+        console.error('Error parsing document data:', error);
+        setSelectedDocuments([]);
+      }
+    } else {
+      setSelectedDocuments([]);
+    }
+  }, [conversationId]);
+
+  useEffect(() => {
+    loadSelectedDocuments();
+    
+    const handleDocumentsUpdated = () => {
+      loadSelectedDocuments();
+    };
+    
+    window.addEventListener('documentsUpdated', handleDocumentsUpdated);
+    window.addEventListener('storage', handleDocumentsUpdated);
+    
+    return () => {
+      window.removeEventListener('documentsUpdated', handleDocumentsUpdated);
+      window.removeEventListener('storage', handleDocumentsUpdated);
+    };
+  }, [loadSelectedDocuments]);
 
   const handleClick = useCallback(() => {
     if (isDisabled) return;
@@ -28,9 +78,24 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
       console.log('Selected documents:', selectedDocuments);
       // Documents are already stored in localStorage by DocumentSelector
       setShowDocumentSelector(false);
+      loadSelectedDocuments();
     },
-    [],
+    [loadSelectedDocuments],
   );
+
+  const documentCount = useMemo(() => selectedDocuments.length, [selectedDocuments.length]);
+  
+  const documentNames = useMemo(() => {
+    return selectedDocuments
+      .map(doc => doc.filename || doc.name || 'Unknown')
+      .join('\n');
+  }, [selectedDocuments]);
+
+  const buttonText = documentCount > 0 
+    ? `${documentCount} ${documentCount === 1 ? 'document' : 'documents'} selected` 
+    : 'Select Documents';
+
+  const tooltipText = documentCount > 0 ? documentNames : localize('com_ui_tools');
 
   return (
     <>
@@ -41,17 +106,18 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
       onClick={handleClick}
       id="tools-dropdown-button"
       aria-label="Select Documents"
+      title={tooltipText}
       style={{ height: '34px' }}
       className={cn(
         'flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover',
         isDisabled && 'opacity-50 cursor-not-allowed',
       )}
     >
-      Select Documents
+      {buttonText}
     </button>
   }
   id="tools-dropdown-button"
-  description={localize('com_ui_tools')}
+  description={tooltipText}
   disabled={isDisabled}
 />
       <DocumentSelector

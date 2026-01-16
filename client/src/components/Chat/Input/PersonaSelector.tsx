@@ -175,9 +175,8 @@ export default function PersonaSelector() {
 
   const menuItems = [
     ...personas.map((persona) => ({
-      label: ` ${persona.name}`,
+      label: persona.name,
       onClick: () => handleSelectPersona(persona),
-      icon: getIsPersonaSelected(persona) ? '✓' : '',
       key: `persona-${persona.name}`,
     })),
     {
@@ -185,7 +184,7 @@ export default function PersonaSelector() {
       key: 'separator-create',
     },
     {
-      label: '➕ Create New Agent',
+      label: 'Create New Agent',
       onClick: () => {
         setIsOpen(false);
         navigate('/templates?tab=personas&action=create');
@@ -239,8 +238,9 @@ export default function PersonaSelector() {
       <DropdownPopup
       portal={true}
       modal={true}
-      sameWidth={true}
+      sameWidth={false}
       gutter={4}
+      anchor={{ x: 'start', y: 'bottom' }}
         menuId="persona-selector"
         isOpen={isOpen}
         setIsOpen={setIsOpen}
@@ -255,6 +255,8 @@ export default function PersonaSelector() {
           </Ariakit.MenuButton>
         }
         items={menuItems}
+        className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
+        itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
       />
   );
 }

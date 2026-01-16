@@ -347,16 +347,16 @@ export default function TemplatesView() {
             <table className="min-w-full border-separate border-spacing-0">
               <thead className="bg-gray-50 dark:bg-gray-700/50">
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                     Name
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                     Short description
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                     Date created
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
                     Actions
                   </th>
                 </tr>

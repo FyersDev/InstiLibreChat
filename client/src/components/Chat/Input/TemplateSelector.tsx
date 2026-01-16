@@ -223,7 +223,6 @@ export default function TemplateSelector() {
       return {
         label: template.name,
         onClick: () => handleSelectTemplate(template),
-        icon: isSelected ? '✓' : undefined,
         key: `template-${template.name}`,
       };
     }),
@@ -232,7 +231,7 @@ export default function TemplateSelector() {
       key: 'separator-create',
     },
     {
-      label: '➕ Create New Template',
+      label: 'Create New Template',
       onClick: () => {
         setIsOpen(false);
         navigate('/templates?tab=templates&action=create');
@@ -286,8 +285,9 @@ export default function TemplateSelector() {
     <DropdownPopup
       portal={true}
       modal={true}
-      sameWidth={true}
+      sameWidth={false}
       gutter={4}
+      anchor={{ x: 'start', y: 'bottom' }}
       menuId="template-selector"
       isOpen={isOpen}
       setIsOpen={setIsOpen}
@@ -302,6 +302,8 @@ export default function TemplateSelector() {
         </Ariakit.MenuButton>
       }
       items={menuItems}
+      className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
+      itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
     />
   );
 }

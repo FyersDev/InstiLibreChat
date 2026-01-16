@@ -95,6 +95,14 @@ const Menu: React.FC<MenuProps> = ({
           if (item.separate === true) {
             return <Ariakit.MenuSeparator key={index} className="my-1 h-px border-border-medium" />;
           }
+          // Support section headers
+          if ((item as any).isHeader === true) {
+            return (
+              <div key={`header-${index}`} className="px-4 py-2 text-xs font-semibold text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                {item.label}
+              </div>
+            );
+          }
           if (subItems && subItems.length > 0) {
             return (
               <Ariakit.MenuProvider
@@ -138,7 +146,7 @@ const Menu: React.FC<MenuProps> = ({
               key={`${keyPrefix ?? ''}${index}-${item.id ?? ''}`}
               id={item.id}
               className={cn(
-                'group flex w-full cursor-pointer items-center gap-2 rounded-lg px-3 py-3.5 text-sm text-text-primary outline-none transition-colors duration-200 hover:bg-surface-hover focus:bg-surface-hover md:px-2.5 md:py-2',
+                'group flex w-full cursor-pointer items-center gap-2 rounded-lg px-4 py-3 text-base text-text-primary outline-none transition-colors duration-200 hover:bg-surface-hover focus:bg-surface-hover',
                 itemClassName,
               )}
               disabled={item.disabled}
