@@ -174,7 +174,6 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
             >
               <option value="user">User (default)</option>
               <option value="admin">Admin (can login via OTP)</option>
-              <option value="viewer">Viewer (read-only)</option>
             </select>
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
               This determines login eligibility. Admin can log in via OTP.
