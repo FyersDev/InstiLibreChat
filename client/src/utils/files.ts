@@ -280,8 +280,10 @@ export const validateFiles = ({
       return false;
     }
 
-    if (fileSizeLimit && originalFile.size >= fileSizeLimit) {
-      setError(`File size exceeds ${fileSizeLimit / megabyte} MB.`);
+    // Default to 50MB if fileSizeLimit is not configured
+    const effectiveFileSizeLimit = fileSizeLimit || (50 * megabyte);
+    if (originalFile.size >= effectiveFileSizeLimit) {
+      setError(`File size exceeds ${effectiveFileSizeLimit / megabyte} MB.`);
       return false;
     }
   }

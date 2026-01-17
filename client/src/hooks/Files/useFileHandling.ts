@@ -443,6 +443,25 @@ const useFileHandling = (params?: UseFileHandling) => {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, _toolResource?: string) => {
     event.stopPropagation();
     if (event.target.files) {
+      const fileList = Array.from(event.target.files);
+      const maxSize = 50 * 1024 * 1024; // 50MB
+      
+      // Check file size before processing - reject files 50MB or larger
+      for (const file of fileList) {
+        if (file.size >= maxSize) {
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          showToast({
+            message: `File "${file.name}" is too large (${fileSizeMB}MB). Maximum file size is 50MB.`,
+            status: 'error',
+            duration: 5000,
+          });
+          setFilesLoading(false);
+          // reset the input
+          event.target.value = '';
+          return;
+        }
+      }
+      
       setFilesLoading(true);
       handleFiles(event.target.files, _toolResource);
       // reset the input

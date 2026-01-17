@@ -72,17 +72,34 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
         return;
       }
 
-      const maxSize = 50 * 1024 * 1024;
-      if (file.size > maxSize) {
+      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
+      
+      // Validate file size - reject files 50MB or larger (inclusive limit)
+      if (file.size >= maxSize) {
+        const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+        console.warn('File size validation failed:', {
+          fileName: file.name,
+          fileSizeBytes: file.size,
+          fileSizeMB: parseFloat(fileSizeMB),
+          maxSizeBytes: maxSize,
+          maxSizeMB: 50,
+        });
         showToast({
-          message: 'File size must be less than 50MB',
+          message: `File "${file.name}" is too large (${fileSizeMB}MB). Maximum file size is 50MB.`,
           status: 'error',
+          duration: 5000,
         });
         return;
       }
 
       setIsUploading(true);
       try {
+        // Double-check file size before upload (defensive programming)
+        if (file.size >= maxSize) {
+          const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
+          throw new Error(`File size validation failed: ${fileSizeMB}MB exceeds 50MB limit`);
+        }
+        
         const response = await uploadDocument(file);
 
         if (response.code === 200 || response.code === 202 || response.s === 'ok') {
@@ -96,9 +113,11 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
         }
       } catch (error) {
         console.error('Upload error:', error);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error occurred';
         showToast({
-          message: `Failed to upload document`,
+          message: `Failed to upload document "${file.name}": ${errorMessage}`,
           status: 'error',
+          duration: 5000,
         });
       } finally {
         setIsUploading(false);
