@@ -7,7 +7,7 @@ import { Constants, buildTree } from 'librechat-data-provider';
 import type { TMessage } from 'librechat-data-provider';
 import type { ChatFormValues } from '~/common';
 import { ChatContext, AddedChatContext, useFileMapContext, ChatFormProvider } from '~/Providers';
-import { useChatHelpers, useAddedResponse, useSSE } from '~/hooks';
+import { useChatHelpers, useAddedResponse, useSSE, useMCPSelect } from '~/hooks';
 import ConversationStarters from './Input/ConversationStarters';
 import { useGetMessagesByConvoId } from '~/data-provider';
 import MessagesView from './Messages/MessagesView';
@@ -56,6 +56,9 @@ function ChatView({ index = 0 }: { index?: number }) {
 
   useSSE(rootSubmission, chatHelpers, false);
   useSSE(addedSubmission, addedChatHelpers, true);
+  
+  // Initialize MCP server selection (auto-selects all available servers by default)
+  useMCPSelect({ conversationId });
   
   // Reset submission state on unmount / route change
   const setSubmission = useSetRecoilState(store.submissionByIndex(index));

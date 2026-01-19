@@ -18,6 +18,32 @@ export function useMCPSelect({ conversationId }: { conversationId?: string | nul
   const [mcpValues, setMCPValuesRaw] = useAtom(mcpValuesAtomFamily(key));
   const [ephemeralAgent, setEphemeralAgent] = useRecoilState(ephemeralAgentByConvoId(key));
 
+  // Auto-select all available MCP servers by default (runs once per conversation)
+  useEffect(() => {
+    // Only auto-select if:
+    // 1. We have startup config with MCP servers
+    // 2. No servers are currently selected
+    // 3. No ephemeralAgent.mcp is set yet
+    if (
+      !startupConfig?.mcpServers ||
+      mcpValues.length > 0 ||
+      (ephemeralAgent?.mcp && ephemeralAgent.mcp.length > 0)
+    ) {
+      return;
+    }
+
+    // Get all servers that should be available (chatMenu !== false)
+    const availableServers = Object.keys(startupConfig.mcpServers).filter((serverName) => {
+      const serverConfig = startupConfig.mcpServers?.[serverName];
+      return serverConfig && serverConfig.chatMenu !== false;
+    });
+
+    if (availableServers.length > 0) {
+      console.log('[useMCPSelect] Auto-selecting all available MCP servers:', availableServers);
+      setMCPValuesRaw(availableServers);
+    }
+  }, [startupConfig?.mcpServers, mcpValues.length, ephemeralAgent?.mcp, setMCPValuesRaw]);
+
   // Sync Jotai state with ephemeral agent state
   useEffect(() => {
     const mcps = ephemeralAgent?.mcp ?? [];
