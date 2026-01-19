@@ -100,7 +100,11 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
 
   const handleClearDocuments = useCallback(() => {
     const convoId = conversationId || Constants.NEW_CONVO;
+    // Clear both current conversation and NEW_CONVO fallback to prevent stale data
     localStorage.removeItem(`persona_documents_${convoId}`);
+    if (convoId !== Constants.NEW_CONVO) {
+      localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
+    }
     setSelectedDocuments([]);
     window.dispatchEvent(new Event('documentsUpdated'));
   }, [conversationId]);

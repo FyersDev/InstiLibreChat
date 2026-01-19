@@ -91,6 +91,37 @@ export default function TemplatePersonaSelector() {
     fetchData();
   }, []);
 
+  // Initialize FIA (default) persona if no persona is selected
+  useEffect(() => {
+    const initializeDefaultPersona = () => {
+      const convoId = conversationId || Constants.NEW_CONVO;
+      let personaData = localStorage.getItem(`persona_data_${convoId}`);
+      
+      // Check fallback to NEW_CONVO if not found
+      if (!personaData && convoId !== Constants.NEW_CONVO) {
+        personaData = localStorage.getItem(`persona_data_${Constants.NEW_CONVO}`);
+      }
+      
+      // If no persona is selected, automatically select FIA (default)
+      if (!personaData) {
+        const fiaDefaultPersona = defaultPersonas[0]; // FIA (default) is first in array
+        const personaDataToStore = {
+          persona: fiaDefaultPersona.name,
+          name: fiaDefaultPersona.name,
+          description: fiaDefaultPersona.description,
+          detailedPrompt: fiaDefaultPersona.detailedPrompt,
+          content: { custom: fiaDefaultPersona.detailedPrompt }
+        };
+        localStorage.setItem(`persona_data_${convoId}`, JSON.stringify(personaDataToStore));
+        setSelectedPersona(fiaDefaultPersona.name);
+        window.dispatchEvent(new Event('personaUpdated'));
+        console.log('✅ Auto-initialized FIA (default) persona');
+      }
+    };
+    
+    initializeDefaultPersona();
+  }, [conversationId]);
+
   // Get selected template and persona from localStorage to show in button
   const updateSelectedItems = useCallback(() => {
     const convoId = conversationId || Constants.NEW_CONVO;
@@ -122,12 +153,23 @@ export default function TemplatePersonaSelector() {
     if (personaData) {
       try {
         const data = JSON.parse(personaData);
-        setSelectedPersona(data.persona || data.name || null);
+        setSelectedPersona(data.persona || data.name || 'FIA (default)');
       } catch (e) {
-        setSelectedPersona(null);
+        setSelectedPersona('FIA (default)');
       }
     } else {
-      setSelectedPersona(null);
+      // If no persona found, initialize FIA (default)
+      const fiaDefaultPersona = defaultPersonas[0];
+      const personaDataToStore = {
+        persona: fiaDefaultPersona.name,
+        name: fiaDefaultPersona.name,
+        description: fiaDefaultPersona.description,
+        detailedPrompt: fiaDefaultPersona.detailedPrompt,
+        content: { custom: fiaDefaultPersona.detailedPrompt }
+      };
+      localStorage.setItem(`persona_data_${convoId}`, JSON.stringify(personaDataToStore));
+      setSelectedPersona(fiaDefaultPersona.name);
+      window.dispatchEvent(new Event('personaUpdated'));
     }
   }, [conversationId]);
 
@@ -240,13 +282,28 @@ export default function TemplatePersonaSelector() {
       console.log('[TemplatePersonaSelector] Formatted templates:', formattedTemplates);
       console.log('[TemplatePersonaSelector] Formatted personas:', formattedPersonas);
 
+      // Merge default personas with backend personas, prioritizing backend
+      const mergedPersonas = [...defaultPersonas];
+      formattedPersonas.forEach((backendPersona) => {
+        const existingIndex = mergedPersonas.findIndex(p => p.name === backendPersona.name);
+        if (existingIndex >= 0) {
+          // Replace default with backend version
+          mergedPersonas[existingIndex] = backendPersona;
+        } else {
+          // Add new backend persona
+          mergedPersonas.push(backendPersona);
+        }
+      });
+
+      console.log('[TemplatePersonaSelector] Merged personas with defaults:', mergedPersonas);
+
       setTemplates(formattedTemplates);
-      setPersonas(formattedPersonas);
+      setPersonas(mergedPersonas);
     } catch (error) {
       console.error('[TemplatePersonaSelector] Error fetching from backend:', error);
-      // On error, set empty arrays (don't use defaults)
-      setTemplates([]);
-      setPersonas([]);
+      // On error, use default personas so FIA (default) is always available
+      setTemplates(defaultTemplates);
+      setPersonas(defaultPersonas);
     } finally {
       setLoading(false);
     }
@@ -296,16 +353,32 @@ export default function TemplatePersonaSelector() {
   const handleClearAll = () => {
     const convoId = conversationId || Constants.NEW_CONVO;
     localStorage.removeItem(`template_data_${convoId}`);
-    localStorage.removeItem(`persona_data_${convoId}`);
+    // Clear both current conversation and NEW_CONVO fallback to prevent stale data
     localStorage.removeItem(`persona_documents_${convoId}`);
+    if (convoId !== Constants.NEW_CONVO) {
+      localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
+    }
+    
+    // Reset to FIA (default) persona instead of clearing persona
+    const fiaDefaultPersona = defaultPersonas[0]; // FIA (default) is first in array
+    const personaDataToStore = {
+      persona: fiaDefaultPersona.name,
+      name: fiaDefaultPersona.name,
+      description: fiaDefaultPersona.description,
+      detailedPrompt: fiaDefaultPersona.detailedPrompt,
+      content: { custom: fiaDefaultPersona.detailedPrompt }
+    };
+    localStorage.setItem(`persona_data_${convoId}`, JSON.stringify(personaDataToStore));
+    
     setSelectedTemplate(null);
-    setSelectedPersona(null);
+    setSelectedPersona(fiaDefaultPersona.name);
+    
     // Dispatch events to notify all components
     window.dispatchEvent(new Event('templateUpdated'));
     window.dispatchEvent(new Event('personaUpdated'));
     window.dispatchEvent(new Event('documentsUpdated'));
     setIsOpen(false);
-    console.log('✅ Cleared all selections');
+    console.log('✅ Reset to default: cleared template and documents, reset persona to FIA (default)');
   };
 
   // Build menu items with sections: Templates, Separator, Personas, Clear All
@@ -370,11 +443,11 @@ export default function TemplatePersonaSelector() {
         key: `persona-${persona.name}`,
       };
     }),
-    // Separator before clear option
-    ...((templates.length > 0 || personas.length > 0) && (selectedTemplate || selectedPersona) ? [{ separate: true }] : []),
-    // Clear all option (only show if something is selected)
-    ...((selectedTemplate || selectedPersona) ? [{
-      label: 'Clear All',
+    // Separator before reset option
+    ...((templates.length > 0 || personas.length > 0) && (selectedTemplate || (selectedPersona && selectedPersona !== 'FIA (default)')) ? [{ separate: true }] : []),
+    // Reset to default option (only show if template is selected or persona is not FIA default)
+    ...((selectedTemplate || (selectedPersona && selectedPersona !== 'FIA (default)')) ? [{
+      label: 'Reset to Default',
       onClick: handleClearAll,
     }] : []),
   ];
@@ -399,13 +472,12 @@ export default function TemplatePersonaSelector() {
     if (selectedTemplate && selectedPersona) {
       return `${selectedTemplate} + ${selectedPersona}`;
     } else if (selectedTemplate) {
-      return ` ${selectedTemplate}`;
+      return `${selectedTemplate}`;
     } else if (selectedPersona) {
       return `${selectedPersona}`;
     } else {
-      return templates.length > 0 || personas.length > 0
-        ? 'Pick Template/Persona'
-        : 'No Templates';
+      // Default to showing FIA (default) since it's always selected
+      return 'FIA (default)';
     }
   };
 

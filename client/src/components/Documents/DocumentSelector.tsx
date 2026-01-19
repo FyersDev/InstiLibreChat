@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RefreshCw, X, Calendar, Check, ChevronRight, Home } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, useToastContext } from '@librechat/client';
 import { useLocalize, useMCPServerManager } from '~/hooks';
 import { type DocumentListItem } from '~/data-provider/document-service';
 import { Constants } from 'librechat-data-provider';
@@ -47,6 +47,7 @@ export default function DocumentSelector({
   conversationId,
 }: DocumentSelectorProps) {
   const localize = useLocalize();
+  const { showToast } = useToastContext();
   const mcpServerManager = useMCPServerManager({ conversationId: conversationId || null });
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
@@ -55,6 +56,8 @@ export default function DocumentSelector({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [userInfo, setUserInfo] = useState<any>(null);
+
+  const MAX_DOCUMENTS = 5;
 
   // Load user info to get orgId
   useEffect(() => {
@@ -273,13 +276,22 @@ export default function DocumentSelector({
       const newSet = new Set(prev);
       const idStr = documentId.toString();
       if (newSet.has(idStr)) {
+        // Deselecting - always allowed
         newSet.delete(idStr);
       } else {
+        // Selecting - check if limit reached
+        if (newSet.size >= MAX_DOCUMENTS) {
+          showToast({
+            message: `You can select a maximum of ${MAX_DOCUMENTS} documents. Please deselect a document before selecting another.`,
+            status: 'error',
+          });
+          return prev; // Don't update the state
+        }
         newSet.add(idStr);
       }
       return newSet;
     });
-  }, []);
+  }, [showToast]);
 
   // Convert FileNode to DocumentListItem for selected documents
   const convertFileToDocument = useCallback((file: FileNode): DocumentListItem | null => {
@@ -332,13 +344,24 @@ export default function DocumentSelector({
         documents: documentsToStore,
         document_ids: documentsToStore.map(d => d.document_id),
       });
-      localStorage.setItem(
-        `persona_documents_${conversationId}`,
-        JSON.stringify({
-          documents: documentsToStore,
-          timestamp: Date.now(),
-        }),
-      );
+      
+      // If no documents selected, clear both current and NEW_CONVO storage
+      if (selected.length === 0) {
+        localStorage.removeItem(`persona_documents_${conversationId}`);
+        if (conversationId !== Constants.NEW_CONVO) {
+          localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
+        }
+      } else {
+        // Store documents for current conversation
+        localStorage.setItem(
+          `persona_documents_${conversationId}`,
+          JSON.stringify({
+            documents: documentsToStore,
+            timestamp: Date.now(),
+          }),
+        );
+      }
+      
       // Dispatch custom event to notify other components (like SelectedDocuments)
       window.dispatchEvent(new Event('documentsUpdated'));
 
@@ -414,12 +437,17 @@ export default function DocumentSelector({
       <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden" showCloseButton={false}>
         <DialogHeader className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
           <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-1">
             <DialogTitle 
               className="text-xl font-semibold text-gray-900 dark:text-gray-100"
               title={selectedDocumentsList.length > 0 ? selectedDocumentsList.map(doc => doc.name).join('\n') : ''}
             >
               Select documents
             </DialogTitle>
+              <span className="text-sm text-gray-500 dark:text-gray-400">
+                {selectedDocumentsList.length} of {MAX_DOCUMENTS} selected
+              </span>
+            </div>
             <div className="flex items-center gap-2">
               <button
                 onClick={loadFolders}

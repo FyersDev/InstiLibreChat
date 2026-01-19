@@ -88,6 +88,35 @@ export default function PersonaSelector() {
     fetchData();
   }, []);
 
+  // Auto-set FIA (Default) persona when personas are loaded and no persona is stored
+  useEffect(() => {
+    if (personas.length === 0 || loading) return;
+
+    const convoId = conversationId || Constants.NEW_CONVO;
+    const personaData = localStorage.getItem(`persona_data_${convoId}`);
+    
+    // Only set default if no persona is stored for this conversation
+    if (!personaData) {
+      const fiaDefaultPersona = personas.find(p => p.name === DEFAULT_PERSONA);
+      
+      if (fiaDefaultPersona) {
+        const defaultPersonaData = {
+          persona: fiaDefaultPersona.name,
+          name: fiaDefaultPersona.name,
+          description: fiaDefaultPersona.description || '',
+          detailedPrompt: fiaDefaultPersona.detailedPrompt || fiaDefaultPersona.description || fiaDefaultPersona.name,
+          content: { custom: fiaDefaultPersona.detailedPrompt || fiaDefaultPersona.description || fiaDefaultPersona.name }
+        };
+        
+        localStorage.setItem(`persona_data_${convoId}`, JSON.stringify(defaultPersonaData));
+        console.log('FIA (Default) persona automatically set for conversation:', convoId, defaultPersonaData);
+        window.dispatchEvent(new Event('personaUpdated'));
+      } else {
+        console.warn('[PersonaSelector] FIA (Default) persona not found in fetched personas');
+      }
+    }
+  }, [personas, conversationId, loading]);
+
   // Load and sync selected persona - only when conversationId changes
   useEffect(() => {
     const convoId = conversationId || Constants.NEW_CONVO;
@@ -144,10 +173,28 @@ export default function PersonaSelector() {
 
   const handleClearPersona = () => {
     const convoId = conversationId || Constants.NEW_CONVO;
-    localStorage.removeItem(`persona_data_${convoId}`);
+    
+    // Find FIA (Default) from personas and set it
+    const fiaDefaultPersona = personas.find(p => p.name === DEFAULT_PERSONA);
+    
+    if (fiaDefaultPersona) {
+      const defaultPersonaData = {
+        persona: fiaDefaultPersona.name,
+        name: fiaDefaultPersona.name,
+        description: fiaDefaultPersona.description || '',
+        detailedPrompt: fiaDefaultPersona.detailedPrompt || fiaDefaultPersona.description || fiaDefaultPersona.name,
+        content: { custom: fiaDefaultPersona.detailedPrompt || fiaDefaultPersona.description || fiaDefaultPersona.name }
+      };
+      
+      localStorage.setItem(`persona_data_${convoId}`, JSON.stringify(defaultPersonaData));
+      console.log('🔄 Reset to FIA (Default) persona:', defaultPersonaData);
+    } else {
+      localStorage.removeItem(`persona_data_${convoId}`);
+      console.log('🗑️ Persona cleared (FIA Default not found)');
+    }
+    
     window.dispatchEvent(new Event('personaUpdated'));
     setSelectedPersona(DEFAULT_PERSONA);
-    console.log('🗑️ Persona cleared');
     setIsOpen(false);
   };
 

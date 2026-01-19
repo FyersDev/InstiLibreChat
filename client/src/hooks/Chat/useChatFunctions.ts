@@ -303,14 +303,27 @@ export default function useChatFunctions({
 
     // Get persona and template data from localStorage
     const convoId = conversationId ?? Constants.NEW_CONVO;
-    const storedPersonaData = localStorage.getItem(`persona_data_${convoId}`);
-    const storedTemplateData = localStorage.getItem(`template_data_${convoId}`);
+    let storedPersonaData = localStorage.getItem(`persona_data_${convoId}`);
+    let storedTemplateData = localStorage.getItem(`template_data_${convoId}`);
+    
+    // Fallback to NEW_CONVO if current conversation doesn't have data
+    if (!storedPersonaData && convoId !== Constants.NEW_CONVO) {
+      storedPersonaData = localStorage.getItem(`persona_data_${Constants.NEW_CONVO}`);
+    }
+    if (!storedTemplateData && convoId !== Constants.NEW_CONVO) {
+      storedTemplateData = localStorage.getItem(`template_data_${Constants.NEW_CONVO}`);
+    }
     
     // Get document data and build document prompt
     let documentPrompt = '';
     let documentsList: any[] = [];
     let enhancedEphemeralAgent = ephemeralAgent ? { ...ephemeralAgent } : {};
-    const documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
+    let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
+    
+    // Fallback to NEW_CONVO for documents if current conversation doesn't have data
+    if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
+      documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
+    }
     
     if (documentDataStr) {
       try {
@@ -732,11 +745,13 @@ export default function useChatFunctions({
       }
     }
 
-    // Build persona object
+    // Build persona object - ALWAYS include a persona (default to FIA if none found)
+    let personaObj: any = null;
+    
     if (storedPersonaData) {
       try {
         const personaData = JSON.parse(storedPersonaData);
-        const personaObj: any = {
+        personaObj = {
           name: personaData.name || personaData.persona || 'Persona',
           description: personaData.description || 'Defines the role and behavioral style of the assistant.'
         };
@@ -757,8 +772,8 @@ export default function useChatFunctions({
               'Use evidence from documents when available.'
             ]
           };
-            }
-        
+        }
+
         requestObject.persona = personaObj;
       } catch (error) {
         console.error('Error parsing persona data:', error);
