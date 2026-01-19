@@ -5,7 +5,6 @@ import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import AddUserModal from './Modals/AddUserModal';
 import EditUserModal from './Modals/EditUserModal';
-import AssignRoleModal from './Modals/AssignRoleModal';
 import PermissionsModal from './Modals/PermissionsModal';
 
 interface UsersViewProps {
@@ -35,7 +34,6 @@ export default function UsersView({
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [userPermissions, setUserPermissions] = useState<any[]>([]);
-  const [showAssignRoleModal, setShowAssignRoleModal] = useState(false);
 
   const handleOrgFilterChange = (orgId: string) => {
     onOrgFilterChange(orgId);
@@ -245,26 +243,15 @@ export default function UsersView({
                   <td className="px-3 py-3 whitespace-nowrap text-sm">
                     <div className="flex gap-2">
                       {permissionManager && permissionManager.canUpdate('users') && (
-                        <>
-                          <button
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowEditUserModal(true);
-                            }}
-                            className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
-                          >
-                            Edit
-                          </button>
-                          <button
-                            onClick={() => {
-                              setSelectedUser(user);
-                              setShowAssignRoleModal(true);
-                            }}
-                            className="text-green-600 hover:text-green-900 dark:text-green-400 dark:hover:text-green-300"
-                          >
-                            Assign Role
-                          </button>
-                        </>
+                        <button
+                          onClick={() => {
+                            setSelectedUser(user);
+                            setShowEditUserModal(true);
+                          }}
+                          className="text-blue-600 hover:text-blue-900 dark:text-blue-400 dark:hover:text-blue-300"
+                        >
+                          Edit
+                        </button>
                       )}
                       {permissionManager && permissionManager.canDelete('users') && (
                         <button
@@ -304,23 +291,6 @@ export default function UsersView({
           }}
           onSuccess={() => {
             setShowEditUserModal(false);
-            setSelectedUser(null);
-            onRefresh();
-          }}
-        />
-      )}
-
-      {showAssignRoleModal && selectedUser && (
-        <AssignRoleModal
-          user={selectedUser}
-          isSuperAdmin={isSuperAdmin}
-          userOrgId={userOrgId}
-          onClose={() => {
-            setShowAssignRoleModal(false);
-            setSelectedUser(null);
-          }}
-          onSuccess={() => {
-            setShowAssignRoleModal(false);
             setSelectedUser(null);
             onRefresh();
           }}

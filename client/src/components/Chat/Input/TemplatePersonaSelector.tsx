@@ -295,15 +295,9 @@ export default function TemplatePersonaSelector() {
 
   const handleClearAll = () => {
     const convoId = conversationId || Constants.NEW_CONVO;
-    // Clear from both actual conversationId and NEW_CONVO to ensure it's removed
     localStorage.removeItem(`template_data_${convoId}`);
     localStorage.removeItem(`persona_data_${convoId}`);
     localStorage.removeItem(`persona_documents_${convoId}`);
-    if (convoId !== Constants.NEW_CONVO) {
-      localStorage.removeItem(`template_data_${Constants.NEW_CONVO}`);
-      localStorage.removeItem(`persona_data_${Constants.NEW_CONVO}`);
-      localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
-    }
     setSelectedTemplate(null);
     setSelectedPersona(null);
     // Dispatch events to notify all components

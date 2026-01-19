@@ -217,9 +217,12 @@ export default function DocumentSelector({
     if (isOpen && !loading) {
       const convoId = conversationId || Constants.NEW_CONVO;
       let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
+      
+      // Fallback to NEW_CONVO if current convo doesn't have data (handles migration timing)
       if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
         documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
       }
+      
       if (documentDataStr) {
         try {
           const documentData = JSON.parse(documentDataStr);

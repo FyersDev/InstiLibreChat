@@ -107,6 +107,7 @@ export default function PersonaSelector() {
   const loadPersonaFromStorage = useCallback((convoId: string) => {
     let personaData = localStorage.getItem(`persona_data_${convoId}`);
     
+    // Fallback to NEW_CONVO if current convo doesn't have data (handles migration timing)
     if (!personaData && convoId !== Constants.NEW_CONVO) {
       personaData = localStorage.getItem(`persona_data_${Constants.NEW_CONVO}`);
     }
@@ -144,9 +145,6 @@ export default function PersonaSelector() {
   const handleClearPersona = () => {
     const convoId = conversationId || Constants.NEW_CONVO;
     localStorage.removeItem(`persona_data_${convoId}`);
-    if (convoId !== Constants.NEW_CONVO) {
-      localStorage.removeItem(`persona_data_${Constants.NEW_CONVO}`);
-    }
     window.dispatchEvent(new Event('personaUpdated'));
     setSelectedPersona(DEFAULT_PERSONA);
     console.log('🗑️ Persona cleared');

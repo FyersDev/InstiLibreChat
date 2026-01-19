@@ -69,7 +69,6 @@ Response: *"I'm specifically designed for financial analysis and market research
 #### document_search MCP (Primary Source - Uploaded Documents)
 - **tool:text** → Maximum 2 calls per selected document
 - **tool:table** → Maximum 2 calls per selected document
-- Use this FIRST before calling external MCPs
 - Can make multiple calls to thoroughly extract from provided documents
 
 #### External MCPs (Market Data & Regulatory)

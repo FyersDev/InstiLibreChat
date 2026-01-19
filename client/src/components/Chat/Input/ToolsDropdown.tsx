@@ -31,6 +31,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
     const convoId = conversationId || Constants.NEW_CONVO;
     let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
     
+    // Fallback to NEW_CONVO if current convo doesn't have data (handles migration timing)
     if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
       documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
     }
@@ -97,6 +98,13 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
 
   const tooltipText = documentCount > 0 ? documentNames : localize('com_ui_tools');
 
+  const handleClearDocuments = useCallback(() => {
+    const convoId = conversationId || Constants.NEW_CONVO;
+    localStorage.removeItem(`persona_documents_${convoId}`);
+    setSelectedDocuments([]);
+    window.dispatchEvent(new Event('documentsUpdated'));
+  }, [conversationId]);
+
   return (
     <>
      <TooltipAnchor
@@ -106,7 +114,6 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
       onClick={handleClick}
       id="tools-dropdown-button"
       aria-label="Select Documents"
-      title={tooltipText}
       style={{ height: '34px' }}
       className={cn(
         'flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover',
@@ -114,6 +121,18 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
       )}
     >
       {buttonText}
+      {documentCount > 0 && (
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            handleClearDocuments();
+          }}
+          className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-surface-hover"
+          aria-label="Clear all documents"
+        >
+          <span className="text-xs">✕</span>
+        </button>
+      )}
     </button>
   }
   id="tools-dropdown-button"

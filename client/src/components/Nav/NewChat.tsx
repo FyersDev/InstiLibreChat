@@ -34,6 +34,16 @@ export default function NewChat({
         window.open('/c/new', '_blank');
         return;
       }
+      // Clear all selections when starting a new chat
+      localStorage.removeItem(`persona_data_${Constants.NEW_CONVO}`);
+      localStorage.removeItem(`template_data_${Constants.NEW_CONVO}`);
+      localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
+      
+      // Dispatch events to notify all components
+      window.dispatchEvent(new Event('personaUpdated'));
+      window.dispatchEvent(new Event('templateUpdated'));
+      window.dispatchEvent(new Event('documentsUpdated'));
+      
       clearMessagesCache(queryClient, conversation?.conversationId);
       queryClient.invalidateQueries([QueryKeys.messages]);
       newConvo();

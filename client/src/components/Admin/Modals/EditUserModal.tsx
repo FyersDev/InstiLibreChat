@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
+import * as Ariakit from '@ariakit/react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext, DropdownPopup } from '@librechat/client';
+import { ChevronDown } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 
 interface EditUserModalProps {
@@ -15,7 +17,6 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
     last_name: user.last_name || '',
     phone: user.phone || '',
     status: user.status || 'active',
-    org_role: user.org_role || 'user',
     timezone: user.timezone || '',
     locale: user.locale || '',
     role_id: '',
@@ -24,6 +25,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
   const [availableRoles, setAvailableRoles] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
 
   // Fetch roles on mount
   useEffect(() => {
@@ -38,14 +40,31 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
         const uniqueRoles = Array.from(
           new Map(rolesList.map((role: any) => [role.id, role])).values()
         );
-        setAvailableRoles(uniqueRoles);
+        
+        // Filter to show only "Org Admin" and "User" roles
+        const filteredRoles = uniqueRoles.filter((role: any) => {
+          const roleName = role.name.toLowerCase();
+          return roleName === 'org admin' || roleName === 'user';
+        });
+        
+        setAvailableRoles(filteredRoles);
+        
+        // Set initial role_id from user's current role
+        if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {
+          const currentRole = user.roles[0];
+          setFormData(prev => ({
+            ...prev,
+            role_id: currentRole.id,
+            role_name: currentRole.name,
+          }));
+        }
       } catch (error) {
         console.error('Error fetching roles:', error);
       }
     };
 
     fetchRoles();
-  }, []);
+  }, [user.roles]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,15 +77,20 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
       if (formData.last_name) payload.last_name = formData.last_name;
       if (formData.phone) payload.phone = formData.phone;
       if (formData.status) payload.status = formData.status;
-      if (formData.org_role) payload.org_role = formData.org_role;
       if (formData.timezone) payload.timezone = formData.timezone;
       if (formData.locale) payload.locale = formData.locale;
 
-      // Include role assignment if selected
+      // Include role assignment (required - determines org_role automatically)
       if (formData.role_id && formData.role_id.trim() !== '') {
         payload.role_id = formData.role_id;
+        // Set org_role based on selected role name
+        const selectedRole = availableRoles.find(r => r.id === formData.role_id);
+        if (selectedRole) {
+          payload.org_role = selectedRole.name.toLowerCase() === 'org admin' ? 'admin' : 'user';
+        }
       } else if (formData.role_name && formData.role_name.trim() !== '') {
         payload.role_name = formData.role_name;
+        payload.org_role = formData.role_name.toLowerCase() === 'org admin' ? 'admin' : 'user';
       }
 
       await saasApi.updateUser(user.id, payload);
@@ -163,64 +187,49 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Organization Role *
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Role *
             </label>
-            <select
-              value={formData.org_role}
-              onChange={(e) => setFormData({ ...formData, org_role: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              required
-            >
-              <option value="user">User (default)</option>
-              <option value="admin">Admin (can login via OTP)</option>
-            </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              This determines login eligibility. Admin can log in via OTP.
-            </p>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Assign Role (Permissions)
-            </label>
-            <select
-              value={formData.role_id || ''}
-              onChange={(e) => {
-                const selectedRoleId = e.target.value;
-                if (selectedRoleId) {
-                  const selectedRole = availableRoles.find((r) => r.id === selectedRoleId);
-                  if (selectedRole) {
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="role-selector-edit"
+                isOpen={isRoleMenuOpen}
+                setIsOpen={setIsRoleMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span>{formData.role_name || 'Select Role'}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={availableRoles.map((role, index) => ({
+                  label: role.name,
+                  onClick: () => {
                     setFormData({
                       ...formData,
-                      role_id: selectedRole.id,
-                      role_name: selectedRole.name,
+                      role_id: role.id,
+                      role_name: role.name,
                     });
-                  }
-                } else {
-                  setFormData({ ...formData, role_id: '', role_name: '' });
-                }
-              }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">Keep current role (no change)</option>
-              {availableRoles.length === 0 ? (
-                <option value="" disabled>
-                  No roles available
-                </option>
-              ) : (
-                availableRoles.map((role) => (
-                  <option key={role.id} value={role.id}>
-                    {role.name} {role.type === 'system' ? '(System)' : ''}
-                  </option>
-                ))
-              )}
-            </select>
+                    setIsRoleMenuOpen(false);
+                  },
+                }))}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
             {availableRoles.length === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-                No roles available. Please create a role first.
+              <p className="text-sm text-red-500 dark:text-red-400 mt-2">
+                No roles available. Please create roles first.
               </p>
             )}
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+              Org Admins have full access and can see the admin panel. Users can upload documents and query.
+            </p>
           </div>
 
           <div>

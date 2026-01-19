@@ -111,6 +111,7 @@ export default function TemplateSelector() {
   const loadTemplateFromStorage = useCallback((convoId: string) => {
     let templateData = localStorage.getItem(`template_data_${convoId}`);
     
+    // Fallback to NEW_CONVO if current convo doesn't have data (handles migration timing)
     if (!templateData && convoId !== Constants.NEW_CONVO) {
       templateData = localStorage.getItem(`template_data_${Constants.NEW_CONVO}`);
     }

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useSearchParams, useOutletContext } from 'react-router-dom';
 import {
   TrendingUp,
@@ -25,6 +25,25 @@ function OTP() {
   const [otp, setOtp] = useState(['', '', '', '', '', '']);
   const [isLoading, setIsLoading] = useState(false);
   const [isResending, setIsResending] = useState(false);
+  const [countdown, setCountdown] = useState(30);
+  const [canResend, setCanResend] = useState(false);
+
+  // Countdown timer effect
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    
+    if (countdown > 0 && !canResend) {
+      timer = setTimeout(() => {
+        setCountdown(countdown - 1);
+      }, 1000);
+    } else if (countdown === 0) {
+      setCanResend(true);
+    }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [countdown, canResend]);
 
   const handleOtpChange = (index: number, value: string) => {
     if (value.length <= 1 && /^\d*$/.test(value)) {
@@ -194,6 +213,10 @@ function OTP() {
         message: 'OTP resent to your email',
         status: 'success',
       });
+
+      // Reset countdown timer after successful resend
+      setCountdown(30);
+      setCanResend(false);
     } catch {
       showToast({
         message: 'Failed to resend OTP. Please try again.',
@@ -298,10 +321,14 @@ function OTP() {
 
             <button
               onClick={handleResend}
-              disabled={isResending}
-              className="w-full border border-gray-300 py-3 rounded-lg font-medium hover:bg-gray-50 transition"
+              disabled={isResending || !canResend}
+              className="w-full border border-gray-300 py-3 rounded-lg font-medium hover:bg-gray-50 transition disabled:bg-gray-100 disabled:text-gray-400 disabled:cursor-not-allowed"
             >
-              {isResending ? 'Resending...' : 'Resend OTP'}
+              {isResending 
+                ? 'Resending...' 
+                : !canResend 
+                  ? `Resend OTP in ${countdown}s` 
+                  : 'Resend OTP'}
             </button>
           </div>
         </div>

@@ -19,10 +19,9 @@ export default function SelectedDocuments() {
 
   const loadSelectedDocuments = useCallback(() => {
     const convoId = conversationId || Constants.NEW_CONVO;
-    // Try actual conversationId first, then fallback to NEW_CONVO
     let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
     
-    // If no data found for actual conversationId and we're not on NEW_CONVO, also check NEW_CONVO
+    // Fallback to NEW_CONVO if current convo doesn't have data (handles migration timing)
     if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
       documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
     }
@@ -84,11 +83,7 @@ export default function SelectedDocuments() {
 
   const handleRemoveAll = useCallback(() => {
     const convoId = conversationId || Constants.NEW_CONVO;
-    // Clear from both actual conversationId and NEW_CONVO to ensure it's removed
     localStorage.removeItem(`persona_documents_${convoId}`);
-    if (convoId !== Constants.NEW_CONVO) {
-      localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
-    }
     setSelectedDocuments([]);
     // Dispatch custom event to notify other components
     window.dispatchEvent(new Event('documentsUpdated'));

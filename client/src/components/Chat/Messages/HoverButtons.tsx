@@ -318,8 +318,8 @@ const HoverButtons = ({
         className={`ml-0 flex items-center gap-1.5 text-xs ${isSubmitting && isCreatedByUser ? 'md:opacity-0 md:group-hover:opacity-100' : ''}`}
       />
 
-      {/* Edit Button - Hidden for user messages */}
-      {isEditableEndpoint && !isCreatedByUser && (
+      {/* Edit Button - Removed */}
+      {/* {isEditableEndpoint && !isCreatedByUser && (
         <HoverButton
           id={`edit-${message.messageId}`}
           onClick={onEdit}
@@ -338,7 +338,7 @@ const HoverButtons = ({
           isLast={isLast}
           className="active"
         />
-      )}
+      )} */}
 
       {/* Feedback Buttons */}
       {!isCreatedByUser && handleFeedback != null && (
