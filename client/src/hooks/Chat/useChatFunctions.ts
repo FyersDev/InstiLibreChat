@@ -367,10 +367,16 @@ export default function useChatFunctions({
             if (numericDocumentIds.length === 0) {
               console.error('[DOCUMENT SEARCH] ❌ No valid numeric document_ids after conversion!');
           } else {
+            // CRITICAL: Preserve ALL existing MCP servers from ephemeralAgent
+            const existingMCPServers = ephemeralAgent?.mcp || [];
+            
+            // Add document_search to the list if not already present
+            const allMCPServers = [...existingMCPServers, 'document_search'].filter((v, i, a) => a.indexOf(v) === i);
+            
             enhancedEphemeralAgent = {
               ...(ephemeralAgent || {}),
-              // Add document search capability to MCP tools
-              mcp: [...(ephemeralAgent?.mcp || []), 'document_search'].filter((v, i, a) => a.indexOf(v) === i), // Remove duplicates
+              // Preserve ALL MCP tools and add document search capability
+              mcp: allMCPServers,
               // @ts-ignore - Adding documentSearch property for MCP
               documentSearch: {
                 enabled: true,

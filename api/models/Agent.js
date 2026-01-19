@@ -78,7 +78,9 @@ const loadEphemeralAgent = async ({ req, spec, agent_id, endpoint, model_paramet
   }
   /** @type {TEphemeralAgent | null} */
   const ephemeralAgent = req.body.ephemeralAgent;
+  logger.info('[loadEphemeralAgent] Received ephemeralAgent.mcp:', ephemeralAgent?.mcp);
   const mcpServers = new Set(ephemeralAgent?.mcp);
+  logger.info('[loadEphemeralAgent] MCP servers Set:', Array.from(mcpServers));
   const userId = req.user?.id; // note: userId cannot be undefined at runtime
   if (modelSpec?.mcpServers) {
     for (const mcpServer of modelSpec.mcpServers) {
@@ -99,19 +101,26 @@ const loadEphemeralAgent = async ({ req, spec, agent_id, endpoint, model_paramet
 
   const addedServers = new Set();
   if (mcpServers.size > 0) {
+    logger.info(`[loadEphemeralAgent] Processing ${mcpServers.size} MCP servers:`, Array.from(mcpServers));
     for (const mcpServer of mcpServers) {
       if (addedServers.has(mcpServer)) {
+        logger.debug(`[loadEphemeralAgent] Skipping duplicate MCP server: ${mcpServer}`);
         continue;
       }
+      logger.info(`[loadEphemeralAgent] Loading tools for MCP server: ${mcpServer}`);
       const serverTools = await getMCPServerTools(userId, mcpServer);
       if (!serverTools) {
+        logger.info(`[loadEphemeralAgent] No cached tools for ${mcpServer}, adding placeholder`);
         tools.push(`${mcp_all}${mcp_delimiter}${mcpServer}`);
         addedServers.add(mcpServer);
         continue;
       }
-      tools.push(...Object.keys(serverTools));
+      const toolKeys = Object.keys(serverTools);
+      logger.info(`[loadEphemeralAgent] Adding ${toolKeys.length} tools from ${mcpServer}:`, toolKeys);
+      tools.push(...toolKeys);
       addedServers.add(mcpServer);
     }
+    logger.info(`[loadEphemeralAgent] Final tools array (${tools.length} tools):`, tools);
   }
 
   const instructions = req.body.promptPrefix;

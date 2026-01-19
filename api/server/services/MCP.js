@@ -334,6 +334,12 @@ function createToolInstance({ res, toolName, serverName, toolDefinition, provide
       const mcpManager = getMCPManager(userId);
       const provider = (config?.metadata?.provider || _provider)?.toLowerCase();
 
+      // Log MCP tool selection
+      logger.info(
+        `[MCP][${serverName}][${toolName}][User: ${userId}] Tool selected by AI with arguments:`,
+        { toolName, serverName, provider, toolArguments },
+      );
+
       const { args: _args, stepId, ...toolCall } = config.toolCall ?? {};
       const flowId = `${serverName}:oauth_login:${config.metadata.thread_id}:${config.metadata.run_id}`;
       const runStepDeltaEmitter = createRunStepDeltaEmitter({

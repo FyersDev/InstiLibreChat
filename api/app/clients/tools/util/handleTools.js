@@ -455,8 +455,15 @@ Current Date & Time: ${replaceSpecialVars({ text: '{{iso_datetime}}' })}
 
         if (Array.isArray(mcpTool)) {
           loadedTools.push(...mcpTool);
+          logger.info(
+            `[MCP][${serverName}] Loaded ${mcpTool.length} tools for user ${safeUser.id}:`,
+            mcpTool.map((t) => t.name),
+          );
         } else if (mcpTool) {
           loadedTools.push(mcpTool);
+          logger.info(
+            `[MCP][${serverName}] Loaded tool "${mcpTool.name}" for user ${safeUser.id}`,
+          );
         } else {
           failedMCPServers.add(serverName);
           logger.warn(

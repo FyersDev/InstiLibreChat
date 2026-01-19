@@ -51,10 +51,10 @@ export default function MCPServerSelector() {
       availableServers.length > 0 &&
       (!mcpValues || mcpValues.length === 0)
     ) {
-      // Pick first 4 servers (or fewer if less than 4 exist)
-      const defaults = availableServers.slice(0, 4);
+      // Select ALL available servers by default
+      const defaults = availableServers;
   
-      console.log('[MCP Selector] Setting default MCP servers:', defaults);
+      console.log('[MCP Selector] Setting default MCP servers (ALL):', defaults);
       batchToggleServers(defaults);
     }
   }, [availableServers, mcpValues, batchToggleServers]);

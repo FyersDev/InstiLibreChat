@@ -227,6 +227,15 @@ Please follow these instructions when using tools from the respective MCP server
         connection.setRequestHeaders(currentOptions.headers || {});
       }
 
+      // Log which MCP tool is being called
+      logger.info(`${logPrefix}[${toolName}] Tool selected and being executed with arguments:`, {
+        toolName,
+        serverName,
+        provider,
+        arguments: toolArguments,
+        userId,
+      });
+
       const result = await connection.client.request(
         {
           method: 'tools/call',
