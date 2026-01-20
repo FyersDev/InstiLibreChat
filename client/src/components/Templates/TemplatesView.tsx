@@ -683,7 +683,6 @@ export default function TemplatesView() {
 {/* Create Persona Modal */}
 {showCreatePersonaModal && (
   <CreatePersonaModal
-    templates={templates}
     onClose={() => {
       setShowCreatePersonaModal(false);
       setSelectedItem(null);
@@ -709,7 +708,6 @@ export default function TemplatesView() {
 {showEditPersonaModal && selectedPersona && (
   <EditPersonaModal
     persona={selectedPersona}
-    templates={templates}
     onClose={() => {
       setShowEditPersonaModal(false);
       setSelectedPersona(null);
@@ -733,7 +731,6 @@ export default function TemplatesView() {
 
 {showCreatePersonaModal && (
   <CreatePersonaModal
-    templates={templates}
     onClose={() => setShowCreatePersonaModal(false)}
     onSave={async (persona) => {
       try {
@@ -753,7 +750,6 @@ export default function TemplatesView() {
 {showEditPersonaModal && selectedPersona && (
   <EditPersonaModal
     persona={selectedPersona}
-    templates={templates}
     onClose={() => {
       setShowEditPersonaModal(false);
       setSelectedPersona(null);
@@ -1416,11 +1412,9 @@ Keep it:
 
 // Create Persona Modal
 function CreatePersonaModal({
-  templates,
   onClose,
   onSave,
 }: {
-  templates: any[];
   onClose: () => void;
   onSave: (persona: any) => Promise<void>;
 }) {
@@ -1429,9 +1423,6 @@ function CreatePersonaModal({
     description: '',
     usePredefined: false,
     selectedPredefinedId: '',
-    useTemplate: false,
-    selectedTemplateId: '',
-    customTemplate: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1461,23 +1452,12 @@ function CreatePersonaModal({
       setError('Description is required');
       return;
     }
-    if (formData.useTemplate) {
-      if (!formData.selectedTemplateId) {
-        setError('Please select a template');
-        return;
-      }
-    } else {
-      if (!formData.customTemplate.trim()) {
-        setError('Custom template content is required');
-        return;
-      }
-    }
     const persona = {
       name: formData.name,
       description: formData.description || null,
-      template_id: formData.useTemplate && formData.selectedTemplateId ? formData.selectedTemplateId : null,
-      is_custom_template: !formData.useTemplate,
-      content: formData.useTemplate ? {} : { custom: formData.customTemplate },
+      template_id: null,
+      is_custom_template: false,
+      content: {},
     };
 
     setLoading(true);
@@ -1559,71 +1539,6 @@ function CreatePersonaModal({
             )}
           </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Template</label>
-            <div className="space-y-3">
-
-              {/* Option 1: Select from created templates */}
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  checked={formData.useTemplate}
-                  onChange={() => setFormData({ 
-                    ...formData, 
-                    useTemplate: true,
-                    customTemplate: '',
-                  })}
-                  className="mr-2"
-                />
-                <span className="text-gray-700 dark:text-gray-300">Select from created templates</span>
-              </label>
-              {formData.useTemplate && (
-                <div className="ml-6">
-                <select
-                  value={formData.selectedTemplateId}
-                  onChange={(e) => setFormData({ ...formData, selectedTemplateId: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">-- Select Template --</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name} ({template.framework})
-                    </option>
-                  ))}
-                </select>
-                </div>
-              )}
-
-              {/* Option 2: Write your own template */}
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  checked={!formData.useTemplate}
-                  onChange={() => setFormData({ 
-                    ...formData, 
-                    useTemplate: false,
-                    selectedTemplateId: '',
-                  })}
-                  className="mr-2"
-                />
-                <span className="text-gray-700 dark:text-gray-300">Write your own template</span>
-              </label>
-              {!formData.useTemplate && (
-                <div className="ml-6">
-                <TextareaAutosize
-                  value={formData.customTemplate}
-                  onChange={(e) => setFormData({ ...formData, customTemplate: e.target.value })}
-                  minRows={6}
-                  maxRows={12}
-                  aria-label="Custom persona template"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                  placeholder="Enter your custom template here..."
-                />
-                </div>
-              )}
-            </div>
-          </div>
-
           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
             <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
               Cancel
@@ -1641,48 +1556,20 @@ function CreatePersonaModal({
 // Edit Persona Modal
 function EditPersonaModal({
   persona,
-  templates,
   onClose,
   onSave,
 }: {
   persona: any;
-  templates: any[];
   onClose: () => void;
   onSave: (persona: any) => Promise<void>;
 }) {
   // Initialize formData based on persona's current state
   const getInitialFormData = () => {
-    // Check is_custom_template first - this is the definitive flag
-    // If is_custom_template is true, use custom template mode (second option)
-    // If is_custom_template is false and template_id exists, use template selection mode (first option)
-    const useTemplateMode = !persona.is_custom_template && !!persona.template_id;
-    
-    // Extract custom template content
-    let customTemplateContent = '';
-    if (persona.is_custom_template && persona.content) {
-      if (persona.content.custom) {
-        customTemplateContent = typeof persona.content.custom === 'string' 
-          ? persona.content.custom 
-          : JSON.stringify(persona.content.custom);
-      } else if (typeof persona.content === 'string') {
-        customTemplateContent = persona.content;
-      } else if (typeof persona.content === 'object') {
-        // Try to extract custom content from object
-        const custom = (persona.content as any).custom;
-        if (custom) {
-          customTemplateContent = typeof custom === 'string' ? custom : JSON.stringify(custom);
-        }
-      }
-    }
-    
     return {
-    name: persona.name || '',
-    description: persona.description || '',
-    usePredefined: false,
-    selectedPredefinedId: '',
-      useTemplate: useTemplateMode, // false if is_custom_template is true, true if template_id exists
-      selectedTemplateId: useTemplateMode ? (persona.template_id || '') : '',
-      customTemplate: customTemplateContent,
+      name: persona.name || '',
+      description: persona.description || '',
+      usePredefined: false,
+      selectedPredefinedId: '',
     };
   };
   
@@ -1715,23 +1602,12 @@ function EditPersonaModal({
       setError('Description is required');
       return;
     }
-    if (formData.useTemplate) {
-      if (!formData.selectedTemplateId) {
-        setError('Please select a template');
-        return;
-      }
-    } else {
-      if (!formData.customTemplate.trim()) {
-        setError('Custom template content is required');
-        return;
-      }
-    }
     const updatedPersona = {
       name: formData.name,
       description: formData.description || null,
-      template_id: formData.useTemplate && formData.selectedTemplateId ? formData.selectedTemplateId : null,
-      is_custom_template: !formData.useTemplate,
-      content: formData.useTemplate ? {} : { custom: formData.customTemplate.trim() },
+      template_id: null,
+      is_custom_template: false,
+      content: {},
     };
     
     console.log('Updating persona with:', updatedPersona);
@@ -1813,71 +1689,6 @@ function EditPersonaModal({
                 Variables to edit: {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map(v => `{{${v}}}`).join(', ')}
               </p>
             )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Template</label>
-            <div className="space-y-3">
-
-              {/* Option 1: Select from created templates */}
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  checked={formData.useTemplate}
-                  onChange={() => setFormData({ 
-                    ...formData, 
-                    useTemplate: true,
-                    customTemplate: '',
-                  })}
-                  className="mr-2"
-                />
-                <span className="text-gray-700 dark:text-gray-300">Select from created templates</span>
-              </label>
-              {formData.useTemplate && (
-                <div className="ml-6">
-                <select
-                  value={formData.selectedTemplateId}
-                  onChange={(e) => setFormData({ ...formData, selectedTemplateId: e.target.value })}
-                    className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-                >
-                  <option value="">-- Select Template --</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name} ({template.framework})
-                    </option>
-                  ))}
-                </select>
-                </div>
-              )}
-
-              {/* Option 2: Write your own template */}
-              <label className="flex items-center">
-                <input
-                  type="radio"
-                  checked={!formData.useTemplate}
-                  onChange={() => setFormData({ 
-                    ...formData, 
-                    useTemplate: false,
-                    selectedTemplateId: '',
-                  })}
-                  className="mr-2"
-                />
-                <span className="text-gray-700 dark:text-gray-300">Write your own template</span>
-              </label>
-              {!formData.useTemplate && (
-                <div className="ml-6">
-                <TextareaAutosize
-                  value={formData.customTemplate}
-                  onChange={(e) => setFormData({ ...formData, customTemplate: e.target.value })}
-                  minRows={6}
-                  maxRows={12}
-                  aria-label="Custom persona template"
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                  placeholder="Enter your custom template here..."
-                />
-                </div>
-              )}
-            </div>
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
