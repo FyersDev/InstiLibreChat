@@ -1,10 +1,11 @@
 import { useState, useMemo, memo, useCallback } from 'react';
 import { useAtomValue } from 'jotai';
 import { Lightbulb, ChevronDown } from 'lucide-react';
-import { Clipboard, CheckMark } from '@librechat/client';
+import { Clipboard, CheckMark, useToastContext } from '@librechat/client';
 import type { MouseEvent, FC } from 'react';
 import { showThinkingAtom } from '~/store/showThinking';
 import { fontSizeAtom } from '~/store/fontSize';
+import { NotificationSeverity } from '~/common';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -45,6 +46,7 @@ export const ThinkingButton = memo(
   }) => {
     const localize = useLocalize();
     const fontSize = useAtomValue(fontSizeAtom);
+    const { showToast } = useToastContext();
 
     const [isCopied, setIsCopied] = useState(false);
 
@@ -53,11 +55,20 @@ export const ThinkingButton = memo(
         e.stopPropagation();
         if (content) {
           navigator.clipboard.writeText(content);
+          
+          // Show toast notification
+          showToast({
+            message: 'Thoughts copied to clipboard',
+            severity: NotificationSeverity.SUCCESS,
+            showIcon: false,
+            duration: 2000,
+          });
+          
           setIsCopied(true);
           setTimeout(() => setIsCopied(false), 2000);
         }
       },
-      [content],
+      [content, showToast],
     );
 
     return (

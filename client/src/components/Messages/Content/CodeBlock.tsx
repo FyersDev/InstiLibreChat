@@ -2,8 +2,9 @@ import React, { useRef, useState, useMemo, useEffect } from 'react';
 import copy from 'copy-to-clipboard';
 import { InfoIcon } from 'lucide-react';
 import { Tools } from 'librechat-data-provider';
-import { Clipboard, CheckMark } from '@librechat/client';
+import { Clipboard, CheckMark, useToastContext } from '@librechat/client';
 import type { CodeBarProps } from '~/common';
+import { NotificationSeverity } from '~/common';
 import ResultSwitcher from '~/components/Messages/Content/ResultSwitcher';
 import { useToolCallsMapContext, useMessageContext } from '~/Providers';
 import { LogContent } from '~/components/Chat/Messages/Content/Parts';
@@ -23,6 +24,8 @@ const CodeBar: React.FC<CodeBarProps> = React.memo(
   ({ lang, error, codeRef, blockIndex, plugin = null, allowExecution = true }) => {
     const localize = useLocalize();
     const [isCopied, setIsCopied] = useState(false);
+    const { showToast } = useToastContext();
+    
     return (
       <div className="relative flex items-center justify-between rounded-tl-md rounded-tr-md bg-gray-700 px-4 py-2 font-sans text-xs text-gray-200 dark:bg-gray-700">
         <span className="">{lang}</span>
@@ -44,6 +47,14 @@ const CodeBar: React.FC<CodeBarProps> = React.memo(
                 if (codeString != null) {
                   setIsCopied(true);
                   copy(codeString.trim(), { format: 'text/plain' });
+
+                  // Show toast notification
+                  showToast({
+                    message: 'Code copied to clipboard',
+                    severity: NotificationSeverity.SUCCESS,
+                    showIcon: false,
+                    duration: 2000,
+                  });
 
                   setTimeout(() => {
                     setIsCopied(false);

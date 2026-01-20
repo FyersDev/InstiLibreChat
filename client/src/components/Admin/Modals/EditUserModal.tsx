@@ -26,6 +26,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isRoleMenuOpen, setIsRoleMenuOpen] = useState(false);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
   // Fetch roles on mount
   useEffect(() => {
@@ -172,18 +173,53 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Status
             </label>
-            <select
-              value={formData.status}
-              onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="active">Active</option>
-              <option value="pending">Pending</option>
-              <option value="suspended">Suspended</option>
-            </select>
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="status-selector-edit"
+                isOpen={isStatusMenuOpen}
+                setIsOpen={setIsStatusMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span className="capitalize">{formData.status}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={[
+                  {
+                    label: 'Active',
+                    onClick: () => {
+                      setFormData({ ...formData, status: 'active' });
+                      setIsStatusMenuOpen(false);
+                    },
+                  },
+                  {
+                    label: 'Pending',
+                    onClick: () => {
+                      setFormData({ ...formData, status: 'pending' });
+                      setIsStatusMenuOpen(false);
+                    },
+                  },
+                  {
+                    label: 'Suspended',
+                    onClick: () => {
+                      setFormData({ ...formData, status: 'suspended' });
+                      setIsStatusMenuOpen(false);
+                    },
+                  },
+                ]}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
           </div>
 
           <div>

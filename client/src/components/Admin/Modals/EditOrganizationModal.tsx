@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
+import * as Ariakit from '@ariakit/react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext, DropdownPopup } from '@librechat/client';
+import { ChevronDown } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 
 interface EditOrganizationModalProps {
@@ -34,6 +36,7 @@ export default function EditOrganizationModal({
   const [logoPreview, setLogoPreview] = useState<string | null>(organization.logo_url || null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isStatusMenuOpen, setIsStatusMenuOpen] = useState(false);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -154,18 +157,59 @@ export default function EditOrganizationModal({
             </div>
             <div>
               <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Statu
+                Status
               </label>
-              <select
-                value={formData.status}
-                onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                <option value="active">Active</option>
-                <option value="pending">Pending</option>
-                <option value="suspended">Suspended</option>
-                <option value="deleted">Deleted</option>
-              </select>
+              <div className="relative">
+                <DropdownPopup
+                  portal={false}
+                  sameWidth={true}
+                  anchor={{ x: 'start', y: 'bottom' }}
+                  menuId="org-status-selector-edit"
+                  isOpen={isStatusMenuOpen}
+                  setIsOpen={setIsStatusMenuOpen}
+                  trigger={
+                    <Ariakit.MenuButton
+                      style={{ height: '40px' }}
+                      className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    >
+                      <span className="capitalize">{formData.status}</span>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                    </Ariakit.MenuButton>
+                  }
+                  items={[
+                    {
+                      label: 'Active',
+                      onClick: () => {
+                        setFormData({ ...formData, status: 'active' });
+                        setIsStatusMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Pending',
+                      onClick: () => {
+                        setFormData({ ...formData, status: 'pending' });
+                        setIsStatusMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Suspended',
+                      onClick: () => {
+                        setFormData({ ...formData, status: 'suspended' });
+                        setIsStatusMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Deleted',
+                      onClick: () => {
+                        setFormData({ ...formData, status: 'deleted' });
+                        setIsStatusMenuOpen(false);
+                      },
+                    },
+                  ]}
+                  className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                  itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                />
+              </div>
             </div>
           </div>
 

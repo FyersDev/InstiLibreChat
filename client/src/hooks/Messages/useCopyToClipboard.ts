@@ -2,6 +2,8 @@ import { useCallback, useEffect, useRef } from 'react';
 import copy from 'copy-to-clipboard';
 import { ContentTypes, SearchResultData } from 'librechat-data-provider';
 import type { TMessage } from 'librechat-data-provider';
+import { useToastContext } from '@librechat/client';
+import { NotificationSeverity } from '~/common';
 import {
   SPAN_REGEX,
   CLEANUP_REGEX,
@@ -35,6 +37,7 @@ export default function useCopyToClipboard({
   searchResults?: { [key: string]: SearchResultData };
 }) {
   const copyTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { showToast } = useToastContext();
 
   useEffect(() => {
     return () => {
@@ -86,6 +89,15 @@ export default function useCopyToClipboard({
           .replace(CLEANUP_REGEX, '');
 
         copy(cleanedText, { format: 'text/plain' });
+        
+        // Show toast notification
+        showToast({
+          message: 'Copied to clipboard',
+          severity: NotificationSeverity.SUCCESS,
+          showIcon: false,
+          duration: 2000,
+        });
+        
         copyTimeoutRef.current = setTimeout(() => {
           setIsCopied(false);
         }, 3000);
@@ -111,11 +123,20 @@ export default function useCopyToClipboard({
       }
 
       copy(processedText, { format: 'text/plain' });
+      
+      // Show toast notification
+      showToast({
+        message: 'Copied to clipboard',
+        severity: NotificationSeverity.SUCCESS,
+        showIcon: false,
+        duration: 2000,
+      });
+      
       copyTimeoutRef.current = setTimeout(() => {
         setIsCopied(false);
       }, 3000);
     },
-    [text, content, searchResults],
+    [text, content, searchResults, showToast],
   );
 
   return copyToClipboard;

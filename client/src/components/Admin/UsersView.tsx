@@ -1,6 +1,7 @@
 import { useState } from 'react';
-import { Button, useToastContext } from '@librechat/client';
-import { Search } from 'lucide-react';
+import * as Ariakit from '@ariakit/react';
+import { Button, useToastContext, DropdownPopup } from '@librechat/client';
+import { Search, ChevronDown } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import AddUserModal from './Modals/AddUserModal';
@@ -34,6 +35,7 @@ export default function UsersView({
   const [selectedUser, setSelectedUser] = useState<any>(null);
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [userPermissions, setUserPermissions] = useState<any[]>([]);
+  const [openStatusMenuUserId, setOpenStatusMenuUserId] = useState<string | null>(null);
 
   const handleOrgFilterChange = (orgId: string) => {
     onOrgFilterChange(orgId);
@@ -192,25 +194,58 @@ export default function UsersView({
                   )}
                   <td className="px-3 py-3 whitespace-nowrap">
                     {permissionManager && permissionManager.canUpdate('users') ? (
-                      <select
-                        value={user.status || 'pending'}
-                        onChange={(e) => handleStatusChange(user, e.target.value)}
-                        className={`px-2 py-1 text-xs rounded-md border-0 focus:ring-2 focus:ring-blue-500 cursor-pointer font-medium transition-colors ${
-                          user.status === 'active'
-                            ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'
-                            : user.status === 'suspended'
-                              ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800'
-                              : user.status === 'pending'
-                                ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800'
-                                : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
-                        }`}
-                        onClick={(e) => e.stopPropagation()}
-                        title="Click to change status"
-                      >
-                        <option value="active">Active</option>
-                        <option value="pending">Pending</option>
-                        <option value="suspended">Suspended</option>
-                      </select>
+                      <div className="relative inline-block" onClick={(e) => e.stopPropagation()}>
+                        <DropdownPopup
+                          portal={true}
+                          sameWidth={false}
+                          anchor={{ x: 'start', y: 'bottom' }}
+                          menuId={`user-status-selector-${user.id}`}
+                          isOpen={openStatusMenuUserId === user.id}
+                          setIsOpen={(isOpen) => setOpenStatusMenuUserId(isOpen ? user.id : null)}
+                          trigger={
+                            <Ariakit.MenuButton
+                              className={`flex items-center justify-between gap-1 px-2 py-1 text-xs rounded-md border-0 cursor-pointer font-medium transition-colors ${
+                                user.status === 'active'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300 hover:bg-green-200 dark:hover:bg-green-800'
+                                  : user.status === 'suspended'
+                                    ? 'bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-300 hover:bg-red-200 dark:hover:bg-red-800'
+                                    : user.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300 hover:bg-yellow-200 dark:hover:bg-yellow-800'
+                                      : 'bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-600'
+                              }`}
+                              title="Click to change status"
+                            >
+                              <span className="capitalize">{user.status || 'pending'}</span>
+                              <ChevronDown className="h-3 w-3" />
+                            </Ariakit.MenuButton>
+                          }
+                          items={[
+                            {
+                              label: 'Active',
+                              onClick: () => {
+                                handleStatusChange(user, 'active');
+                                setOpenStatusMenuUserId(null);
+                              },
+                            },
+                            {
+                              label: 'Pending',
+                              onClick: () => {
+                                handleStatusChange(user, 'pending');
+                                setOpenStatusMenuUserId(null);
+                              },
+                            },
+                            {
+                              label: 'Suspended',
+                              onClick: () => {
+                                handleStatusChange(user, 'suspended');
+                                setOpenStatusMenuUserId(null);
+                              },
+                            },
+                          ]}
+                          className="min-w-[120px] rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                          itemClassName="px-4 py-2 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                        />
+                      </div>
                     ) : (
                       <span
                         className={`px-2 py-1 text-xs rounded-full font-medium ${

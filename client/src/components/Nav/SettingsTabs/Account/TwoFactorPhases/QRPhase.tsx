@@ -2,7 +2,8 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { QRCodeSVG } from 'qrcode.react';
 import { Copy, Check } from 'lucide-react';
-import { Input, Button, Label } from '@librechat/client';
+import { Input, Button, Label, useToastContext } from '@librechat/client';
+import { NotificationSeverity } from '~/common';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -24,9 +25,19 @@ interface QRPhaseProps {
 export const QRPhase: React.FC<QRPhaseProps> = ({ secret, otpauthUrl, onNext }) => {
   const localize = useLocalize();
   const [isCopying, setIsCopying] = useState(false);
+  const { showToast } = useToastContext();
 
   const handleCopy = async () => {
     await navigator.clipboard.writeText(secret);
+    
+    // Show toast notification
+    showToast({
+      message: 'Secret key copied to clipboard',
+      severity: NotificationSeverity.SUCCESS,
+      showIcon: false,
+      duration: 2000,
+    });
+    
     setIsCopying(true);
     setTimeout(() => setIsCopying(false), 2000);
   };
