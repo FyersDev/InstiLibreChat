@@ -48,7 +48,18 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
           return roleName === 'org admin' || roleName === 'user';
         });
         
-        setAvailableRoles(filteredRoles);
+        // Deduplicate by role name (show each role type only once)
+        const roleNameMap = new Map();
+        filteredRoles.forEach((role: any) => {
+          const roleName = role.name.toLowerCase();
+          // Keep the first occurrence of each role name
+          if (!roleNameMap.has(roleName)) {
+            roleNameMap.set(roleName, role);
+          }
+        });
+        const finalRoles = Array.from(roleNameMap.values());
+        
+        setAvailableRoles(finalRoles);
         
         // Set initial role_id from user's current role
         if (user.roles && Array.isArray(user.roles) && user.roles.length > 0) {

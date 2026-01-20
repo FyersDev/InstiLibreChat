@@ -25,6 +25,9 @@ interface FlatFolder {
   created_by?: string;
 }
 
+// Placeholder ID for Resources folder when it doesn't exist yet
+const RESOURCES_PLACEHOLDER_ID = 'resources-placeholder';
+
 export default function UploadFileModal({ folderId, orgId, folders = [], isSuperAdmin = false, isOrgAdmin: isOrgAdminProp, currentUserId: currentUserIdProp, onClose, onSuccess }: UploadFileModalProps) {
   const { showToast } = useToastContext();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -85,21 +88,58 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
     (folder) => folder.name.toLowerCase() === 'resources'
   );
 
-  // Sort folders to put "resources" first
-  const sortedFolders = [...filteredFolders].sort((a, b) => {
-    if (a.id === resourcesFolder?.id) return -1;
-    if (b.id === resourcesFolder?.id) return 1;
+  // Find "FYERS Resources" folder (for superadmins)
+  const fyersResourcesFolder = filteredFolders.find(
+    (folder) => folder.name.toLowerCase() === 'fyers resources'
+  );
+
+  // Always ensure "Resources" folder appears in the list for non-superadmins, even if it doesn't exist yet
+  // The backend will auto-create it when documents are uploaded
+  let foldersWithResources = [...filteredFolders];
+  
+  if (!resourcesFolder && !isSuperAdmin) {
+    // Add Resources placeholder for org admins and regular users if it doesn't exist
+    foldersWithResources.unshift({
+      id: RESOURCES_PLACEHOLDER_ID,
+      name: 'Resources',
+      path: 'Resources',
+      level: 0,
+      created_by: currentUserId,
+    });
+  }
+
+  // Sort folders to put default folder first based on user role
+  const sortedFolders = [...foldersWithResources].sort((a, b) => {
+    const aNameLower = a.name.toLowerCase();
+    const bNameLower = b.name.toLowerCase();
+    
+    if (isSuperAdmin) {
+      // For superadmins, prioritize "FYERS Resources"
+      if (aNameLower === 'fyers resources') return -1;
+      if (bNameLower === 'fyers resources') return 1;
+    } else {
+      // For non-superadmins, prioritize "Resources"
+      if (aNameLower === 'resources') return -1;
+      if (bNameLower === 'resources') return 1;
+    }
+    
     return 0;
   });
 
   useEffect(() => {
     if (folderId) {
       setSelectedFolderId(folderId);
-    } else if (resourcesFolder) {
-      // Set resources as default if no folderId is provided
-      setSelectedFolderId(resourcesFolder.id);
+    } else if (isSuperAdmin && fyersResourcesFolder) {
+      // Superadmins default to "FYERS Resources"
+      setSelectedFolderId(fyersResourcesFolder.id);
+    } else if (!isSuperAdmin) {
+      // Non-superadmins default to "Resources" (existing or placeholder)
+      const resourcesOption = sortedFolders.find(f => f.name.toLowerCase() === 'resources');
+      if (resourcesOption) {
+        setSelectedFolderId(resourcesOption.id);
+      }
     }
-  }, [folderId, resourcesFolder?.id]);
+  }, [folderId, fyersResourcesFolder?.id, resourcesFolder?.id, sortedFolders.length, isSuperAdmin]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -173,16 +213,22 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
       return;
     }
 
-    // Validate that non-super-admin users cannot upload to "FYERS Resources"
+    // Validate that non-super-admin users cannot upload to "FYERS Resources" or its subfolders
     if (!isSuperAdmin && selectedFolderId) {
       const selectedFolder = flatFolders.find(f => f.id === selectedFolderId);
-      if (selectedFolder && selectedFolder.name.toLowerCase() === 'fyers resources') {
-        setError('Only super administrators can upload files to "FYERS Resources" folder');
-        showToast({
-          message: 'Only super administrators can upload files to "FYERS Resources" folder',
-          status: 'error',
-        });
-        return;
+      if (selectedFolder) {
+        const nameLower = selectedFolder.name.toLowerCase();
+        const pathLower = (selectedFolder.path || '').toLowerCase();
+        
+        // Check if folder is "FYERS Resources" or inside it
+        if (nameLower === 'fyers resources' || pathLower.includes('fyers resources')) {
+          setError('Cannot upload files to "FYERS Resources" folder or its subfolders');
+          showToast({
+            message: 'Cannot upload files to "FYERS Resources" folder or its subfolders',
+            status: 'error',
+          });
+          return;
+        }
       }
     }
 
@@ -192,16 +238,23 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
     try {
       // Upload document directly with folder_id using saasApi
       // This will automatically assign to the specified folder or Resources if no folder
+      // If the placeholder ID is selected, pass undefined to let backend create Resources folder
+      const folderIdToUse = (selectedFolderId === RESOURCES_PLACEHOLDER_ID || !selectedFolderId) 
+        ? undefined 
+        : selectedFolderId;
+      
       const response = await saasApi.uploadFile(
         selectedFile, 
-        selectedFolderId || undefined, // Pass folder ID if selected
+        folderIdToUse, // Pass folder ID if selected (undefined for Resources auto-creation)
         orgId || undefined
       );
 
       if (response) {
-        const folderMessage = selectedFolderId 
-          ? 'uploaded successfully and associated with folder' 
-          : 'uploaded successfully to Resources folder';
+        const selectedFolderName = selectedFolderId 
+          ? (sortedFolders.find(f => f.id === selectedFolderId)?.name || 'folder')
+          : 'Resources';
+        
+        const folderMessage = `uploaded successfully to ${selectedFolderName}`;
         
         showToast({
           message: `Document "${selectedFile.name}" ${folderMessage}`,

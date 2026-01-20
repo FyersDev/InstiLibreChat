@@ -70,9 +70,24 @@ export default function AddUserModal({
           const roleOrgId = String(role.org_id);
           const userOrgIdStr = String(userOrgId);
           return roleOrgId === userOrgIdStr;
-        });        
-        console.log(' AddUserModal - Filtered roles:', { count: filteredRoles.length, filteredRoles });
-        setAvailableRoles(filteredRoles);
+        });
+        
+        // For superadmins, deduplicate by role name (show each role type only once)
+        let finalRoles = filteredRoles;
+        if (isSuperAdmin) {
+          const roleNameMap = new Map();
+          filteredRoles.forEach((role: any) => {
+            const roleName = role.name.toLowerCase();
+            // Keep the first occurrence of each role name
+            if (!roleNameMap.has(roleName)) {
+              roleNameMap.set(roleName, role);
+            }
+          });
+          finalRoles = Array.from(roleNameMap.values());
+        }
+        
+        console.log(' AddUserModal - Filtered roles:', { count: finalRoles.length, finalRoles });
+        setAvailableRoles(finalRoles);
       } catch (error) {
         console.error('❌ Error fetching roles:', error);
       }

@@ -978,6 +978,8 @@ export default function ResourcesRoute() {
         <CreateFolderModal
           parentId={currentFolderId || undefined}
           orgId={isSuperAdmin ? selectedOrgId : userOrgId}
+          isSuperAdmin={isSuperAdmin}
+          folders={allFolders}
           onClose={() => setShowCreateFolderModal(false)}
           onSuccess={async () => {
             setShowCreateFolderModal(false);

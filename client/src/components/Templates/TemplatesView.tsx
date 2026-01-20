@@ -1,8 +1,9 @@
 import { useState, useEffect, useRef } from 'react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, useToastContext } from '@librechat/client';
+import * as Ariakit from '@ariakit/react';
+import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, useToastContext, DropdownPopup } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { createPortal } from 'react-dom';
-import { User, Edit, Trash2, MoreVertical } from 'lucide-react';
+import { User, Edit, Trash2, MoreVertical, ChevronDown } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
 
 export default function TemplatesView() {
@@ -789,6 +790,7 @@ function CreateTemplateModal({
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
 
   const frameworks = {
     'R-T-F': {
@@ -935,19 +937,56 @@ function CreateTemplateModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Framework
             </label>
-            <select
-              value={formData.customTemplate ? 'custom' : formData.framework}
-              onChange={(e) => handleFrameworkChange(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">-- Select Framework --</option>
-              {Object.keys(frameworks).map((key) => (
-                <option key={key} value={key}>
-                  {(frameworks as any)[key].name}
-                </option>
-              ))}
-              <option value="custom">Create Custom Template</option>
-            </select>
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="framework-selector-create"
+                isOpen={isFrameworkMenuOpen}
+                setIsOpen={setIsFrameworkMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span>
+                      {formData.customTemplate 
+                        ? 'Create Custom Template'
+                        : formData.framework 
+                          ? (frameworks as any)[formData.framework].name
+                          : '-- Select Framework --'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={[
+                  {
+                    label: '-- Select Framework --',
+                    onClick: () => {
+                      handleFrameworkChange('');
+                      setIsFrameworkMenuOpen(false);
+                    },
+                  },
+                  ...Object.keys(frameworks).map((key) => ({
+                    label: (frameworks as any)[key].name,
+                    onClick: () => {
+                      handleFrameworkChange(key);
+                      setIsFrameworkMenuOpen(false);
+                    },
+                  })),
+                  {
+                    label: 'Create Custom Template',
+                    onClick: () => {
+                      handleFrameworkChange('custom');
+                      setIsFrameworkMenuOpen(false);
+                    },
+                  },
+                ]}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
@@ -1033,6 +1072,7 @@ function EditTemplateModal({
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
 
   const frameworks = {
     'R-T-F': {
@@ -1180,19 +1220,56 @@ function EditTemplateModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Framework
             </label>
-            <select
-              value={formData.customTemplate ? 'custom' : formData.framework}
-              onChange={(e) => handleFrameworkChange(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">-- Select Framework --</option>
-              {Object.keys(frameworks).map((key) => (
-                <option key={key} value={key}>
-                  {(frameworks as any)[key].name}
-                </option>
-              ))}
-              <option value="custom">Create Custom Template</option>
-            </select>
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="framework-selector-edit"
+                isOpen={isFrameworkMenuOpen}
+                setIsOpen={setIsFrameworkMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span>
+                      {formData.customTemplate 
+                        ? 'Create Custom Template'
+                        : formData.framework 
+                          ? (frameworks as any)[formData.framework].name
+                          : '-- Select Framework --'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={[
+                  {
+                    label: '-- Select Framework --',
+                    onClick: () => {
+                      handleFrameworkChange('');
+                      setIsFrameworkMenuOpen(false);
+                    },
+                  },
+                  ...Object.keys(frameworks).map((key) => ({
+                    label: (frameworks as any)[key].name,
+                    onClick: () => {
+                      handleFrameworkChange(key);
+                      setIsFrameworkMenuOpen(false);
+                    },
+                  })),
+                  {
+                    label: 'Create Custom Template',
+                    onClick: () => {
+                      handleFrameworkChange('custom');
+                      setIsFrameworkMenuOpen(false);
+                    },
+                  },
+                ]}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
@@ -1426,6 +1503,7 @@ function CreatePersonaModal({
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
   
   // Handle predefined persona selection
   const handlePredefinedSelect = (predefinedId: string) => {
@@ -1499,18 +1577,47 @@ function CreatePersonaModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Predefined Agent (optional)
             </label>
-            <select
-              value={formData.selectedPredefinedId}
-              onChange={(e) => handlePredefinedSelect(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">-- Select Predefined Agent (Optional) --</option>
-              {PREDEFINED_PERSONAS.map((persona, idx) => (
-                <option key={idx} value={idx.toString()}>
-                  {persona.name}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="predefined-agent-selector-create"
+                isOpen={isPredefinedMenuOpen}
+                setIsOpen={setIsPredefinedMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span>
+                      {formData.selectedPredefinedId 
+                        ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
+                        : '-- Select Predefined Agent (Optional) --'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={[
+                  {
+                    label: '-- Select Predefined Agent (Optional) --',
+                    onClick: () => {
+                      handlePredefinedSelect('');
+                      setIsPredefinedMenuOpen(false);
+                    },
+                  },
+                  ...PREDEFINED_PERSONAS.map((persona, idx) => ({
+                    label: persona.name,
+                    onClick: () => {
+                      handlePredefinedSelect(idx.toString());
+                      setIsPredefinedMenuOpen(false);
+                    },
+                  })),
+                ]}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
                 Agent template will be auto-filled below. Just edit the variables like {`{{variable_name}}`} with your values.
@@ -1576,6 +1683,7 @@ function EditPersonaModal({
   const [formData, setFormData] = useState(getInitialFormData());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
   
   // Handle predefined persona selection
   const handlePredefinedSelect = (predefinedId: string) => {
@@ -1651,18 +1759,47 @@ function EditPersonaModal({
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Predefined Persona (optional)
             </label>
-            <select
-              value={formData.selectedPredefinedId}
-              onChange={(e) => handlePredefinedSelect(e.target.value)}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            >
-              <option value="">-- Select Predefined Persona (Optional) --</option>
-              {PREDEFINED_PERSONAS.map((persona, idx) => (
-                <option key={idx} value={idx.toString()}>
-                  {persona.name}
-                </option>
-              ))}
-            </select>
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="predefined-persona-selector-edit"
+                isOpen={isPredefinedMenuOpen}
+                setIsOpen={setIsPredefinedMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span>
+                      {formData.selectedPredefinedId 
+                        ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
+                        : '-- Select Predefined Persona (Optional) --'}
+                    </span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={[
+                  {
+                    label: '-- Select Predefined Persona (Optional) --',
+                    onClick: () => {
+                      handlePredefinedSelect('');
+                      setIsPredefinedMenuOpen(false);
+                    },
+                  },
+                  ...PREDEFINED_PERSONAS.map((persona, idx) => ({
+                    label: persona.name,
+                    onClick: () => {
+                      handlePredefinedSelect(idx.toString());
+                      setIsPredefinedMenuOpen(false);
+                    },
+                  })),
+                ]}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
                 Persona template will be auto-filled below. Just edit the variables like {`{{variable_name}}`} with your values.

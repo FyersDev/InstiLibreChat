@@ -105,8 +105,8 @@ export default function AdminDashboard({ userInfo }: AdminDashboardProps) {
       console.log('👥 Fetched users:', { count: usersList.length, isSuperAdmin, orgFilterId, data, usersList });
       
       // Note: Backend now handles filtering based on JWT claims
-      // Super admin sees only org admins, org admin sees all users in their org
-      // Client-side filtering is no longer needed, but kept for compatibility
+      // Super admin sees all users (can filter by org), org admin sees all users in their org
+      // Client-side filtering is no longer needed
         setUsers(usersList);
     } catch (err: any) {
       console.error('❌ Error fetching users:', err);
