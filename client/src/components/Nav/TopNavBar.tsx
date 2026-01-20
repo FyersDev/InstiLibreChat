@@ -1,8 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuthContext } from '~/hooks/AuthContext';
 import { PermissionManager, type Permission } from '~/utils/permissions';
 import { saasApi } from '~/services/saasApi';
+import Settings from './Settings';
 
 // interface NiftyData {
 //   symbol: string;
@@ -24,9 +25,37 @@ export default function TopNavBar() {
   const [userInfo, setUserInfo] = useState<any>(null);
   const [permissionManager, setPermissionManager] = useState<PermissionManager | null>(null);
   const [activeMenu, setActiveMenu] = useState('FIA research');
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [isDarkMode, setIsDarkMode] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
   // const [niftyData, setNiftyData] = useState<NiftyData | null>(null);
   // const [niftyLoading, setNiftyLoading] = useState(true);
   // const [niftyError, setNiftyError] = useState<string | null>(null);
+
+  // Check and set dark mode on mount
+  useEffect(() => {
+    const isDark = document.documentElement.classList.contains('dark');
+    setIsDarkMode(isDark);
+  }, []);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsDropdownOpen(false);
+      }
+    };
+
+    if (isDropdownOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [isDropdownOpen]);
 
   useEffect(() => {
     // Load user info and permissions
@@ -243,7 +272,45 @@ export default function TopNavBar() {
     localStorage.removeItem('user');
     localStorage.removeItem('permissions');
     localStorage.removeItem('canAccessAdmin'); // Clear admin access flag on logout
+    setIsDropdownOpen(false);
     logout();
+  };
+
+  const getUserInitials = () => {
+    if (!userInfo) return 'US';
+    
+    // Get initials from first 2 letters of email
+    const email = userInfo.email || userInfo.username || 'User';
+    return email.substring(0, 2).toUpperCase();
+  };
+
+  const getUserDisplayName = () => {
+    if (!userInfo) return 'User';
+    // Show email as the main display name
+    return userInfo.email || userInfo.username || userInfo.name || 'User';
+  };
+
+  const getUserSubtext = () => {
+    // Don't show any subtext (no ID)
+    return '';
+  };
+
+  const handleLogoutClick = () => {
+    setShowLogoutConfirm(true);
+  };
+
+  const confirmLogout = () => {
+    setShowLogoutConfirm(false);
+    handleLogout();
+  };
+
+  const cancelLogout = () => {
+    setShowLogoutConfirm(false);
+  };
+
+  const handleSettingsClick = () => {
+    setIsDropdownOpen(false);
+    setShowSettings(true);
   };
 
   // State to track admin access - DEFAULT TO FALSE (hide Admin tab by default)
@@ -398,26 +465,112 @@ export default function TopNavBar() {
         </div>
 
         {/* Right: User Actions */}
-        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gray-300 dark:bg-gray-700 rounded-full flex items-center justify-center">
-              <svg
-                className="w-5 h-5 sm:w-6 sm:h-6 text-gray-600 dark:text-gray-300"
-                fill="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-              </svg>
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0 relative" ref={dropdownRef}>
+          <button
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+          >
+            <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-blue-300 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold text-sm sm:text-base">
+              {getUserInitials()}
             </div>
-            <button
-              onClick={handleLogout}
-              className="text-xs sm:text-sm text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 whitespace-nowrap"
+            <svg
+              className={`w-4 h-4 text-gray-600 dark:text-gray-300 transition-transform ${isDropdownOpen ? 'rotate-180' : ''}`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
             >
-              Logout
-            </button>
-          </div>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          </button>
+
+          {/* Dropdown Menu */}
+          {isDropdownOpen && (
+            <div className="absolute right-0 top-full mt-2 w-[380px] bg-white dark:bg-[#1a1a1a] rounded-lg shadow-2xl border border-gray-200 dark:border-gray-700 overflow-hidden z-50">
+              {/* User Profile Section */}
+              <div className="px-4 py-4 border-b border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-3">
+                  <div className="w-12 h-12 bg-gradient-to-br from-blue-300 to-purple-400 rounded-full flex items-center justify-center text-white font-semibold text-lg">
+                    {getUserInitials()}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="text-base font-semibold text-gray-900 dark:text-white truncate">
+                      {getUserDisplayName()}
+                    </div>
+                    <div className="text-sm text-gray-500 dark:text-gray-400 truncate">
+                      {getUserSubtext()}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Menu Items */}
+              <div className="py-2">
+                {/* Settings */}
+                <button
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#222222] transition-colors"
+                  onClick={handleSettingsClick}
+                >
+                  <svg
+                    className="w-6 h-6 text-gray-700 dark:text-gray-300"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                  </svg>
+                  <span className="text-base text-gray-900 dark:text-white">Settings</span>
+                </button>
+                {/* Logout */}
+                <button
+                  onClick={handleLogoutClick}
+                  className="w-full px-4 py-3 flex items-center gap-3 hover:bg-gray-50 dark:hover:bg-[#222222] transition-colors text-[#BB5850]"
+                >
+                  <svg
+                    className="w-6 h-6"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  <span className="text-base font-medium">Logout</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Logout Confirmation Modal */}
+          {showLogoutConfirm && (
+            <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100]" onClick={cancelLogout}>
+              <div className="bg-[#1a1a1a] rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4 border border-gray-800" onClick={(e) => e.stopPropagation()}>
+                <div className="flex flex-col items-center text-center">
+                  <img src="/assets/warning.svg" alt="Warning" className="w-10 h-10 mb-4" style={{ fill: '#BB5850' }} />
+                  <h3 className="text-lg font-bold text-white mb-2">Logout</h3>
+                  <p className="text-sm text-gray-300 mb-4">Are you sure you want to logout?</p>
+                  <div className="flex gap-3 w-full">
+                    <button
+                      onClick={confirmLogout}
+                      className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-white bg-[#BB5850] hover:bg-[#A34B44] transition-colors"
+                    >
+                      Confirm
+                    </button>
+                    <button
+                      onClick={cancelLogout}
+                      className="flex-1 px-4 py-2 rounded-lg text-sm font-semibold text-white border-2 border-[#BB5850] hover:bg-[#BB5850]/10 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
+
+      {/* Settings Modal */}
+      {showSettings && <Settings open={showSettings} onOpenChange={setShowSettings} />}
     </nav>
   );
 }

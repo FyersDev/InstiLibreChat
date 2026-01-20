@@ -209,14 +209,14 @@ const Nav = memo(
                         isSearchLoading={isSearchLoading}
                       />
                     </div>
-                    <div className="flex flex-col gap-2">
+                    {/* <div className="flex flex-col gap-2">
                       <Suspense fallback={null}>
                         <NavSettingsButton />
                       </Suspense>
                     <Suspense fallback={null}>
                       <AccountSettings />
                     </Suspense>
-                    </div>
+                    </div> */}
                   </nav>
                 </div>
               </div>
