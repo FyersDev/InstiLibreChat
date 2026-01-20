@@ -1,5 +1,7 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext } from '@librechat/client';
+import * as Ariakit from '@ariakit/react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, Input, useToastContext, DropdownPopup } from '@librechat/client';
+import { ChevronDown } from 'lucide-react';
 import { saasApi } from '~/services/saasApi';
 
 interface CreateOrganizationModalProps {
@@ -28,6 +30,7 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: CreateOr
   const [logoPreview, setLogoPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isSubscriptionMenuOpen, setIsSubscriptionMenuOpen] = useState(false);
 
   const handleLogoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -201,20 +204,67 @@ export default function CreateOrganizationModal({ onClose, onSuccess }: CreateOr
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
                 Subscription Plan
               </label>
-              <select
-                value={formData.subscription_plan}
-                onChange={(e) => setFormData({ ...formData, subscription_plan: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                <option value="free">Free</option>
-                <option value="starter">Starter</option>
-                <option value="pro">Pro</option>
-                <option value="enterprise">Enterprise</option>
-                <option value="trial">Trial</option>
-              </select>
+              <div className="relative">
+                <DropdownPopup
+                  portal={false}
+                  sameWidth={true}
+                  anchor={{ x: 'start', y: 'bottom' }}
+                  menuId="subscription-selector-create"
+                  isOpen={isSubscriptionMenuOpen}
+                  setIsOpen={setIsSubscriptionMenuOpen}
+                  trigger={
+                    <Ariakit.MenuButton
+                      style={{ height: '40px' }}
+                      className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    >
+                      <span className="capitalize">{formData.subscription_plan}</span>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                    </Ariakit.MenuButton>
+                  }
+                  items={[
+                    {
+                      label: 'Free',
+                      onClick: () => {
+                        setFormData({ ...formData, subscription_plan: 'free' });
+                        setIsSubscriptionMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Starter',
+                      onClick: () => {
+                        setFormData({ ...formData, subscription_plan: 'starter' });
+                        setIsSubscriptionMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Pro',
+                      onClick: () => {
+                        setFormData({ ...formData, subscription_plan: 'pro' });
+                        setIsSubscriptionMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Enterprise',
+                      onClick: () => {
+                        setFormData({ ...formData, subscription_plan: 'enterprise' });
+                        setIsSubscriptionMenuOpen(false);
+                      },
+                    },
+                    {
+                      label: 'Trial',
+                      onClick: () => {
+                        setFormData({ ...formData, subscription_plan: 'trial' });
+                        setIsSubscriptionMenuOpen(false);
+                      },
+                    },
+                  ]}
+                  className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                  itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                />
+              </div>
             </div>
           </div>
 

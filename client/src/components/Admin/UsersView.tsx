@@ -36,6 +36,7 @@ export default function UsersView({
   const [showPermissionsModal, setShowPermissionsModal] = useState(false);
   const [userPermissions, setUserPermissions] = useState<any[]>([]);
   const [openStatusMenuUserId, setOpenStatusMenuUserId] = useState<string | null>(null);
+  const [isOrgFilterMenuOpen, setIsOrgFilterMenuOpen] = useState(false);
 
   const handleOrgFilterChange = (orgId: string) => {
     onOrgFilterChange(orgId);
@@ -108,18 +109,47 @@ export default function UsersView({
               <label className="text-sm font-medium text-gray-700 dark:text-gray-300">
                 Filter by Organization:
               </label>
-              <select
-                value={selectedOrgFilter}
-                onChange={(e) => handleOrgFilterChange(e.target.value)}
-                className="px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-              >
-                <option value="">All Organizations</option>
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name}
-                  </option>
-                ))}
-              </select>
+              <div className="relative" style={{ minWidth: '200px' }}>
+                <DropdownPopup
+                  portal={false}
+                  sameWidth={true}
+                  anchor={{ x: 'start', y: 'bottom' }}
+                  menuId="org-filter-selector"
+                  isOpen={isOrgFilterMenuOpen}
+                  setIsOpen={setIsOrgFilterMenuOpen}
+                  trigger={
+                    <Ariakit.MenuButton
+                      style={{ height: '40px' }}
+                      className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    >
+                      <span>
+                        {selectedOrgFilter 
+                          ? organizations.find(org => org.id === selectedOrgFilter)?.name || 'All Organizations'
+                          : 'All Organizations'}
+                      </span>
+                      <ChevronDown className="h-4 w-4 text-gray-500" />
+                    </Ariakit.MenuButton>
+                  }
+                  items={[
+                    {
+                      label: 'All Organizations',
+                      onClick: () => {
+                        handleOrgFilterChange('');
+                        setIsOrgFilterMenuOpen(false);
+                      },
+                    },
+                    ...organizations.map((org) => ({
+                      label: org.name,
+                      onClick: () => {
+                        handleOrgFilterChange(org.id);
+                        setIsOrgFilterMenuOpen(false);
+                      },
+                    })),
+                  ]}
+                  className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                  itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                />
+              </div>
             </div>
           )}
           {permissionManager && permissionManager.canCreate('users') && (
