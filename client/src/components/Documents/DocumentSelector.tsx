@@ -468,6 +468,44 @@ export default function DocumentSelector({
           </div>
         </DialogHeader>
 
+        {/* Selected Documents Section */}
+        {selectedDocumentsList.length > 0 && (
+          <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
+            <div className="flex flex-col gap-2">
+              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                Selected Documents:
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {selectedDocumentsList.map((doc) => (
+                  <div
+                    key={doc.document_id}
+                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
+                  >
+                    <img 
+                      src="/assets/documents.svg" 
+                      alt="Document" 
+                      className="h-3 w-3 flex-shrink-0 opacity-70 dark:invert" 
+                    />
+                    <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={doc.name}>
+                      {doc.name}
+                    </span>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleToggleSelection(doc.document_id);
+                      }}
+                      className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
+                      aria-label={`Remove ${doc.name}`}
+                    >
+                      <X className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Breadcrumbs */}
         <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
           <div className="flex items-center gap-2 text-sm flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
