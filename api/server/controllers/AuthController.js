@@ -10,7 +10,7 @@ const {
   setAuthTokens,
   registerUser,
 } = require('~/server/services/AuthService');
-const { findUser, getUserById, deleteAllUserSessions, findSession } = require('~/models');
+const { findUser, getUserById, deleteAllUserSessions, findSession, generateToken } = require('~/models');
 const { getGraphApiToken } = require('~/server/services/GraphTokenService');
 const { getOAuthReconnectionManager } = require('~/config');
 const { getOpenIdConfig } = require('~/strategies');
@@ -67,6 +67,49 @@ const refreshController = async (req, res) => {
   if (!refreshToken) {
     return res.status(200).send('Refresh token not provided');
   }
+  
+  // Handle proxy-managed tokens - DO NOT ROTATE
+  if (token_provider === 'proxy') {
+    try {
+      const payload = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+      const user = await getUserById(payload.id, '-password -__v -totpSecret -backupCodes');
+      if (!user) {
+        logger.warn('[refreshController] User not found for proxy token:', payload.id);
+        return res.status(401).redirect('/login');
+      }
+
+      const userId = payload.id;
+
+      // Verify session exists and is valid
+      const session = await findSession(
+        {
+          userId: userId,
+          refreshToken: refreshToken,
+        },
+        { lean: true },
+      );
+
+      if (session && session.expiration > new Date()) {
+        // Generate new access token (short-lived) but DO NOT rotate refresh token
+        const token = await generateToken(user);
+        
+        logger.debug(`[refreshController] Proxy token refreshed for user: ${user.email}`);
+        
+        // Return the SAME refresh token (no rotation for proxy-managed sessions)
+        return res.status(200).send({ token, user });
+      } else if (req?.query?.retry) {
+        return res.status(403).send('No session found');
+      } else if (payload.exp < Date.now() / 1000) {
+        return res.status(403).redirect('/login');
+      } else {
+        return res.status(401).send('Refresh token expired or not found for this user');
+      }
+    } catch (err) {
+      logger.error(`[refreshController] Invalid proxy refresh token:`, err);
+      return res.status(403).send('Invalid refresh token');
+    }
+  }
+  
   if (token_provider === 'openid' && isEnabled(process.env.OPENID_REUSE_TOKENS) === true) {
     try {
       const openIdConfig = getOpenIdConfig();

@@ -16,9 +16,18 @@ const optionalJwtAuth = (req, res, next) => {
     }
     next();
   };
+  
+  // Use proxy authentication if token provider is "proxy"
+  if (tokenProvider === 'proxy') {
+    return passport.authenticate('proxyJwt', { session: false }, callback)(req, res, next);
+  }
+  
+  // Use OpenID authentication if configured
   if (tokenProvider === 'openid' && isEnabled(process.env.OPENID_REUSE_TOKENS)) {
     return passport.authenticate('openidJwt', { session: false }, callback)(req, res, next);
   }
+  
+  // Default to standard JWT authentication
   passport.authenticate('jwt', { session: false }, callback)(req, res, next);
 };
 
