@@ -144,7 +144,7 @@ export default function AddUserModal({
         payload.org_id = userOrgId;
       }
 
-      // Always include role assignment (required - determines org_role automatically)
+      // Always include role assignment (defaults to "user" if not specified)
       if (formData.role_id && formData.role_id.trim() !== '') {
         payload.role_id = formData.role_id;
         // Set org_role based on selected role name
@@ -158,8 +158,16 @@ export default function AddUserModal({
         payload.org_role = formData.role_name.toLowerCase() === 'org admin' ? 'admin' : 'user';
         console.log('🎭 Sending role_name:', formData.role_name, 'org_role:', payload.org_role);
       } else {
-        // Default to user role if no role selected
+        // Default to "User" role if no role selected
         payload.org_role = 'user';
+        // Try to find the "User" role in available roles and assign it
+        const userRole = availableRoles.find(r => r.name.toLowerCase() === 'user');
+        if (userRole) {
+          payload.role_id = userRole.id;
+          console.log('No role selected, defaulting to User role:', userRole.id);
+        } else {
+          console.log('No role selected, setting org_role to "user" without role_id');
+        }
       }
       
       console.log('📤 Creating user with payload:', payload);
@@ -285,7 +293,7 @@ export default function AddUserModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Role *
+              Role (defaults to User)
             </label>
             <div className="relative">
               <DropdownPopup
@@ -300,7 +308,7 @@ export default function AddUserModal({
                     style={{ height: '40px' }}
                     className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
                   >
-                    <span>{formData.role_name || 'Select Role'}</span>
+                    <span>{formData.role_name || 'User (default)'}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500" />
                   </Ariakit.MenuButton>
                 }
@@ -325,7 +333,7 @@ export default function AddUserModal({
               </p>
             )}
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-              Org Admins have full access and can see the admin panel. Users can upload documents and query.
+              If no role is selected, the user will be assigned as "User" by default. Org Admins have full access and can see the admin panel.
             </p>
           </div>
 

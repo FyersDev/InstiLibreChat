@@ -342,7 +342,7 @@ export default function UsersView({
           onClose={() => setShowAddUserModal(false)}
           onSuccess={() => {
             setShowAddUserModal(false);
-            onRefresh();
+            onRefresh(selectedOrgFilter || null);
           }}
         />
       )}
@@ -357,7 +357,7 @@ export default function UsersView({
           onSuccess={() => {
             setShowEditUserModal(false);
             setSelectedUser(null);
-            onRefresh();
+            onRefresh(selectedOrgFilter || null);
           }}
         />
       )}

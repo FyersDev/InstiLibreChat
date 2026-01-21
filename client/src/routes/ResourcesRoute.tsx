@@ -419,6 +419,36 @@ export default function ResourcesRoute() {
         throw new Error('Invalid file ID');
       }
       await saasApi.deleteFile(fileId);
+      
+      // Remove from selected documents in all conversations
+      const allKeys = Object.keys(localStorage);
+      allKeys.forEach(key => {
+        if (key.startsWith('persona_documents_')) {
+          try {
+            const data = JSON.parse(localStorage.getItem(key) || '{}');
+            if (data.documents && Array.isArray(data.documents)) {
+              const filteredDocs = data.documents.filter((doc: any) => doc.document_id !== fileId);
+              if (filteredDocs.length !== data.documents.length) {
+                // Document was removed, update localStorage
+                if (filteredDocs.length === 0) {
+                  localStorage.removeItem(key);
+                } else {
+                  localStorage.setItem(key, JSON.stringify({
+                    documents: filteredDocs,
+                    timestamp: Date.now(),
+                  }));
+                }
+              }
+            }
+          } catch (e) {
+            console.error('Error updating selected documents:', e);
+          }
+        }
+      });
+      
+      // Dispatch event to notify other components
+      window.dispatchEvent(new Event('documentsUpdated'));
+      
       loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
     } catch (err: any) {
       alert(err.message || 'Failed to delete file');

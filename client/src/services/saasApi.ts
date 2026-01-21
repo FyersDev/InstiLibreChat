@@ -46,6 +46,32 @@ function normalizeResponse<T>(data: any): T {
 
 async function handleResponse<T>(response: Response, originalRequest?: { url: string; method: string; body?: string }, retry = true): Promise<T> {
   if (!response.ok) {
+    // Check for "Session invalidated" message from Go backend
+    try {
+      const errorData = await response.clone().json().catch(() => ({}));
+      const errorMessage = errorData.message || errorData.error || '';
+      
+      if (errorMessage.toLowerCase().includes('session invalidated')) {
+        console.log('Session invalidated by backend, Logging out...');
+        
+        // Clear tokens
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        
+        // Store error message to display on login page
+        sessionStorage.setItem('auth_error', errorMessage);
+        
+        // Redirect to login if not already there
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        
+        return Promise.reject(new Error(errorMessage));
+      }
+    } catch (e) {
+      // Continue with normal error handling if parsing fails
+    }
+    
     // Handle 401 Unauthorized - try to refresh token
     if (response.status === 401 && retry && originalRequest) {
       const refreshToken = localStorage.getItem('refresh_token');
