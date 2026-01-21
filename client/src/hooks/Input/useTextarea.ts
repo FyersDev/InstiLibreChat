@@ -104,7 +104,7 @@ export default function useTextarea({
       // Check if there are messages to determine Ask vs Reply
       const messages = getMessages();
       const hasMessages = Array.isArray(messages) && messages.length > 0;
-      const actionWord = hasMessages ? 'Reply' : 'Ask';
+      const actionWord = hasMessages ? 'Reply to' : 'Ask';
       
       return `${actionWord} ${sender ? sender : localize('com_endpoint_ai')}`;
     };
