@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useToastContext } from '@librechat/client';
 import type { TLoginLayoutContext } from '~/common';
@@ -10,6 +10,19 @@ function Login() {
 
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+
+  // Check for auth error from session invalidation or user suspension
+  useEffect(() => {
+    const authError = sessionStorage.getItem('auth_error');
+    if (authError) {
+      showToast({
+        message: authError,
+        status: 'error',
+      });
+      // Clear the error after displaying
+      sessionStorage.removeItem('auth_error');
+    }
+  }, [showToast]);
 
   const companyName =
     startupConfig?.appTitle || 'FIA - FYERS Intelligent Assistant';

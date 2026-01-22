@@ -41,7 +41,7 @@ export default function FileViewRoute() {
       console.log('Loading file:', fileId);
 
       // Get file metadata
-      const file: any = await saasApi.getFile(fileId!);
+      const file: any = await saasApi.getFile(parseInt(fileId!, 10));
       console.log('File metadata:', file);
       setFileInfo(file);
 
@@ -74,8 +74,8 @@ export default function FileViewRoute() {
         // Normalize path separators for URL (use forward slashes)
         filePath = filePath.replace(/\\/g, '/');
         
-        // Append token as query parameter for authentication (needed for img/iframe tags)
-        staticUrl = `/static/resources/folder/file/${filePath}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        // Authentication handled by cookies/Authorization header
+        staticUrl = `/static/resources/folder/file/${filePath}`;
       } else {
         // Fallback to old route if storage_key not available
         staticUrl = `/files/${fileId}?download=true${token ? `&token=${encodeURIComponent(token)}` : ''}`;
@@ -189,7 +189,7 @@ export default function FileViewRoute() {
     if (!fileId) return;
     
     try {
-      const blob = await saasApi.downloadFile(fileId);
+      const blob = await saasApi.downloadFile(parseInt(fileId, 10));
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;
@@ -389,8 +389,8 @@ export default function FileViewRoute() {
         }
         // Normalize path separators for URL
         filePath = filePath.replace(/\\/g, '/');
-        // Append token as query parameter for authentication
-        staticImageUrl = `${window.location.origin}/static/resources/folder/file/${filePath}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        // Authentication handled by cookies/Authorization header
+        staticImageUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
       } else {
         staticImageUrl = `${window.location.origin}/files/${fileId}?download=true${token ? `&token=${encodeURIComponent(token)}` : ''}`;
       }
@@ -444,8 +444,8 @@ export default function FileViewRoute() {
       }
       // Normalize path separators for URL
       filePath = filePath.replace(/\\/g, '/');
-      // Append token as query parameter for authentication
-      staticFileUrl = `${window.location.origin}/static/resources/folder/file/${filePath}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+      // Authentication handled by cookies/Authorization header
+      staticFileUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
     } else {
       staticFileUrl = previewUrl || `${window.location.origin}/files/${fileId}?download=true${token ? `&token=${encodeURIComponent(token)}` : ''}`;
     }

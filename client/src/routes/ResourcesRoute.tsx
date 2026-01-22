@@ -496,9 +496,6 @@ export default function ResourcesRoute() {
 
   const handlePreviewFile = async (file: FileNode) => {
     try {
-      // Get access token for authentication
-      const token = localStorage.getItem('access_token');
-      
       // Use static route if storage_key is available, otherwise fallback to file ID route
       if (file.storage_key) {
         const storagePath = 'uploads';
@@ -510,12 +507,12 @@ export default function ResourcesRoute() {
           filePath = filePath.substring(storagePath.length + 2);
         }
         // Use full URL to avoid React Router intercepting it
-        // Append token as query parameter for authentication
-        const staticUrl = `${window.location.origin}/static/resources/folder/file/${filePath}${token ? `?token=${encodeURIComponent(token)}` : ''}`;
+        // Authentication handled by cookies/Authorization header
+        const staticUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
         window.open(staticUrl, '_blank');
       } else {
         // Fallback to file ID route
-        const fileUrl = `${window.location.origin}/files/${file.id}?direct=true${token ? `&token=${encodeURIComponent(token)}` : ''}`;
+        const fileUrl = `${window.location.origin}/files/${file.id}?direct=true`;
         window.open(fileUrl, '_blank');
       }
     } catch (err: any) {

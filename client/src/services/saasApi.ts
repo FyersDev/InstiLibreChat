@@ -46,13 +46,20 @@ function normalizeResponse<T>(data: any): T {
 
 async function handleResponse<T>(response: Response, originalRequest?: { url: string; method: string; body?: string }, retry = true): Promise<T> {
   if (!response.ok) {
-    // Check for "Session invalidated" message from Go backend
+    // Check for "Session invalidated" or user suspension messages from Go backend
     try {
       const errorData = await response.clone().json().catch(() => ({}));
       const errorMessage = errorData.message || errorData.error || '';
       
-      if (errorMessage.toLowerCase().includes('session invalidated')) {
-        console.log('Session invalidated by backend, Logging out...');
+      // Check for session invalidation (including user suspension)
+      const lowerMessage = errorMessage.toLowerCase();
+      if (lowerMessage.includes('session invalidated') || 
+          lowerMessage.includes('invalidated all sessions') ||
+          lowerMessage.includes('suspended user') ||
+          lowerMessage.includes('user is suspended') ||
+          lowerMessage.includes('account suspended') ||
+          lowerMessage.includes('account has been suspended')) {
+        console.log('Session invalidated by backend (user may be suspended), Logging out...');
         
         // Clear tokens
         localStorage.removeItem('access_token');
@@ -60,6 +67,28 @@ async function handleResponse<T>(response: Response, originalRequest?: { url: st
         
         // Store error message to display on login page
         sessionStorage.setItem('auth_error', errorMessage);
+        
+        // Redirect to login if not already there
+        if (!window.location.pathname.includes('/login')) {
+          window.location.href = '/login';
+        }
+        
+        return Promise.reject(new Error(errorMessage));
+      }
+      
+      // Also check for 403 Forbidden with suspension-related messages
+      if (response.status === 403 && (
+          lowerMessage.includes('suspended') ||
+          lowerMessage.includes('banned') ||
+          lowerMessage.includes('disabled'))) {
+        console.log('User account suspended/banned, Logging out...');
+        
+        // Clear tokens
+        localStorage.removeItem('access_token');
+        localStorage.removeItem('refresh_token');
+        
+        // Store error message to display on login page
+        sessionStorage.setItem('auth_error', errorMessage || 'Your account has been suspended. Please contact support.');
         
         // Redirect to login if not already there
         if (!window.location.pathname.includes('/login')) {
@@ -170,6 +199,25 @@ async function handleResponse<T>(response: Response, originalRequest?: { url: st
   }
   
   const data = await response.json();
+  
+  // Check if the response contains a logout flag (user suspended, role changed, etc.)
+  if (data && (data.logout === true || (data.data && data.data.logout === true))) {
+    console.log('Logout flag detected in response, logging out user...');
+    
+    // Clear tokens
+    localStorage.removeItem('access_token');
+    localStorage.removeItem('refresh_token');
+    
+    // Store message to display on login page
+    const message = data.message || data.data?.message || 'You have been logged out. Please log in again.';
+    sessionStorage.setItem('auth_error', message);
+    
+    // Redirect to login if not already there
+    if (!window.location.pathname.includes('/login')) {
+      window.location.href = '/login';
+    }
+  }
+  
   return normalizeResponse<T>(data);
 }
 
