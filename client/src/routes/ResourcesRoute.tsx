@@ -723,8 +723,8 @@ export default function ResourcesRoute() {
                   <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Name
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">Created by</th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:table-cell">Date</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">Owner</th>
+                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:table-cell">Created date</th>
                   <th className="px-3 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
                 </tr>
               </thead>

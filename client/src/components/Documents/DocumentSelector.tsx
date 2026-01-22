@@ -568,7 +568,7 @@ export default function DocumentSelector({
                         </th>
                       )}
                       <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Upload date
+                        Created date
                       </th>
                       {currentFiles.length > 0 && (
                         <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
