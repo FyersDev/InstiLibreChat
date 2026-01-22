@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Button } from '@librechat/client';
+import { Button, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import { 
@@ -71,6 +71,7 @@ const formatDate = (dateString: string | undefined | null) => {
 };
 
 export default function ResourcesRoute() {
+  const { showToast } = useToastContext();
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Home' }]);
@@ -401,12 +402,20 @@ export default function ResourcesRoute() {
     if (!confirm(`Delete folder "${folder.name}" and all its contents?`)) return;
     try {
       await saasApi.deleteFolder(folder.id);
+      showToast({
+        message: `Folder "${folder.name}" deleted successfully`,
+        status: 'success',
+      });
       loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
       if (currentFolderId === folder.id) {
         navigateToFolder(null, 'Home');
       }
     } catch (err: any) {
-      alert(err.message || 'Failed to delete folder');
+      const errorMessage = err.message || 'Failed to delete folder';
+      showToast({
+        message: `Failed to delete folder: ${errorMessage}`,
+        status: 'error',
+      });
     }
   };
 
@@ -419,6 +428,11 @@ export default function ResourcesRoute() {
         throw new Error('Invalid file ID');
       }
       await saasApi.deleteFile(fileId);
+      
+      showToast({
+        message: `File "${file.name}" deleted successfully`,
+        status: 'success',
+      });
       
       // Remove from selected documents in all conversations
       const allKeys = Object.keys(localStorage);
@@ -451,7 +465,11 @@ export default function ResourcesRoute() {
       
       loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
     } catch (err: any) {
-      alert(err.message || 'Failed to delete file');
+      const errorMessage = err.message || 'Failed to delete file';
+      showToast({
+        message: `Failed to delete file: ${errorMessage}`,
+        status: 'error',
+      });
     }
   };
 

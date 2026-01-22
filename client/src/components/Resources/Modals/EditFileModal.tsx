@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, useToastContext } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { Loader2 } from 'lucide-react';
@@ -14,6 +14,7 @@ interface EditFileModalProps {
 }
 
 export default function EditFileModal({ file, onClose, onSuccess }: EditFileModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: file.name,
   });
@@ -34,9 +35,18 @@ export default function EditFileModal({ file, onClose, onSuccess }: EditFileModa
       await saasApi.updateFile(Number(file.id), {
         name: newName,
       });
+      showToast({
+        message: `File "${newName}" updated successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to update file');
+      const errorMessage = err.message || 'Failed to update file';
+      setError(errorMessage);
+      showToast({
+        message: `Failed to update file: ${errorMessage}`,
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

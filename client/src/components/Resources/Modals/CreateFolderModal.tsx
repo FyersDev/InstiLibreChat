@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, useToastContext } from '@librechat/client';
 import { Input } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
@@ -40,6 +40,7 @@ const isFolderId_InFyersResources = (folderId: string | undefined, folders: any[
 };
 
 export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = false, folders = [], onClose, onSuccess }: CreateFolderModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: '',
   });
@@ -64,9 +65,18 @@ export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = fals
         parent_id: parentId || undefined,
         org_id: orgId || undefined,
       });
+      showToast({
+        message: `Folder "${formData.name}" created successfully`,
+        status: 'success',
+      });
       onSuccess();
     } catch (err: any) {
-      setError(err.message || 'Failed to create folder');
+      const errorMessage = err.message || 'Failed to create folder';
+      setError(errorMessage);
+      showToast({
+        message: `Failed to create folder: ${errorMessage}`,
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }

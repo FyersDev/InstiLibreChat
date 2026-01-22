@@ -110,11 +110,23 @@ export default function TemplatesView() {
     try {
       if (template.id) {
         await saasApi.updateTemplate(template.id, template);
+        showToast({
+          message: `Template "${template.name}" updated successfully`,
+          status: 'success',
+        });
       } else {
         await saasApi.createTemplate(template);
+        showToast({
+          message: `Template "${template.name}" created successfully`,
+          status: 'success',
+        });
       }
       await fetchTemplates();
-    } catch (error) {
+    } catch (error: any) {
+      showToast({
+        message: error.message || (template.id ? 'Failed to update Template' : 'Failed to create Template'),
+        status: 'error',
+      });
       throw error;
     }
   };
@@ -147,6 +159,15 @@ export default function TemplatesView() {
   const deleteTemplate = async (id: string) => {
     try {
       await saasApi.deleteTemplate(id);
+      showToast({
+        message: 'Template deleted successfully',
+        status: 'success',
+      });
+    } catch (error: any) {
+      showToast({
+        message: error.message || 'Failed to delete template',
+        status: 'error',
+      });
     } finally {
       // Always refresh the list, even if deletion fails
       await fetchTemplates();

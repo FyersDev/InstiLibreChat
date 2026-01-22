@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, useToastContext } from '@librechat/client';
 import { Input } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
@@ -11,6 +11,7 @@ interface EditFolderModalProps {
 }
 
 export default function EditFolderModal({ folder, onClose, onSuccess }: EditFolderModalProps) {
+  const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: folder.name || '',
   });
@@ -47,6 +48,10 @@ export default function EditFolderModal({ folder, onClose, onSuccess }: EditFold
       await saasApi.updateFolder(folder.id, {
         name: formData.name,
       });
+      showToast({
+        message: `Folder "${formData.name}" updated successfully`,
+        status: 'success',
+      });
       onSuccess();
       onClose();
     } catch (err: any) {
@@ -54,6 +59,10 @@ export default function EditFolderModal({ folder, onClose, onSuccess }: EditFold
       // Extract error message from various possible formats
       const errorMessage = err?.message || err?.error || err?.response?.data?.message || 'Failed to update folder';
       setError(errorMessage);
+      showToast({
+        message: `Failed to update folder: ${errorMessage}`,
+        status: 'error',
+      });
     } finally {
       setLoading(false);
     }
