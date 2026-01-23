@@ -50,6 +50,18 @@ export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = fals
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if trying to create a folder named "Reports" (case-insensitive)
+    const folderNameLower = formData.name.trim().toLowerCase();
+    if (folderNameLower === 'reports' || folderNameLower === 'report') {
+      const errorMsg = 'Cannot create folder named "Reports". Reports folder already exists.';
+      setError(errorMsg);
+      showToast({
+        message: errorMsg,
+        status: 'error',
+      });
+      return;
+    }
+    
     // Check if non-superadmin is trying to create folder inside FYERS Resources
     if (!isSuperAdmin && isFolderId_InFyersResources(parentId, folders)) {
       setError('Cannot create folders inside "FYERS Resources"');

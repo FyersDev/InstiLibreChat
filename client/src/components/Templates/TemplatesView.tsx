@@ -122,6 +122,8 @@ export default function TemplatesView() {
         });
       }
       await fetchTemplates();
+      // Notify other components that templates list has changed
+      window.dispatchEvent(new Event('templatesListUpdated'));
     } catch (error: any) {
       showToast({
         message: error.message || (template.id ? 'Failed to update Template' : 'Failed to create Template'),
@@ -147,6 +149,8 @@ export default function TemplatesView() {
         });
       }
       await fetchPersonas();
+      // Notify other components that personas list has changed
+      window.dispatchEvent(new Event('personasListUpdated'));
     } catch (error: any) {
       showToast({
         message: error.message || (persona.id ? 'Failed to update Agent' : 'Failed to create Agent'),
@@ -158,11 +162,41 @@ export default function TemplatesView() {
 
   const deleteTemplate = async (id: string) => {
     try {
+      // Find the template being deleted to check if it's currently selected
+      const templateToDelete = templates.find(t => t.id === id);
+      
       await saasApi.deleteTemplate(id);
       showToast({
         message: 'Template deleted successfully',
         status: 'success',
       });
+      
+      // Clear the deleted template from localStorage if it's currently selected
+      if (templateToDelete) {
+        // Check all possible conversation IDs in localStorage
+        const keys = Object.keys(localStorage);
+        const templateKeys = keys.filter(key => key.startsWith('template_data_'));
+        
+        templateKeys.forEach(key => {
+          try {
+            const storedData = localStorage.getItem(key);
+            if (storedData) {
+              const templateData = JSON.parse(storedData);
+              // Check if this is the deleted template
+              if (templateData.template === templateToDelete.name || templateData.name === templateToDelete.name) {
+                // Clear it from localStorage
+                localStorage.removeItem(key);
+                console.log(`🗑️ Cleared deleted template "${templateToDelete.name}" from ${key}`);
+              }
+            }
+          } catch (e) {
+            console.error('Error checking template data:', e);
+          }
+        });
+        
+        // Dispatch event to notify all components that template was updated/removed
+        window.dispatchEvent(new Event('templateUpdated'));
+      }
     } catch (error: any) {
       showToast({
         message: error.message || 'Failed to delete template',
@@ -171,16 +205,48 @@ export default function TemplatesView() {
     } finally {
       // Always refresh the list, even if deletion fails
       await fetchTemplates();
+      // Notify other components that templates list has changed
+      window.dispatchEvent(new Event('templatesListUpdated'));
     }
   };
 
   const deletePersona = async (id: string) => {
     try {
+      // Find the persona being deleted to check if it's currently selected
+      const personaToDelete = personas.find(p => p.id === id);
+      
       await saasApi.deletePersona(id);
       showToast({
         message: 'Agent deleted successfully',
         status: 'success',
       });
+      
+      // Clear the deleted persona from localStorage if it's currently selected
+      if (personaToDelete) {
+        // Check all possible conversation IDs in localStorage
+        const keys = Object.keys(localStorage);
+        const personaKeys = keys.filter(key => key.startsWith('persona_data_'));
+        
+        personaKeys.forEach(key => {
+          try {
+            const storedData = localStorage.getItem(key);
+            if (storedData) {
+              const personaData = JSON.parse(storedData);
+              // Check if this is the deleted persona
+              if (personaData.persona === personaToDelete.name || personaData.name === personaToDelete.name) {
+                // Clear it from localStorage
+                localStorage.removeItem(key);
+                console.log(`🗑️ Cleared deleted persona "${personaToDelete.name}" from ${key}`);
+              }
+            }
+          } catch (e) {
+            console.error('Error checking persona data:', e);
+          }
+        });
+        
+        // Dispatch event to notify all components that persona was updated/removed
+        window.dispatchEvent(new Event('personaUpdated'));
+      }
     } catch (error: any) {
       showToast({
         message: error.message || 'Failed to delete persona',
@@ -189,6 +255,8 @@ export default function TemplatesView() {
     } finally {
       // Always refresh the list, even if deletion fails
       await fetchPersonas();
+      // Notify other components that personas list has changed
+      window.dispatchEvent(new Event('personasListUpdated'));
     }
   };
 

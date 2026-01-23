@@ -91,6 +91,34 @@ export default function TemplatePersonaSelector() {
     fetchData();
   }, []);
 
+  // Listen for persona list changes (created/deleted)
+  useEffect(() => {
+    const handlePersonasListUpdate = () => {
+      console.log('[TemplatePersonaSelector] Personas list updated, refetching...');
+      fetchData();
+    };
+
+    window.addEventListener('personasListUpdated', handlePersonasListUpdate);
+    
+    return () => {
+      window.removeEventListener('personasListUpdated', handlePersonasListUpdate);
+    };
+  }, []);
+
+  // Listen for template list changes (created/deleted)
+  useEffect(() => {
+    const handleTemplatesListUpdate = () => {
+      console.log('[TemplatePersonaSelector] Templates list updated, refetching...');
+      fetchData();
+    };
+
+    window.addEventListener('templatesListUpdated', handleTemplatesListUpdate);
+    
+    return () => {
+      window.removeEventListener('templatesListUpdated', handleTemplatesListUpdate);
+    };
+  }, []);
+
   // Initialize FIA (default) persona if no persona is selected
   useEffect(() => {
     const initializeDefaultPersona = () => {

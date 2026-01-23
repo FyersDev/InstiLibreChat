@@ -33,6 +33,21 @@ export default function EditFolderModal({ folder, onClose, onSuccess }: EditFold
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Check if trying to rename a folder to "Reports" (case-insensitive)
+    const folderNameLower = formData.name.trim().toLowerCase();
+    const originalNameLower = folder.name.toLowerCase();
+    
+    // Only check if the name is being changed to "Reports"
+    if ((folderNameLower === 'reports' || folderNameLower === 'report') && originalNameLower !== folderNameLower) {
+      const errorMsg = 'Cannot rename folder to "Reports". Reports folder already exists.';
+      setError(errorMsg);
+      showToast({
+        message: errorMsg,
+        status: 'error',
+      });
+      return;
+    }
+    
     // Validate folder ID exists
     if (!folder.id) {
       setError('Invalid folder: missing folder ID');

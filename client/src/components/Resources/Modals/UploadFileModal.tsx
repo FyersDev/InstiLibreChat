@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from 'react';
+import * as Ariakit from '@ariakit/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
 import { Button } from '@librechat/client';
-import { useToastContext } from '@librechat/client';
+import { useToastContext, DropdownPopup } from '@librechat/client';
 import { uploadDocument } from '~/data-provider/document-service';
 import { saasApi } from '~/services/saasApi';
-import { File as FileIcon } from 'lucide-react';
+import { File as FileIcon, ChevronDown } from 'lucide-react';
 
 interface UploadFileModalProps {
   folderId?: string;
@@ -32,8 +33,10 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
   const { showToast } = useToastContext();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
+  const [selectedFolderName, setSelectedFolderName] = useState<string>('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   
   // Use props if provided, otherwise get from localStorage
@@ -129,14 +132,20 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
   useEffect(() => {
     if (folderId) {
       setSelectedFolderId(folderId);
+      const folder = sortedFolders.find(f => f.id === folderId);
+      if (folder) {
+        setSelectedFolderName(folder.name);
+      }
     } else if (isSuperAdmin && fyersResourcesFolder) {
       // Superadmins default to "FYERS Resources"
       setSelectedFolderId(fyersResourcesFolder.id);
+      setSelectedFolderName(fyersResourcesFolder.name);
     } else if (!isSuperAdmin) {
       // Non-superadmins default to "Resources" (existing or placeholder)
       const resourcesOption = sortedFolders.find(f => f.name.toLowerCase() === 'resources');
       if (resourcesOption) {
         setSelectedFolderId(resourcesOption.id);
+        setSelectedFolderName(resourcesOption.name);
       }
     }
   }, [folderId, fyersResourcesFolder?.id, resourcesFolder?.id, sortedFolders.length, isSuperAdmin]);
@@ -357,29 +366,45 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
               Select Folder (Optional)
             </label>
-            <select
-              value={selectedFolderId}
-              onChange={(e) => setSelectedFolderId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
-            >
-              {sortedFolders.map((folder) => (
-                <option key={folder.id} value={folder.id}>
-                  {'  '.repeat(folder.level)}
-                  {folder.level > 0 ? '└─ ' : ''}
-                  {folder.name}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <div className="relative">
+              <DropdownPopup
+                portal={false}
+                sameWidth={true}
+                anchor={{ x: 'start', y: 'bottom' }}
+                menuId="folder-selector-upload"
+                isOpen={isFolderMenuOpen}
+                setIsOpen={setIsFolderMenuOpen}
+                trigger={
+                  <Ariakit.MenuButton
+                    style={{ height: '40px' }}
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-[#FFFFFF] dark:bg-[#111111] px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                  >
+                    <span>{selectedFolderName || 'Select Folder'}</span>
+                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                  </Ariakit.MenuButton>
+                }
+                items={sortedFolders.map((folder) => ({
+                  label: `${'  '.repeat(folder.level)}${folder.level > 0 ? '└─ ' : ''}${folder.name}`,
+                  onClick: () => {
+                    setSelectedFolderId(folder.id);
+                    setSelectedFolderName(folder.name);
+                    setIsFolderMenuOpen(false);
+                  },
+                }))}
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-[#FFFFFF] dark:bg-[#111111] divide-y divide-gray-200 dark:divide-gray-700"
+                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+              />
+            </div>
+            <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
               Select a folder to associate this document with in the database.
             </p>
           </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" onClick={onClose} variant="outline">
+          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
+            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100">
               Cancel
             </Button>
-            <Button type="submit" disabled={loading || !selectedFile} className="bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
+            <Button type="submit" disabled={loading || !selectedFile} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
               {loading ? 'Uploading...' : 'Upload File'}
             </Button>  
           </div>

@@ -26,70 +26,84 @@ export default function PersonaSelector() {
   const hasInitialized = useRef(false);
   const { showToast } = useToastContext();
 
+  // Function to fetch personas from API
+  const fetchPersonas = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('[PersonaSelector] Fetching personas from backend...');
+      const response = await saasApi.getPersonas();
+      console.log('[PersonaSelector] Raw API response:', response);
+      
+      let personasArray: any[] = [];
+      if (response) {
+        if (Array.isArray(response)) {
+          personasArray = response;
+        } else {
+          const responseAny = response as any;
+          if (responseAny.data && Array.isArray(responseAny.data)) {
+            personasArray = responseAny.data;
+          }
+        }
+      }
+      
+      if (personasArray.length > 0) {
+        const parsedPersonas: SavedPersona[] = personasArray.map((item: any) => {
+          let detailedPrompt = '';
+          if (item.content?.custom) {
+            detailedPrompt = typeof item.content.custom === 'string' 
+              ? item.content.custom 
+              : JSON.stringify(item.content.custom);
+          } else if (item.content && typeof item.content === 'string') {
+            detailedPrompt = item.content;
+          } else if (item.detailedPrompt) {
+            detailedPrompt = item.detailedPrompt;
+          } else if (item.description) {
+            detailedPrompt = item.description;
+          } else if (item.framework) {
+            detailedPrompt = item.framework;
+          }
+          
+          return {
+            name: item.name || item.persona || 'Unnamed Persona',
+            description: item.description || '',
+            detailedPrompt: detailedPrompt || item.name || ''
+          };
+        });
+        
+        console.log('[PersonaSelector] Parsed personas:', parsedPersonas);
+        setPersonas(parsedPersonas);
+      } else {
+        console.warn('[PersonaSelector] No personas found in response:', response);
+        setPersonas([]);
+      }
+    } catch (error) {
+      console.error('[PersonaSelector] Error fetching personas:', error);
+      setPersonas([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Fetch personas once on mount
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
+    fetchPersonas();
+  }, [fetchPersonas]);
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        console.log('[PersonaSelector] Fetching personas from backend...');
-        const response = await saasApi.getPersonas();
-        console.log('[PersonaSelector] Raw API response:', response);
-        
-        let personasArray: any[] = [];
-        if (response) {
-          if (Array.isArray(response)) {
-            personasArray = response;
-          } else {
-            const responseAny = response as any;
-            if (responseAny.data && Array.isArray(responseAny.data)) {
-              personasArray = responseAny.data;
-            }
-          }
-        }
-        
-        if (personasArray.length > 0) {
-          const parsedPersonas: SavedPersona[] = personasArray.map((item: any) => {
-            let detailedPrompt = '';
-            if (item.content?.custom) {
-              detailedPrompt = typeof item.content.custom === 'string' 
-                ? item.content.custom 
-                : JSON.stringify(item.content.custom);
-            } else if (item.content && typeof item.content === 'string') {
-              detailedPrompt = item.content;
-            } else if (item.detailedPrompt) {
-              detailedPrompt = item.detailedPrompt;
-            } else if (item.description) {
-              detailedPrompt = item.description;
-            } else if (item.framework) {
-              detailedPrompt = item.framework;
-            }
-            
-            return {
-              name: item.name || item.persona || 'Unnamed Persona',
-              description: item.description || '',
-              detailedPrompt: detailedPrompt || item.name || ''
-            };
-          });
-          
-          console.log('[PersonaSelector] Parsed personas:', parsedPersonas);
-          setPersonas(parsedPersonas);
-        } else {
-          console.warn('[PersonaSelector] No personas found in response:', response);
-          setPersonas([]);
-        }
-      } catch (error) {
-        console.error('[PersonaSelector] Error fetching personas:', error);
-        setPersonas([]);
-      } finally {
-        setLoading(false);
-      }
+  // Listen for persona list changes (created/deleted)
+  useEffect(() => {
+    const handlePersonasListUpdate = () => {
+      console.log('[PersonaSelector] Personas list updated, refetching...');
+      fetchPersonas();
     };
 
-    fetchData();
-  }, []);
+    window.addEventListener('personasListUpdated', handlePersonasListUpdate);
+    
+    return () => {
+      window.removeEventListener('personasListUpdated', handlePersonasListUpdate);
+    };
+  }, [fetchPersonas]);
 
   // Auto-set FIA (Default) persona when personas are loaded and no persona is stored
   useEffect(() => {

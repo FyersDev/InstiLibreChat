@@ -354,6 +354,21 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
           type: 'message',
           canBreakBefore: true, // Can break before messages
         });
+        
+        // Also collect paragraph positions within messages to avoid breaking lines
+        const paragraphs = element.querySelectorAll('p, div.message-content > div, li, h1, h2, h3, h4, h5, h6');
+        paragraphs.forEach((para) => {
+          const paraElement = para as HTMLElement;
+          // Only add if paragraph has meaningful height (not empty)
+          if (paraElement.offsetHeight > 10) {
+            const paraPos = getElementPosition(paraElement);
+            breakableElements.push({
+              ...paraPos,
+              type: 'paragraph',
+              canBreakBefore: true, // Can break before paragraphs, but not inside
+            });
+          }
+        });
       });
       
       // Sort by top position
@@ -419,13 +434,34 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
             
             // Apply orphans/widows rules to paragraphs and list items
             if (element.tagName === 'P' || element.tagName === 'LI') {
-              element.style.marginBottom = '10px';
+              element.style.marginBottom = '12px';
+              element.style.paddingBottom = '5px';
               element.style.pageBreakInside = 'avoid';
+              element.style.breakInside = 'avoid';
+              element.style.orphans = '3';
+              element.style.widows = '3';
+            }
+            
+            // Prevent headings from being orphaned
+            if (['H1', 'H2', 'H3', 'H4', 'H5', 'H6'].includes(element.tagName)) {
+              element.style.pageBreakAfter = 'avoid';
+              element.style.breakAfter = 'avoid';
+              element.style.pageBreakInside = 'avoid';
+              element.style.breakInside = 'avoid';
+              element.style.marginBottom = '15px';
+              element.style.paddingBottom = '5px';
+            }
+            
+            // Prevent divs with content from breaking
+            if (element.tagName === 'DIV' && element.textContent && element.textContent.trim().length > 0) {
+              element.style.pageBreakInside = 'avoid';
+              element.style.breakInside = 'avoid';
             }
             
             // Ensure tables have proper breaks
             if (element.tagName === 'TABLE') {
               element.style.pageBreakInside = 'avoid';
+              element.style.breakInside = 'avoid';
               element.style.marginTop = '20px';
               element.style.marginBottom = '20px';
             }
@@ -685,9 +721,15 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
             const elementTopPx = element.top * scaleFactor;
             const elementBottomPx = element.bottom * scaleFactor;
             const elementHeightPx = element.height * scaleFactor;
+            // Increased buffer for better protection
+            // Tables: 30% or min 60px
+            // Paragraphs: 20% or min 40px (to prevent line breaks)
+            // Messages: 15% or min 35px
             const buffer = element.type === 'table' 
-              ? Math.max(elementHeightPx * 0.25, 50) 
-              : Math.max(elementHeightPx * 0.15, 30);
+              ? Math.max(elementHeightPx * 0.30, 60) 
+              : element.type === 'paragraph'
+              ? Math.max(elementHeightPx * 0.20, 40)
+              : Math.max(elementHeightPx * 0.15, 35);
             const safeTop = elementTopPx - buffer;
             const safeBottom = elementBottomPx + buffer;
             
@@ -697,8 +739,8 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
               if (safeTop > sourceYpxForCheck && safeTop < idealPageEndPx) {
                 const breakHeightPx = safeTop - sourceYpxForCheck;
                 const breakHeightMm = (breakHeightPx / canvas.height) * imgHeight;
-                if (breakHeightMm >= 50) {
-                  bestBreakPoint = breakHeightMm - 5;
+                if (breakHeightMm >= 40) {
+                  bestBreakPoint = breakHeightMm - 3;
                   foundNaturalBreak = true;
                   break;
                 }
@@ -755,12 +797,15 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
             const elementBottomPx = element.bottom * scaleFactor;
             const elementHeightPx = element.height * scaleFactor;
             
-            // Add larger buffer for tables and messages to prevent cutting
-            // Tables need more protection (25% of height or minimum 50px)
-            // Messages need moderate protection (15% or minimum 30px)
+            // Add larger buffer for tables, paragraphs, and messages to prevent cutting
+            // Tables need most protection (30% of height or minimum 60px)
+            // Paragraphs need good protection (20% or minimum 40px) to prevent line breaks
+            // Messages need moderate protection (15% or minimum 35px)
             const buffer = element.type === 'table' 
-              ? Math.max(elementHeightPx * 0.25, 50) 
-              : Math.max(elementHeightPx * 0.15, 30);
+              ? Math.max(elementHeightPx * 0.30, 60) 
+              : element.type === 'paragraph'
+              ? Math.max(elementHeightPx * 0.20, 40)
+              : Math.max(elementHeightPx * 0.15, 35);
             const safeTop = elementTopPx - buffer;
             const safeBottom = elementBottomPx + buffer;
             
@@ -774,10 +819,11 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
                 const breakHeightPx = safeTop - sourceYpxForCheck;
                 const breakHeightMm = (breakHeightPx / canvas.height) * imgHeight;
                 
-                // Only use this break if we have reasonable content (at least 50mm)
+                // Only use this break if we have reasonable content (at least 40mm)
                 // This ensures we don't create pages with too little content
-                if (breakHeightMm >= 50) {
-                  bestBreakPoint = breakHeightMm - 5; // 5mm buffer for safety (reduced from 8)
+                // Reduced from 50mm to allow more flexible breaks and prevent line splitting
+                if (breakHeightMm >= 40) {
+                  bestBreakPoint = breakHeightMm - 3; // 3mm buffer for safety
                   foundNaturalBreak = true;
                   break; // Use first natural break we find
                 }
@@ -1083,6 +1129,11 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
 
   const isSuperAdmin = userInfo?.is_super_admin || false;
 
+  const handleFormSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    handleSave();
+  };
+
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-md p-6 sm:max-w-md bg-[#F7F7F7] dark:bg-[#222222]">
@@ -1097,7 +1148,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
             {error}
           </div>
         )}
-        <div className="space-y-4">
+        <form onSubmit={handleFormSubmit} className="space-y-4">
           {/* Organization selector for super admin */}
           {isSuperAdmin && organizations.length > 0 && (
             <div>
@@ -1139,13 +1190,13 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
           </div>
 
           <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" onClick={onClose} variant="outline" disabled={saving} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium border border-gray-300 dark:border-gray-400 rounded-lg">
+            <Button type="button" onClick={onClose} variant="outline" disabled={saving} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-0">
               Cancel
             </Button>
             <Button 
-              onClick={handleSave} 
+              type="submit"
               disabled={saving || loading || (isSuperAdmin && !selectedOrgId) || !pdfName.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              className="bg-blue-600 hover:bg-blue-700 text-white font-medium focus:outline-none focus:ring-0"
             >
               {saving ? (
                 <>
@@ -1157,7 +1208,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
               )}
             </Button>
           </div>
-        </div>
+        </form>
       </DialogContent>
     </Dialog>
   );

@@ -26,74 +26,88 @@ export default function TemplateSelector() {
   const hasInitialized = useRef(false);
   const { showToast } = useToastContext();
 
+  // Function to fetch templates from API
+  const fetchTemplates = useCallback(async () => {
+    setLoading(true);
+    try {
+      console.log('[TemplateSelector] Fetching templates from backend...');
+      const response = await saasApi.getTemplates();
+      console.log('[TemplateSelector] Raw API response:', response);
+      
+      // Handle paginated response format: {data: Array, page, limit, total, total_pages}
+      let templatesArray: any[] = [];
+      if (response) {
+        if (Array.isArray(response)) {
+          templatesArray = response;
+        } else {
+          const responseAny = response as any;
+          if (responseAny.data && Array.isArray(responseAny.data)) {
+            templatesArray = responseAny.data;
+          }
+        }
+      }
+      
+      if (templatesArray.length > 0) {
+        const parsedTemplates: SavedTemplate[] = templatesArray.map((item: any) => {
+          // Try multiple fields to get detailedPrompt
+          let detailedPrompt = '';
+          if (item.content?.custom) {
+            detailedPrompt = typeof item.content.custom === 'string' 
+              ? item.content.custom 
+              : JSON.stringify(item.content.custom);
+          } else if (item.content && typeof item.content === 'string') {
+            detailedPrompt = item.content;
+          } else if (item.detailedPrompt) {
+            detailedPrompt = item.detailedPrompt;
+          } else if (item.description) {
+            detailedPrompt = item.description;
+          } else if (item.framework) {
+            detailedPrompt = item.framework;
+          }
+          
+          return {
+            name: item.name || item.template || 'Unnamed Template',
+            description: item.description || '',
+            detailedPrompt: detailedPrompt || item.name || '',
+            framework: item.framework || '',
+            content: item.content || {}
+          };
+        });
+        
+        console.log('[TemplateSelector] Parsed templates:', parsedTemplates);
+        setTemplates(parsedTemplates);
+      } else {
+        console.warn('[TemplateSelector] No templates found in response:', response);
+        setTemplates([]);
+      }
+    } catch (error) {
+      console.error('[TemplateSelector] Error fetching templates:', error);
+      setTemplates([]);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
   // Fetch templates once on mount
   useEffect(() => {
     if (hasInitialized.current) return;
     hasInitialized.current = true;
+    fetchTemplates();
+  }, [fetchTemplates]);
 
-    const fetchData = async () => {
-      setLoading(true);
-      try {
-        console.log('[TemplateSelector] Fetching templates from backend...');
-        const response = await saasApi.getTemplates();
-        console.log('[TemplateSelector] Raw API response:', response);
-        
-        // Handle paginated response format: {data: Array, page, limit, total, total_pages}
-        let templatesArray: any[] = [];
-        if (response) {
-          if (Array.isArray(response)) {
-            templatesArray = response;
-          } else {
-            const responseAny = response as any;
-            if (responseAny.data && Array.isArray(responseAny.data)) {
-              templatesArray = responseAny.data;
-            }
-          }
-        }
-        
-        if (templatesArray.length > 0) {
-          const parsedTemplates: SavedTemplate[] = templatesArray.map((item: any) => {
-            // Try multiple fields to get detailedPrompt
-            let detailedPrompt = '';
-            if (item.content?.custom) {
-              detailedPrompt = typeof item.content.custom === 'string' 
-                ? item.content.custom 
-                : JSON.stringify(item.content.custom);
-            } else if (item.content && typeof item.content === 'string') {
-              detailedPrompt = item.content;
-            } else if (item.detailedPrompt) {
-              detailedPrompt = item.detailedPrompt;
-            } else if (item.description) {
-              detailedPrompt = item.description;
-            } else if (item.framework) {
-              detailedPrompt = item.framework;
-            }
-            
-            return {
-              name: item.name || item.template || 'Unnamed Template',
-              description: item.description || '',
-              detailedPrompt: detailedPrompt || item.name || '',
-              framework: item.framework || '',
-              content: item.content || {}
-            };
-          });
-          
-          console.log('[TemplateSelector] Parsed templates:', parsedTemplates);
-          setTemplates(parsedTemplates);
-        } else {
-          console.warn('[TemplateSelector] No templates found in response:', response);
-          setTemplates([]);
-        }
-      } catch (error) {
-        console.error('[TemplateSelector] Error fetching templates:', error);
-        setTemplates([]);
-      } finally {
-        setLoading(false);
-      }
+  // Listen for template list changes (created/deleted)
+  useEffect(() => {
+    const handleTemplatesListUpdate = () => {
+      console.log('[TemplateSelector] Templates list updated, refetching...');
+      fetchTemplates();
     };
 
-    fetchData();
-  }, []);
+    window.addEventListener('templatesListUpdated', handleTemplatesListUpdate);
+    
+    return () => {
+      window.removeEventListener('templatesListUpdated', handleTemplatesListUpdate);
+    };
+  }, [fetchTemplates]);
 
   // Load and sync selected template - only when conversationId changes
   useEffect(() => {
