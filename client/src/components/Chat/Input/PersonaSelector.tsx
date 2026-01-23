@@ -1,11 +1,10 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown, User, Plus } from 'lucide-react';
 import * as Ariakit from '@ariakit/react';
-import { DropdownPopup, useToastContext } from '@librechat/client';
+import { DropdownPopup } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Constants } from 'librechat-data-provider';
-import CreatePersonaModal from '~/components/Templates/CreatePersonaModal';
 
 const DEFAULT_PERSONA = 'FIA (Default)';
 
@@ -20,11 +19,9 @@ export default function PersonaSelector() {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedPersona, setSelectedPersona] = useState<string>(DEFAULT_PERSONA);
-  const [showCreateModal, setShowCreateModal] = useState(false);
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
   const hasInitialized = useRef(false);
-  const { showToast } = useToastContext();
 
   // Fetch personas once on mount
   useEffect(() => {
@@ -235,7 +232,7 @@ export default function PersonaSelector() {
       label: 'Create New Agent',
       onClick: () => {
         setIsOpen(false);
-        setShowCreateModal(true);
+        navigate('/templates?tab=personas&action=create');
       },
       key: 'create-persona',
     },
@@ -282,80 +279,20 @@ export default function PersonaSelector() {
     );
   }
 
-  const handleSaveNewPersona = async (persona: any) => {
-    try {
-      await saasApi.createPersona(persona);
-      console.log('✅ New persona created:', persona);
-      
-      // Show success toast
-      showToast({
-        message: 'Agent created',
-        status: 'success',
-      });
-      
-      // Refresh personas list
-      const response = await saasApi.getPersonas();
-      let personasArray: any[] = [];
-      if (response) {
-        if (Array.isArray(response)) {
-          personasArray = response;
-        } else {
-          const responseAny = response as any;
-          if (responseAny.data && Array.isArray(responseAny.data)) {
-            personasArray = responseAny.data;
-          }
-        }
-      }
-      
-      if (personasArray.length > 0) {
-        const parsedPersonas: SavedPersona[] = personasArray.map((item: any) => {
-          let detailedPrompt = '';
-          if (item.content?.custom) {
-            detailedPrompt = typeof item.content.custom === 'string' 
-              ? item.content.custom 
-              : JSON.stringify(item.content.custom);
-          } else if (item.content && typeof item.content === 'string') {
-            detailedPrompt = item.content;
-          } else if (item.detailedPrompt) {
-            detailedPrompt = item.detailedPrompt;
-          } else if (item.description) {
-            detailedPrompt = item.description;
-          } else if (item.framework) {
-            detailedPrompt = item.framework;
-          }
-          
-          return {
-            name: item.name || item.persona || 'Unnamed Persona',
-            description: item.description || '',
-            detailedPrompt: detailedPrompt || item.name || ''
-          };
-        });
-        
-        setPersonas(parsedPersonas);
-      }
-      
-      setShowCreateModal(false);
-    } catch (error) {
-      console.error('Failed to create persona:', error);
-      throw error;
-    }
-  };
-
   return (
-    <>
       <DropdownPopup
-        portal={true}
-        modal={true}
-        sameWidth={false}
-        gutter={4}
-        anchor={{ x: 'start', y: 'bottom' }}
+      portal={true}
+      modal={true}
+      sameWidth={false}
+      gutter={4}
+      anchor={{ x: 'start', y: 'bottom' }}
         menuId="persona-selector"
         isOpen={isOpen}
         setIsOpen={setIsOpen}
         trigger={
           <Ariakit.MenuButton
-            style={{ height: '34px' }}
-            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
+          style={{ height: '34px' }}
+          className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
           >
             <User className="h-4 w-4" />
             <span>{buttonText}</span>
@@ -366,13 +303,5 @@ export default function PersonaSelector() {
         className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
         itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
       />
-      
-      {showCreateModal && (
-        <CreatePersonaModal
-          onClose={() => setShowCreateModal(false)}
-          onSave={handleSaveNewPersona}
-        />
-      )}
-    </>
   );
 }
