@@ -46,14 +46,12 @@ export default function Message(props: TMessageProps) {
     let result = '';
     if (isCreatedByUser === true) {
       result = localize('com_user_message');
-    } else if (assistant) {
-      result = assistant.name ?? localize('com_ui_assistant');
-    } else if (agent) {
-      result = agent.name ?? localize('com_ui_agent');
+    } else {
+      result = 'FIA';
     }
 
     return result;
-  }, [assistant, agent, isCreatedByUser, localize]);
+  }, [isCreatedByUser, localize]);
 
   const iconData: TMessageIcon = useMemo(
     () => ({
@@ -144,7 +142,7 @@ export default function Message(props: TMessageProps) {
               }}
             >
               {!isCreatedByUser && (
-                <h2 className={cn('select-none font-semibold text-text-primary', fontSize)}>
+                <h2 className={cn('select-none font-bold text-text-primary', fontSize)}>
                   {name}
                 </h2>
               )}

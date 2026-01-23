@@ -33,7 +33,7 @@ const MessageBody = ({ message, messageLabel, fontSize }) => (
     }}
   >
     {!message.isCreatedByUser && (
-      <div className={cn('select-none font-Inter font-medium', fontSize)}>{messageLabel}</div>
+      <div className={cn('select-none font-Inter font-bold', fontSize)}>{messageLabel}</div>
     )}
     <SearchContent message={message} />
     <SubRow classes="text-xs">
@@ -65,10 +65,9 @@ export default function SearchMessage({ message }: Pick<TMessageProps, 'message'
         ? (user?.name ?? '') || (user?.username ?? '')
         : localize('com_user_message');
     }
-    return message?.sender ?? '';
+    return 'FIA';
   }, [
     message?.isCreatedByUser,
-    message?.sender,
     UsernameDisplay,
     user?.name,
     user?.username,
