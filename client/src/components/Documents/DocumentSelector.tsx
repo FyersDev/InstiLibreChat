@@ -605,7 +605,9 @@ export default function DocumentSelector({
                             </div>
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            {folder.created_by_name || 'System'}
+                            <div className="truncate" title={folder.created_by_name || 'System'}>
+                              {folder.created_by_name || 'System'}
+                            </div>
                           </td>
                           {currentFiles.length > 0 && (
                             <td className="px-3 py-3"></td>
@@ -668,7 +670,9 @@ export default function DocumentSelector({
                             </div>
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            {file.created_by_name || 'System'}
+                            <div className="truncate" title={file.created_by_name || 'System'}>
+                              {file.created_by_name || 'System'}
+                            </div>
                           </td>
                           <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
                             {getFileExtension(file.name)}
