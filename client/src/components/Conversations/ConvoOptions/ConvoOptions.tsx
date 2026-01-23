@@ -2,7 +2,7 @@ import { useState, useId, useRef, memo, useCallback, useMemo } from 'react';
 import * as Menu from '@ariakit/react/menu';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DropdownPopup, Spinner, useToastContext } from '@librechat/client';
-import { Ellipsis, Share2, CopyPlus, Pen } from 'lucide-react';
+import { Ellipsis, /* Share2, */ CopyPlus, Pen } from 'lucide-react'; // Share2 commented out - share feature disabled
 import type { MouseEvent } from 'react';
 import {
   useDuplicateConversationMutation,
@@ -12,7 +12,7 @@ import { useLocalize, useNavigateToConvo, useNewConvo } from '~/hooks';
 import { NotificationSeverity } from '~/common';
 import { useChatContext } from '~/Providers';
 import DeleteButton from './DeleteButton';
-import ShareButton from './ShareButton';
+// import ShareButton from './ShareButton'; // Commented out - share feature disabled
 import { cn } from '~/utils';
 
 function ConvoOptions({
@@ -42,9 +42,9 @@ function ConvoOptions({
   const { conversationId: currentConvoId } = useParams();
   const { newConversation } = useNewConvo();
 
-  const shareButtonRef = useRef<HTMLButtonElement>(null);
+  // const shareButtonRef = useRef<HTMLButtonElement>(null); // Commented out - share feature disabled
   const deleteButtonRef = useRef<HTMLButtonElement>(null);
-  const [showShareDialog, setShowShareDialog] = useState(false);
+  // const [showShareDialog, setShowShareDialog] = useState(false); // Commented out - share feature disabled
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const duplicateConversation = useDuplicateConversationMutation({
@@ -72,9 +72,9 @@ function ConvoOptions({
 
   const isDuplicateLoading = duplicateConversation.isLoading;
 
-  const handleShareClick = useCallback(() => {
-    setShowShareDialog(true);
-  }, []);
+  // const handleShareClick = useCallback(() => { // Commented out - share feature disabled
+  //   setShowShareDialog(true);
+  // }, []);
 
   const handleDeleteClick = useCallback(() => {
     setShowDeleteDialog(true);
@@ -93,6 +93,25 @@ function ConvoOptions({
         onClick: renameHandler,
         icon: <Pen className="icon-sm mr-2 text-text-primary" />,
       },
+      // Share option - commented out
+      // {
+      //   label: localize('com_ui_share'),
+      //   onClick: handleShareClick,
+      //   icon: <Share2 className="icon-sm mr-2 text-text-primary" />,
+      //   hideOnClick: false,
+      //   ref: shareButtonRef,
+      //   render: (props) => <button {...props} />,
+      // },
+      // {
+      //   label: localize('com_ui_duplicate'),
+      //   onClick: handleDuplicateClick,
+      //   icon: isDuplicateLoading ? (
+      //     <Spinner className="icon-sm mr-2" />
+      //   ) : (
+      //     <CopyPlus className="icon-sm mr-2 text-text-primary" />
+      //   ),
+      //   disabled: isDuplicateLoading,
+      // },
       {
         label: localize('com_ui_delete'),
         onClick: handleDeleteClick,
@@ -105,6 +124,9 @@ function ConvoOptions({
     [
       localize,
       renameHandler,
+      // handleShareClick, // Commented out - share feature disabled
+      // handleDuplicateClick,
+      // isDuplicateLoading,
       handleDeleteClick,
     ],
   );
@@ -147,14 +169,15 @@ function ConvoOptions({
         menuId={menuId}
         className="z-30"
       />
-      {showShareDialog && (
+      {/* Share dialog - commented out - share feature disabled */}
+      {/* {showShareDialog && (
         <ShareButton
           conversationId={conversationId ?? ''}
           open={showShareDialog}
           onOpenChange={setShowShareDialog}
           triggerRef={shareButtonRef}
         />
-      )}
+      )} */}
       {showDeleteDialog && (
         <DeleteButton
           title={title ?? ''}

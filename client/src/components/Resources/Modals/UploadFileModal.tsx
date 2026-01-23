@@ -280,7 +280,7 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6">
+      <DialogContent className="max-w-md p-6 bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
             <img src="/assets/export.svg" alt="Upload" className="h-5 w-5 dark:invert" />
@@ -360,7 +360,7 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
             <select
               value={selectedFolderId}
               onChange={(e) => setSelectedFolderId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
             >
               {sortedFolders.map((folder) => (
                 <option key={folder.id} value={folder.id}>

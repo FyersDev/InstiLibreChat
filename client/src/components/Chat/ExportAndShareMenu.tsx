@@ -1,11 +1,11 @@
 import { useState, useId, useRef } from 'react';
 import { useRecoilValue } from 'recoil';
 import * as Ariakit from '@ariakit/react';
-import { Upload, Share2 } from 'lucide-react';
+import { Upload, /* Share2 */ } from 'lucide-react'; // Share2 commented out - share feature disabled
 import { DropdownPopup, TooltipAnchor, useMediaQuery } from '@librechat/client';
 import type * as t from '~/common';
 import ExportModal from '~/components/Nav/ExportConversation/ExportModal';
-import { ShareButton } from '~/components/Conversations/ConvoOptions';
+// import { ShareButton } from '~/components/Conversations/ConvoOptions'; // Commented out - share feature disabled
 import { useLocalize } from '~/hooks';
 import store from '~/store';
 
@@ -17,10 +17,10 @@ export default function ExportAndShareMenu({
   const localize = useLocalize();
   const [showExports, setShowExports] = useState(false);
   const [isPopoverActive, setIsPopoverActive] = useState(false);
-  const [showShareDialog, setShowShareDialog] = useState(false);
+  // const [showShareDialog, setShowShareDialog] = useState(false); // Commented out - share feature disabled
 
   const menuId = useId();
-  const shareButtonRef = useRef<HTMLButtonElement>(null);
+  // const shareButtonRef = useRef<HTMLButtonElement>(null); // Commented out - share feature disabled
   const exportButtonRef = useRef<HTMLButtonElement>(null);
   const isSmallScreen = useMediaQuery('(max-width: 768px)');
   const conversation = useRecoilValue(store.conversationByIndex(0));
@@ -35,25 +35,26 @@ export default function ExportAndShareMenu({
     return null;
   }
 
-  const shareHandler = () => {
-    setShowShareDialog(true);
-  };
+  // const shareHandler = () => { // Commented out - share feature disabled
+  //   setShowShareDialog(true);
+  // };
 
   const exportHandler = () => {
     setShowExports(true);
   };
 
   const dropdownItems: t.MenuItemProps[] = [
-    {
-      label: localize('com_ui_share'),
-      onClick: shareHandler,
-      icon: <Share2 className="icon-md mr-2 text-text-secondary" />,
-      show: isSharedButtonEnabled,
-      /** NOTE: THE FOLLOWING PROPS ARE REQUIRED FOR MENU ITEMS THAT OPEN DIALOGS */
-      hideOnClick: false,
-      ref: shareButtonRef,
-      render: (props) => <button {...props} />,
-    },
+    // Share option - commented out
+    // {
+    //   label: localize('com_ui_share'),
+    //   onClick: shareHandler,
+    //   icon: <Share2 className="icon-md mr-2 text-text-secondary" />,
+    //   show: isSharedButtonEnabled,
+    //   /** NOTE: THE FOLLOWING PROPS ARE REQUIRED FOR MENU ITEMS THAT OPEN DIALOGS */
+    //   hideOnClick: false,
+    //   ref: shareButtonRef,
+    //   render: (props) => <button {...props} />,
+    // },
     {
       label: localize('com_endpoint_export'),
       onClick: exportHandler,
@@ -102,12 +103,13 @@ export default function ExportAndShareMenu({
         triggerRef={exportButtonRef}
         aria-label={localize('com_ui_export_convo_modal')}
       />
-      <ShareButton
+      {/* Share button - commented out - share feature disabled */}
+      {/* <ShareButton
         triggerRef={shareButtonRef}
         conversationId={conversation.conversationId ?? ''}
         open={showShareDialog}
         onOpenChange={setShowShareDialog}
-      />
+      /> */}
     </>
   );
 }

@@ -82,7 +82,7 @@ export default function FolderPermissionsModal({ folderId, onClose }: FolderPerm
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Folder Permissions</DialogTitle>
         </DialogHeader>
@@ -105,7 +105,7 @@ export default function FolderPermissionsModal({ folderId, onClose }: FolderPerm
                 <select
                   value={selectedRoleId}
                   onChange={(e) => setSelectedRoleId(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
                 >
                   <option value="">Select a role</option>
                   {availableRoles.map((role) => (
@@ -122,7 +122,7 @@ export default function FolderPermissionsModal({ folderId, onClose }: FolderPerm
                 <select
                   value={selectedPermission}
                   onChange={(e) => setSelectedPermission(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                  className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
                 >
                   <option value="read">Read</option>
                   <option value="write">Write</option>

@@ -692,6 +692,75 @@ export const saasApi = {
     return handleResponse(response);
   },
 
+  async saveReport(file: File, orgId?: string | null, metadata?: any) {
+    // Validate file before creating FormData
+    if (!file) {
+      throw new Error('File is required for saveReport');
+    }
+    if (file.size === 0) {
+      throw new Error('File is empty');
+    }
+    
+    console.log('saveReport called with:', {
+      fileName: file.name,
+      fileSize: file.size,
+      fileType: file.type,
+      orgId,
+      metadata,
+    });
+    
+    // Validate file before proceeding
+    if (!file || file.size === 0) {
+      throw new Error('Invalid file: file is empty or undefined');
+    }
+    
+    // Read the file to ensure it's fully loaded
+    await new Promise<void>((resolve, reject) => {
+      const reader = new FileReader();
+      reader.onload = () => resolve();
+      reader.onerror = () => reject(new Error('Failed to read file'));
+      reader.readAsArrayBuffer(file);
+    });
+    
+    console.log('File validated and ready for upload');
+    
+    const formData = new FormData();
+    formData.append('file', file, file.name); // Explicitly include filename
+    if (orgId) {
+      formData.append('org_id', orgId);
+    }
+    if (metadata) {
+      formData.append('metadata', JSON.stringify(metadata));
+    }
+
+    // Log FormData contents
+    console.log('FormData entries:');
+    for (const [key, value] of formData.entries()) {
+      if (typeof value === 'object' && value !== null && 'name' in value && 'size' in value) {
+        const fileValue = value as File;
+        console.log(`  ${key}: File(${fileValue.name}, ${fileValue.size} bytes, ${fileValue.type})`);
+      } else {
+        console.log(`  ${key}: ${value}`);
+      }
+    }
+
+    const token = getAuthToken();
+    const headers: HeadersInit = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    console.log('Sending request to:', `${API_BASE_URL}/documents/save-report`);
+    const response = await fetch(`${API_BASE_URL}/documents/save-report`, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+    
+    console.log('Response status:', response.status, response.statusText);
+    return handleResponse(response);
+  },
+
   async updateFile(id: number, data: any) {
     const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
       method: 'PUT',

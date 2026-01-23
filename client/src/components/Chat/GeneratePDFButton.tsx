@@ -37,6 +37,48 @@ export default function GeneratePDFButton() {
   <meta charset="UTF-8">
   <title>Chat Conversation</title>
   <style>
+    /* Page break control for PDF generation */
+    @media print {
+      body {
+        margin: 0;
+        padding: 0;
+      }
+      
+      /* Prevent breaks inside these elements */
+      .message, 
+      .message-content table,
+      .message-content pre,
+      .message-header,
+      h1, h2, h3, h4, h5, h6 {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Prevent breaks right after headers */
+      .message-header {
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      
+      /* Add space before messages to allow natural breaks */
+      .message {
+        page-break-before: auto !important;
+        break-before: auto !important;
+      }
+      
+      /* Tables should never break */
+      table {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Prevent orphaned lines */
+      p, .message-content {
+        orphans: 3;
+        widows: 3;
+      }
+    }
+    
     body {
       font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
       line-height: 1.6;
@@ -46,9 +88,11 @@ export default function GeneratePDFButton() {
       padding: 20px;
     }
     .message {
-      margin-bottom: 20px;
+      margin-bottom: 25px;
       padding: 15px;
       border-radius: 2px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .user-message {
       background-color: #f0f0f0;
@@ -63,6 +107,8 @@ export default function GeneratePDFButton() {
       margin-bottom: 8px;
       color: #666;
       font-size: 14px;
+      page-break-after: avoid;
+      break-after: avoid;
     }
     .message-content {
       color: #1f2937;
@@ -73,6 +119,8 @@ export default function GeneratePDFButton() {
       border-radius: 2px;
       overflow-x: auto;
       font-size: 13px;
+      page-break-inside: avoid;
+      break-inside: avoid;
     }
     .message-content code {
       background-color: #f3f4f6;
@@ -84,13 +132,15 @@ export default function GeneratePDFButton() {
       width: 100%;
       border-collapse: separate;
       border-spacing: 0;
-      margin: 12px 0;
+      margin: 20px 0;
       font-size: 13px;
       table-layout: auto;
       display: table;
       border: 1px solid #d1d5db;
       border-radius: 2px;
       overflow: hidden;
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
     }
     .message-content table thead {
       background-color: #f3f4f6;
@@ -149,6 +199,21 @@ export default function GeneratePDFButton() {
       border-bottom: 2px solid #e5e7eb;
       padding-bottom: 10px;
       margin-bottom: 30px;
+      page-break-after: avoid;
+      break-after: avoid;
+    }
+    
+    /* Wrapper for tables to add extra protection */
+    .table-wrapper {
+      page-break-inside: avoid !important;
+      break-inside: avoid !important;
+      margin: 25px 0;
+      padding: 5px 0;
+    }
+    
+    /* Paragraphs and text blocks */
+    p {
+      margin: 10px 0;
     }
   </style>
 </head>
@@ -165,18 +230,6 @@ export default function GeneratePDFButton() {
         : '';
       
       let content = (message as any).text || (message as any).content || '';
-      
-      // For user messages, extract only the query from structured JSON format
-      if ((message as any).isCreatedByUser && typeof content === 'string' && content.trim().startsWith('{') && content.includes('"query"')) {
-        try {
-          const parsed = JSON.parse(content);
-          if (parsed.query && typeof parsed.query === 'string') {
-            content = parsed.query;
-          }
-        } catch (e) {
-          // If parsing fails, use original content
-        }
-      }
       
       // Basic markdown to HTML conversion
       content = content
@@ -195,7 +248,10 @@ export default function GeneratePDFButton() {
 
     const traverseMessages = (msgs: TMessage[]) => {
       msgs.forEach((msg) => {
-        html += formatMessage(msg);
+        const formattedMsg = formatMessage(msg);
+        if (formattedMsg) {
+          html += formattedMsg;
+        }
         if (msg.children && msg.children.length > 0) {
           traverseMessages(msg.children);
         }

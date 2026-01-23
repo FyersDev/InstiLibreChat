@@ -1,10 +1,11 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { ChevronDown } from 'lucide-react';
 import * as Ariakit from '@ariakit/react';
-import { DropdownPopup } from '@librechat/client';
+import { DropdownPopup, useToastContext } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Constants } from 'librechat-data-provider';
+import CreateTemplateModal from '~/components/Templates/CreateTemplateModal';
 
 interface SavedTemplate {
   name: string;
@@ -19,9 +20,11 @@ export default function TemplateSelector() {
   const [loading, setLoading] = useState(false);
   const [isOpen, setIsOpen] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<string | null>(null);
+  const [showCreateModal, setShowCreateModal] = useState(false);
   const { conversationId } = useParams<{ conversationId?: string }>();
   const navigate = useNavigate();
   const hasInitialized = useRef(false);
+  const { showToast } = useToastContext();
 
   // Fetch templates once on mount
   useEffect(() => {
@@ -235,7 +238,7 @@ export default function TemplateSelector() {
       label: 'Create New Template',
       onClick: () => {
         setIsOpen(false);
-        navigate('/templates?tab=templates&action=create');
+        setShowCreateModal(true);
       },
       key: 'create-template',
     },
@@ -282,29 +285,95 @@ export default function TemplateSelector() {
     );
   }
 
-  return (
-    <DropdownPopup
-      portal={true}
-      modal={true}
-      sameWidth={false}
-      gutter={4}
-      anchor={{ x: 'start', y: 'bottom' }}
-      menuId="template-selector"
-      isOpen={isOpen}
-      setIsOpen={setIsOpen}
-      trigger={
-        <Ariakit.MenuButton
-          style={{ height: '34px' }}
-          className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
-        >
-          <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
-          <span>{buttonText}</span>
-          <ChevronDown className="h-4 w-4" />
-        </Ariakit.MenuButton>
+  const handleSaveNewTemplate = async (template: any) => {
+    try {
+      await saasApi.createTemplate(template);
+      console.log('✅ New template created:', template);
+      
+      // Show success toast
+      showToast({
+        message: 'Template created',
+        status: 'success',
+      });
+      
+      // Refresh templates list
+      const response = await saasApi.getTemplates();
+      let templatesArray: any[] = [];
+      if (response) {
+        if (Array.isArray(response)) {
+          templatesArray = response;
+        } else {
+          const responseAny = response as any;
+          if (responseAny.data && Array.isArray(responseAny.data)) {
+            templatesArray = responseAny.data;
+          }
+        }
       }
-      items={menuItems}
-      className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
-      itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
-    />
+      
+      if (templatesArray.length > 0) {
+        const parsedTemplates: SavedTemplate[] = templatesArray.map((item: any) => {
+          let detailedPrompt = '';
+          if (item.content) {
+            if (item.content.custom) {
+              detailedPrompt = item.content.custom;
+            } else {
+              detailedPrompt = Object.values(item.content).join('\n\n');
+            }
+          } else if (item.framework) {
+            detailedPrompt = item.framework;
+          }
+          
+          return {
+            name: item.name || 'Unnamed Template',
+            description: item.description || '',
+            detailedPrompt: detailedPrompt || item.name || '',
+            framework: item.framework || '',
+            content: item.content || {}
+          };
+        });
+        
+        setTemplates(parsedTemplates);
+      }
+      
+      setShowCreateModal(false);
+    } catch (error) {
+      console.error('Failed to create template:', error);
+      throw error;
+    }
+  };
+
+  return (
+    <>
+      <DropdownPopup
+        portal={true}
+        modal={true}
+        sameWidth={false}
+        gutter={4}
+        anchor={{ x: 'start', y: 'bottom' }}
+        menuId="template-selector"
+        isOpen={isOpen}
+        setIsOpen={setIsOpen}
+        trigger={
+          <Ariakit.MenuButton
+            style={{ height: '34px' }}
+            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
+          >
+            <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+            <span>{buttonText}</span>
+            <ChevronDown className="h-4 w-4" />
+          </Ariakit.MenuButton>
+        }
+        items={menuItems}
+        className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
+        itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
+      />
+      
+      {showCreateModal && (
+        <CreateTemplateModal
+          onClose={() => setShowCreateModal(false)}
+          onSave={handleSaveNewTemplate}
+        />
+      )}
+    </>
   );
 }

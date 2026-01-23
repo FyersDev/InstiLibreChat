@@ -55,12 +55,9 @@ const extractMessageContent = (message: TMessage): string => {
         if ('text' in part) {
           return part.text || '';
         }
+        // Skip 'think' parts (reasoning/thoughts) - they should not appear in PDF
         if ('think' in part) {
-          const think = part.think;
-          if (typeof think === 'string') {
-            return think;
-          }
-          return think && 'text' in think ? think.text || '' : '';
+          return '';
         }
         return '';
       })
@@ -364,7 +361,7 @@ const HoverButtons = ({
       )} */}
 
       {/* Generate PDF Report Button - Hidden for user messages */}
-      {/* {conversationId && conversationId !== 'new' && messages && messages.length > 0 && !isCreatedByUser && (
+      {conversationId && conversationId !== 'new' && messages && messages.length > 0 && !isCreatedByUser && (
         <HoverButton
           onClick={() => setShowPDFModal(true)}
           title="Generate PDF Report"
@@ -379,7 +376,7 @@ const HoverButtons = ({
           isLast={isLast}
           className="active"
         />
-      )} */}
+      )}
 
       {/* Continue Button */}
       {continueSupported && (
@@ -393,30 +390,33 @@ const HoverButtons = ({
       )}
 
       {/* PDF Modal */}
-      {/* {showPDFModal && conversationId && messages && (
+      {showPDFModal && conversationId && messages && (
         <SavePDFModal
           conversationId={conversationId}
           pdfContent={generatePDFContentFromSelectedMessage(message, messages, fileMap)}
           onClose={() => setShowPDFModal(false)}
         />
-      )} */}
+      )}
     </div>
   );
 };
 
-// Generate PDF content from selected message only (not entire conversation)
+// Generate PDF content from selected message and its related question/answer pair
 function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMessages: TMessage[], fileMap: any): string {
-    if (!selectedMessage || !allMessages || allMessages.length === 0) return '';
+    console.log('Generating PDF for selected message:', selectedMessage?.messageId);
     
-    // Find the selected message and its related messages (parent/children)
-    const selectedMessageId = selectedMessage.messageId;
+    if (!selectedMessage || !allMessages || allMessages.length === 0) {
+      console.error('No messages available for PDF generation');
+      return '';
+    }
+    
+    // Find the question-answer pair for the selected message
     const selectedMessages: TMessage[] = [];
+    const selectedIndex = allMessages.findIndex(m => m.messageId === selectedMessage.messageId);
     
-    // If it's a user message, include it and its response (assistant message)
     if (selectedMessage.isCreatedByUser) {
+      // If user message is selected, include it and the next assistant response
       selectedMessages.push(selectedMessage);
-      // Find the assistant response (next message that's not created by user)
-      const selectedIndex = allMessages.findIndex(m => m.messageId === selectedMessageId);
       if (selectedIndex >= 0 && selectedIndex < allMessages.length - 1) {
         const nextMessage = allMessages[selectedIndex + 1];
         if (!nextMessage.isCreatedByUser) {
@@ -424,23 +424,26 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
         }
       }
     } else {
-      // If it's an assistant message, include it and its parent (user message)
-      selectedMessages.push(selectedMessage);
-      // Find the parent user message (previous message that is created by user)
-      const selectedIndex = allMessages.findIndex(m => m.messageId === selectedMessageId);
+      // If assistant message is selected, include the previous user question and this response
       if (selectedIndex > 0) {
         const prevMessage = allMessages[selectedIndex - 1];
         if (prevMessage.isCreatedByUser) {
-          selectedMessages.unshift(prevMessage); // Add at beginning
+          selectedMessages.push(prevMessage);
         }
       }
+      selectedMessages.push(selectedMessage);
     }
     
+    // If we couldn't find a pair, just use the selected message
     if (selectedMessages.length === 0) {
-      selectedMessages.push(selectedMessage); // Fallback: just the selected message
+      selectedMessages.push(selectedMessage);
     }
     
+    console.log('Selected messages for PDF:', selectedMessages.length);
+    
+    // Build tree from selected messages only
     const messagesTree = buildTree({ messages: selectedMessages, fileMap });
+    console.log('Messages tree built:', messagesTree?.length, 'root messages');
     
     // Get current date for report
     const reportDate = new Date().toLocaleDateString('en-US', {
@@ -479,53 +482,52 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
     }
     
     .message {
-      margin-bottom: 20px;
-      padding: 18px 20px;
-      border-radius: 2px;
-      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-      page-break-inside: avoid;
-      break-inside: avoid;
+      margin-bottom: 24px;
+      padding: 0;
+      page-break-inside: auto;
+      break-inside: auto;
+      display: block;
+      min-height: 50px;
     }
     
     .user-message {
-      background-color: #f8fafc;
-      border-left: 5px solid #3b82f6;
-      border-top: 1px solid #e2e8f0;
+      background-color: transparent;
+      border: none;
     }
     
     .assistant-message {
-      background-color: #f0fdf4;
-      border-left: 5px solid #10b981;
-      border-top: 1px solid #d1fae5;
+      background-color: transparent;
+      border: none;
     }
     
     .message-header {
       display: flex;
       align-items: center;
-      justify-content: space-between;
-      margin-bottom: 12px;
-      padding-bottom: 8px;
-      border-bottom: 1px solid rgba(0, 0, 0, 0.08);
+      justify-content: flex-start;
+      margin-bottom: 8px;
+      padding-bottom: 0;
+      border-bottom: none;
     }
     
     .message-header .role {
       font-weight: 700;
       font-size: 14px;
-      text-transform: uppercase;
-      letter-spacing: 0.5px;
-      color: #475569;
+      text-transform: none;
+      letter-spacing: 0;
+      color: #1e293b;
+      margin-right: 12px;
     }
     
     .user-message .message-header .role {
-      color: #3b82f6;
+      color: #1e293b;
     }
     
     .assistant-message .message-header .role {
-      color: #10b981;
+      color: #1e293b;
     }
     
     .message-header .timestamp {
-      font-size: 12px;
+      font-size: 14px;
       color: #64748b;
       font-weight: 400;
     }
@@ -533,11 +535,17 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
     .message-content {
       color: #1e293b;
       font-size: 14px;
-      line-height: 1.8;
+      line-height: 1.7;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+      white-space: pre-wrap;
+      text-align: justify;
     }
     
     .message-content p {
-      margin-bottom: 12px;
+      margin-bottom: 10px;
+      page-break-inside: auto;
+      break-inside: auto;
     }
     
     .message-content p:last-child {
@@ -571,6 +579,34 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
       color: inherit;
       padding: 0;
       border: none;
+    }
+    
+    .message-content h1,
+    .message-content h2,
+    .message-content h3,
+    .message-content h4,
+    .message-content h5,
+    .message-content h6 {
+      page-break-after: avoid;
+      break-after: avoid;
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin-top: 14px;
+      margin-bottom: 8px;
+      font-weight: 600;
+      color: #1e293b;
+    }
+    
+    .message-content ul,
+    .message-content ol {
+      page-break-inside: avoid;
+      break-inside: avoid;
+      margin: 12px 0;
+      padding-left: 24px;
+    }
+    
+    .message-content li {
+      margin-bottom: 6px;
     }
     
     .message-content img {
@@ -636,18 +672,18 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
     }
     
     .message-content table thead {
-      background-color: #f3f4f6;
+      background-color: #f8fafc;
     }
     
     .message-content table th {
-      background-color: #f3f4f6;
+      background-color: #f8fafc;
       font-weight: 600;
       color: #1e293b;
       padding: 0.5rem 0.75rem;
       text-align: left;
-      border: 1px solid #d1d5db;
+      border: 1px solid #cbd5e1;
       border-top: none;
-      border-bottom: 1px solid #d1d5db;
+      border-bottom: 2px solid #94a3b8;
       vertical-align: bottom;
     }
     
@@ -677,13 +713,14 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
     
     .message-content table td {
       padding: 0.5rem 0.75rem;
-      border: 1px solid #d1d5db;
+      border: 1px solid #e2e8f0;
       border-top: none;
-      border-left: 1px solid #d1d5db;
+      border-left: 1px solid #e2e8f0;
       text-align: left;
       vertical-align: baseline;
       white-space: normal;
       word-wrap: break-word;
+      color: #334155;
     }
     
     .message-content table td[style*="text-align: right"] {
@@ -720,8 +757,14 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
 
     const formatMessage = (message: TMessage): string => {
       const isUser = message.isCreatedByUser || (message as any).role === 'user' || (message as any).sender === 'User';
-      const className = isUser ? 'user-message' : 'assistant-message';
-      const role = isUser ? 'User' : 'Assistant';
+      
+      // Skip user messages - only show AI responses in PDF
+      if (isUser) {
+        return '';
+      }
+      
+      const className = 'assistant-message';
+      const role = 'FIA Analysis:';
       const timestamp = message.createdAt 
         ? new Date(message.createdAt).toLocaleString('en-US', {
             year: 'numeric',
@@ -782,12 +825,16 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
       </div>
       <div class="message-content">${content}</div>
     </div>
+    <div style="margin-bottom: 20px;"></div>
 `;
     };
 
     const traverseMessages = (msgs: TMessage[]) => {
       msgs.forEach((msg) => {
-        html += formatMessage(msg);
+        const formattedMsg = formatMessage(msg);
+        if (formattedMsg) {
+          html += formattedMsg;
+        }
         if (msg.children && msg.children.length > 0) {
           traverseMessages(msg.children);
         }
@@ -804,6 +851,9 @@ function generatePDFContentFromSelectedMessage(selectedMessage: TMessage, allMes
 </html>
 `;
 
+    console.log('Generated HTML length:', html.length);
+    console.log('HTML preview:', html.substring(0, 1000));
+    
     return html;
 }
 

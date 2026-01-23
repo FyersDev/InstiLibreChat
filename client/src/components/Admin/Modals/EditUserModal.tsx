@@ -124,7 +124,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit User</DialogTitle>
         </DialogHeader>
@@ -155,7 +155,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                 type="text"
                 value={formData.first_name}
                 onChange={(e) => setFormData({ ...formData, first_name: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
               />
             </div>
             <div>
@@ -166,7 +166,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                 type="text"
                 value={formData.last_name}
                 onChange={(e) => setFormData({ ...formData, last_name: e.target.value })}
-                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
               />
             </div>
           </div>
@@ -179,7 +179,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
               type="tel"
               value={formData.phone}
               onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
             />
           </div>
 
@@ -198,7 +198,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-[#FFFFFF] dark:bg-[#111111] px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
                   >
                     <span className="capitalize">{formData.status}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -227,7 +227,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                     },
                   },
                 ]}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-[#FFFFFF] dark:bg-[#111111] divide-y divide-gray-200 dark:divide-gray-700"
                 itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               />
             </div>
@@ -248,7 +248,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-[#FFFFFF] dark:bg-[#111111] px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
                   >
                     <span>{formData.role_name || 'Select Role'}</span>
                     <ChevronDown className="h-4 w-4 text-gray-500" />
@@ -265,7 +265,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
                     setIsRoleMenuOpen(false);
                   },
                 }))}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-[#FFFFFF] dark:bg-[#111111] divide-y divide-gray-200 dark:divide-gray-700"
                 itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               />
             </div>
@@ -288,7 +288,7 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
               value={formData.timezone}
               onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
               placeholder="e.g., America/New_York"
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
             />
           </div>
 
@@ -301,12 +301,12 @@ export default function EditUserModal({ user, onClose, onSuccess }: EditUserModa
               value={formData.locale}
               onChange={(e) => setFormData({ ...formData, locale: e.target.value })}
               placeholder="e.g., en-US"
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
             />
           </div>
 
           <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
               Cancel
             </Button>
             <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">

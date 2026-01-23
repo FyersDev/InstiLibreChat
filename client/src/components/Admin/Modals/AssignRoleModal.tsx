@@ -114,7 +114,7 @@ export default function AssignRoleModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6">
+      <DialogContent className="max-w-md p-6 bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Assign Role to {user.email}</DialogTitle>
         </DialogHeader>
@@ -134,7 +134,7 @@ export default function AssignRoleModal({
                 const newRoleId = e.target.value;
                 setSelectedRoleId(newRoleId);
               }}
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
               required
             >
               <option value="">-- Select a role --</option>

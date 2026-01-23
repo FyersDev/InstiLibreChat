@@ -18,7 +18,7 @@ const UploadFileModal = ({ open, onOpenChange }) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent
         className={cn(
-          'w-11/12 overflow-x-auto p-3 shadow-2xl dark:bg-gray-700 dark:text-white lg:w-2/3 xl:w-2/5',
+          'w-11/12 overflow-x-auto p-3 shadow-2xl bg-[#F7F7F7] dark:bg-[#222222] dark:text-white lg:w-2/3 xl:w-2/5',
         )}
       >
         <DialogHeader>

@@ -473,26 +473,6 @@ export default function ResourcesRoute() {
     }
   };
 
-  const handleDownloadFile = async (file: FileNode) => {
-    try {
-      // Use document_id if available, otherwise fall back to id (for backward compatibility)
-      const fileId = file.document_id || parseInt(file.id);
-      if (isNaN(fileId)) {
-        throw new Error('Invalid file ID');
-      }
-      const blob = await saasApi.downloadFile(fileId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.name;
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
-    } catch (err: any) {
-      alert(err.message || 'Failed to download file');
-    }
-  };
 
   const handlePreviewFile = async (file: FileNode) => {
     try {
@@ -921,20 +901,6 @@ export default function ResourcesRoute() {
                           >
                             <Eye className="h-4 w-4 text-blue-600 dark:text-blue-400" />
                           </button> */}
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadFile(file);
-                            }}
-                            className="p-1 hover:bg-green-100 dark:hover:bg-green-900/30 rounded"
-                            title="Download"
-                          >
-                            <img 
-                              src="/assets/download.svg" 
-                              alt="Download" 
-                              className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                            />
-                          </button>
                           {canModifyFile && (
                             <div className="relative">
                               <button

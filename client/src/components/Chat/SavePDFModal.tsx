@@ -1,10 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, useToastContext } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { saasApi } from '~/services/saasApi'; // API service - connects to insti-inquora backend
 import { Loader2 } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
+import { NotificationSeverity } from '~/common';
 
 interface SavePDFModalProps {
   conversationId: string;
@@ -19,6 +20,106 @@ interface FlatFolder {
   level: number;
 }
 
+// Helper function to add CSS styles for better page breaks
+const addPageBreakCSS = (htmlContent: string): string => {
+  const cssStyles = `
+    <style>
+      /* Prevent content from breaking awkwardly */
+      p, li, span, h1, h2, h3, h4, h5, h6 {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        orphans: 3 !important;
+        widows: 3 !important;
+      }
+      
+      /* Keep paragraphs together with headers */
+      h1 + p, h2 + p, h3 + p, 
+      h4 + p, h5 + p, h6 + p {
+        page-break-before: avoid !important;
+        break-before: avoid !important;
+      }
+      
+      /* Prevent lists from breaking */
+      ul, ol {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      li {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        page-break-after: avoid !important;
+        break-after: avoid !important;
+      }
+      
+      /* Prevent tables from breaking */
+      table, .table-wrapper {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-top: 20px !important;
+        margin-bottom: 20px !important;
+      }
+      
+      thead {
+        display: table-header-group;
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      tbody {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Prevent inline elements from breaking */
+      strong, b, em, i, u, code {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Add minimum spacing to avoid tight breaks */
+      .message, .chat-block, .content-block {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin-bottom: 15px !important;
+        padding-bottom: 10px !important;
+      }
+      
+      /* Explicit page break points */
+      .page-break {
+        page-break-after: always !important;
+        break-after: page !important;
+      }
+      
+      /* Prevent sections from breaking */
+      section, article {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+      }
+      
+      /* Add space before page breaks */
+      .before-page-break {
+        margin-bottom: 30px !important;
+      }
+      
+      /* Prevent blockquotes from breaking */
+      blockquote {
+        page-break-inside: avoid !important;
+        break-inside: avoid !important;
+        margin: 15px 0 !important;
+      }
+      
+      /* Line height to prevent awkward breaks */
+      body {
+        line-height: 1.6 !important;
+      }
+    </style>
+  `;
+  
+  // Insert styles at the beginning of HTML
+  return cssStyles + htmlContent;
+};
+
 export default function SavePDFModal({ conversationId, pdfContent, onClose }: SavePDFModalProps) {
   const [selectedFolderId, setSelectedFolderId] = useState<string>('');
   const [folders, setFolders] = useState<any[]>([]);
@@ -29,6 +130,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
   const [organizations, setOrganizations] = useState<any[]>([]);
   const [selectedOrgId, setSelectedOrgId] = useState<string>('');
   const [pdfName, setPdfName] = useState<string>('');
+  const { showToast } = useToastContext();
 
   useEffect(() => {
     loadUserInfo();
@@ -121,95 +223,96 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
 
   const flatFolders = flattenFolders(folders);
 
-  // Find or create Reports folder
-  const findOrCreateReportsFolder = async (orgId: string): Promise<string | null> => {
-    try {
-      // First, try to find existing Reports folder
-      const findReportsFolder = (folders: any[]): any | null => {
-        for (const folder of folders) {
-          if (folder.name.toLowerCase() === 'reports') {
-            return folder;
-          }
-          if (folder.children && folder.children.length > 0) {
-            const found = findReportsFolder(folder.children);
-            if (found) return found;
-          }
-        }
-        return null;
-      };
-
-      const reportsFolder = findReportsFolder(folders);
-      if (reportsFolder) {
-        return reportsFolder.id;
-      }
-
-      // If not found, create Reports folder
-      // API call: POST /api/v1/folders (insti-inquora)
-      const newFolderResponse: any = await saasApi.createFolder({
-        name: 'Reports',
-        parent_id: undefined, // Root level
-        org_id: orgId,
-      });
-
-      // Extract folder ID from response (handle multiple formats)
-      const newFolderId = newFolderResponse?.id || newFolderResponse?.data?.id || newFolderResponse?.folder?.id;
-      
-      if (newFolderId) {
-        // Reload folders to refresh the tree
-        await loadFolders(orgId);
-        return newFolderId;
-      }
-
-      // Fallback: Try to find the newly created folder
-      const updatedFoldersResponse: any = await saasApi.getFolderTree(orgId);
-      const updatedFolders = Array.isArray(updatedFoldersResponse) 
-        ? updatedFoldersResponse 
-        : (updatedFoldersResponse?.data || []);
-      const updatedFlat = flattenFolders(updatedFolders);
-      const newReportsFolder = updatedFlat.find(f => f.name.toLowerCase() === 'reports');
-      
-      return newReportsFolder?.id || null;
-    } catch (err: any) {
-      console.error('Error finding/creating Reports folder:', err);
-      return null;
-    }
-  };
-
   const handleSave = async () => {
+    // Store original body styles to restore later
+    const originalBodyStyles = {
+      overflow: document.body.style.overflow,
+      width: document.body.style.width,
+      paddingRight: document.body.style.paddingRight,
+      position: document.body.style.position,
+    };
+    
+    // Store original html styles
+    const originalHtmlStyles = {
+      overflow: document.documentElement.style.overflow,
+      width: document.documentElement.style.width,
+    };
+    
+    let styleMonitor: NodeJS.Timeout | null = null;
+    
     try {
       setSaving(true);
       setError(null);
 
-      // Create a temporary div to render HTML
+      // Validate PDF content
+      console.log('PDF Content length:', pdfContent?.length);
+      console.log('PDF Content preview:', pdfContent?.substring(0, 500));
+      
+      if (!pdfContent || pdfContent.trim().length === 0) {
+        throw new Error('No content available to generate PDF. Please try again.');
+      }
+
+      // Force body and html to maintain their dimensions
+      const forceBodyStyles = () => {
+        document.body.style.overflow = originalBodyStyles.overflow || 'auto';
+        document.body.style.width = originalBodyStyles.width || '100%';
+        document.body.style.paddingRight = originalBodyStyles.paddingRight || '0px';
+        document.documentElement.style.overflow = originalHtmlStyles.overflow || 'auto';
+        document.documentElement.style.width = originalHtmlStyles.width || '100%';
+      };
+      
+      // Apply immediately
+      forceBodyStyles();
+      
+      // Monitor and fix any style changes during PDF generation
+      styleMonitor = setInterval(forceBodyStyles, 50);
+      
+      // Add CSS for page breaks BEFORE rendering
+      const contentWithStyles = addPageBreakCSS(pdfContent);
+      
+      // Create a temporary div to render HTML - completely isolated from layout
       const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = pdfContent;
-      tempDiv.style.position = 'absolute';
-      tempDiv.style.left = '-9999px';
-      tempDiv.style.width = '800px';
-      tempDiv.style.backgroundColor = '#ffffff';
-      tempDiv.style.overflow = 'hidden';
-      tempDiv.style.boxSizing = 'border-box';
+      tempDiv.innerHTML = contentWithStyles;
+      // A4 proportions: 210mm x 297mm, using 210mm width with proper scaling
+      // At 96 DPI: 210mm = 794px, but we use 750px for better margins
+      tempDiv.style.cssText = `
+        position: fixed !important;
+        left: -99999px !important;
+        top: 0 !important;
+        width: 750px !important;
+        height: auto !important;
+        background-color: #ffffff !important;
+        overflow: visible !important;
+        box-sizing: border-box !important;
+        z-index: -99999 !important;
+        pointer-events: none !important;
+        display: block !important;
+        padding: 20px !important;
+      `;
+      
+      // Append to body
       document.body.appendChild(tempDiv);
       
-      // Wait for DOM to be ready and get table positions
+      // Force styles again after appending
+      forceBodyStyles();
+      
+      console.log('TempDiv appended, content length:', tempDiv.innerHTML.length);
+      console.log('TempDiv dimensions:', tempDiv.offsetWidth, 'x', tempDiv.offsetHeight);
+      
+      // Wait for DOM to be ready and get element positions
       await new Promise((resolve) => setTimeout(resolve, 200));
       
-      // Get positions of all table wrappers before canvas conversion
-      // This helps us avoid splitting tables across pages
+      // Get positions of all important elements (tables, messages, etc.)
+      // This helps us find natural break points
       const tableWrappers = tempDiv.querySelectorAll('.table-wrapper, table');
-      const tablePositions: Array<{ top: number; bottom: number; height: number }> = [];
+      const messages = tempDiv.querySelectorAll('.message');
+      const breakableElements: Array<{ top: number; bottom: number; height: number; type: string; canBreakBefore: boolean }> = [];
       
       // Get the container's scroll height for accurate positioning
       const containerHeight = tempDiv.scrollHeight || tempDiv.offsetHeight;
       
-      tableWrappers.forEach((wrapper) => {
-        let element = wrapper as HTMLElement;
-        // If it's a table, find its wrapper
-        if (element.tagName === 'TABLE' && element.parentElement) {
-          const wrapper = element.closest('.table-wrapper') || element.parentElement;
-          element = wrapper as HTMLElement;
-        }
-        
+      // Helper function to get element position
+      const getElementPosition = (element: HTMLElement) => {
         let top = 0;
         let currentElement: HTMLElement | null = element;
         
@@ -222,15 +325,42 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         const height = element.offsetHeight || element.scrollHeight;
         const bottom = top + height;
         
-        tablePositions.push({
-          top: top,
-          bottom: bottom,
-          height: height,
+        return { top, bottom, height };
+      };
+      
+      // Collect table positions (cannot break inside)
+      tableWrappers.forEach((wrapper) => {
+        let element = wrapper as HTMLElement;
+        // If it's a table, find its wrapper
+        if (element.tagName === 'TABLE' && element.parentElement) {
+          const wrapperEl = element.closest('.table-wrapper') || element.parentElement;
+          element = wrapperEl as HTMLElement;
+        }
+        
+        const pos = getElementPosition(element);
+        breakableElements.push({
+          ...pos,
+          type: 'table',
+          canBreakBefore: true, // Can break before table, but not inside
         });
       });
       
-      // Sort table positions by top
-      tablePositions.sort((a, b) => a.top - b.top);
+      // Collect message positions (can break between messages)
+      messages.forEach((message) => {
+        const element = message as HTMLElement;
+        const pos = getElementPosition(element);
+        breakableElements.push({
+          ...pos,
+          type: 'message',
+          canBreakBefore: true, // Can break before messages
+        });
+      });
+      
+      // Sort by top position
+      breakableElements.sort((a, b) => a.top - b.top);
+      
+      // Keep old tablePositions for backward compatibility
+      const tablePositions = breakableElements.filter(el => el.type === 'table');
 
       // Wait for all images to fully load before capturing
       const images = tempDiv.querySelectorAll('img');
@@ -255,7 +385,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
       // Try to load logo image for header (PNG format)
       let logoDataUrl: string | null = null;
       try {
-        const logoUrl = `${window.location.origin}/assets/fyers-logo.jpg`;
+        const logoUrl = `${window.location.origin}/assets/LOGO.png`;
         const logoResponse = await fetch(logoUrl);
         if (logoResponse.ok) {
           const logoBlob = await logoResponse.blob();
@@ -270,15 +400,37 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
       }
 
       // Convert HTML to canvas using html2canvas with better image handling
+      console.log('Starting html2canvas conversion...');
       const canvas = await html2canvas(tempDiv, {
         scale: 2,
         useCORS: true,
         logging: false,
         backgroundColor: '#ffffff',
-        allowTaint: false,
-        imageTimeout: 15000, // 15 seconds timeout for images
+        allowTaint: true, // Allow cross-origin images
+        imageTimeout: 15000,
         removeContainer: false,
+        windowWidth: 800,
+        windowHeight: tempDiv.scrollHeight,
         onclone: (clonedDoc) => {
+          // Apply orphans/widows rules to all relevant elements
+          const allElements = clonedDoc.querySelectorAll('*');
+          allElements.forEach((el) => {
+            const element = el as HTMLElement;
+            
+            // Apply orphans/widows rules to paragraphs and list items
+            if (element.tagName === 'P' || element.tagName === 'LI') {
+              element.style.marginBottom = '10px';
+              element.style.pageBreakInside = 'avoid';
+            }
+            
+            // Ensure tables have proper breaks
+            if (element.tagName === 'TABLE') {
+              element.style.pageBreakInside = 'avoid';
+              element.style.marginTop = '20px';
+              element.style.marginBottom = '20px';
+            }
+          });
+          
           // Ensure all images in cloned document are fully loaded
           const clonedImages = clonedDoc.querySelectorAll('img');
           clonedImages.forEach((img: HTMLImageElement) => {
@@ -394,15 +546,38 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
           });
         },
       });
+      
+      console.log('Canvas created:', canvas.width, 'x', canvas.height);
+      
+      // Clean up
       document.body.removeChild(tempDiv);
+      if (styleMonitor) {
+        clearInterval(styleMonitor);
+        styleMonitor = null;
+      }
+      
+      // Restore original styles
+      document.body.style.overflow = originalBodyStyles.overflow;
+      document.body.style.width = originalBodyStyles.width;
+      document.body.style.paddingRight = originalBodyStyles.paddingRight;
+      document.body.style.position = originalBodyStyles.position;
+      document.documentElement.style.overflow = originalHtmlStyles.overflow;
+      document.documentElement.style.width = originalHtmlStyles.width;
+
+      // Validate canvas
+      if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        throw new Error('Failed to generate PDF: Canvas is empty. Please try again.');
+      }
 
       // Calculate PDF dimensions
       const pdfWidth = 210; // A4 width in mm
       const pdfHeight = 297; // A4 height in mm
-      const margin = 15; // Top and bottom margin in mm
-      const headerHeight = 25; // Header height in mm
-      const footerHeight = 15; // Footer height in mm
-      const usableHeight = pdfHeight - margin * 2 - headerHeight - footerHeight;
+      const margin = 10; // Top and bottom margin in mm
+      const headerHeight = 16; // Header height in mm (reduced from 20)
+      const footerHeight = 10; // Footer height in mm (reduced from 12)
+      const contentPadding = 0; // No padding between header/footer and content for tighter layout
+      const footerBuffer = 2; // Small buffer to prevent content from touching footer
+      const usableHeight = pdfHeight - margin - headerHeight - footerHeight - contentPadding - footerBuffer;
       
       const imgWidth = pdfWidth - (margin * 2);
       const imgHeight = (canvas.height * imgWidth) / canvas.width;
@@ -419,82 +594,135 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
       // Use PNG format with maximum quality to preserve all image data
       const imgData = canvas.toDataURL('image/png', 1.0);
       
-      // Function to add header to each page with gradient and logo
+      // Get report name without file extension
+      const reportTitle = pdfName.replace(/\.(pdf|csv|xlsx?)$/i, '').trim() || 'Chat Conversation Report';
+      
+      // Function to add professional header to each page
       const addHeader = (pageNum: number, totalPages: number) => {
-        // Draw gradient background from RIGHT to LEFT
-        // Light blue (#3b82f6 = RGB 59, 130, 246) on LEFT, Dark blue (#1e40af = RGB 30, 64, 175) on RIGHT
-        const steps = 30;
-        for (let i = 0; i < steps; i++) {
-          const ratio = i / (steps - 1); // 0 at left, 1 at right
-          // Interpolate from light blue (LEFT) to dark blue (RIGHT) - reversed
-          const r = Math.round(59 - (59 - 30) * ratio);   // 59 -> 30 (light to dark)
-          const g = Math.round(130 - (130 - 64) * ratio);  // 130 -> 64 (light to dark)
-          const b = Math.round(246 - (246 - 175) * ratio); // 246 -> 175 (light to dark)
-          pdf.setFillColor(r, g, b);
-          pdf.rect((pdfWidth / steps) * i, 0, pdfWidth / steps + 1, headerHeight, 'F');
-        }
+        // Simple white background
+        pdf.setFillColor(255, 255, 255);
+        pdf.rect(0, 0, pdfWidth, headerHeight, 'F');
         
-        // Add logo if available (PNG format) - logo already contains FYERS text
+        // Add logo if available
         let logoX = margin;
         if (logoDataUrl) {
           try {
-            const logoHeight = 18; // Proper logo size
-            const logoWidth = (logoHeight * 27) / 22; // Maintain aspect ratio (adjust if needed based on actual logo)
-            pdf.addImage(logoDataUrl, 'JPG', margin, (headerHeight - logoHeight) / 2, logoWidth, logoHeight);
-            logoX = margin + logoWidth + 10; // Gap between logo and Chat Conversation Report
+            const logoHeight = 8; // Logo size (restored to previous size)
+            const logoWidth = (logoHeight * 27) / 22; // Maintain aspect ratio
+            const logoLeftMargin = margin; // Position logo at margin
+            pdf.addImage(logoDataUrl, 'PNG', logoLeftMargin, margin / 2, logoWidth, logoHeight);
+            logoX = logoLeftMargin + logoWidth + 5; // Gap between logo and title
           } catch (error) {
             console.log('Error adding logo to PDF:', error);
-            // If logo fails, logoX stays at margin
           }
         }
         
-        // Add "Chat Conversation Report" after logo (FYERS is already in the logo)
-        pdf.setFontSize(16);
-        pdf.setFont('helvetica', 'normal');
-        pdf.setTextColor(255, 255, 255);
-        pdf.text('Chat Conversation Report', logoX, headerHeight - 10);
+        // Add report title (using report name without file extension)
+        pdf.setFontSize(12); // Reduced for compact header
+        pdf.setFont('helvetica', 'bold');
+        pdf.setTextColor(30, 41, 59); // Dark professional color
+        pdf.text(reportTitle, logoX, headerHeight / 2 + 1.5);
         
-        // Add date and report type on right
-        pdf.setFontSize(11);
+        // Add date on right
+        pdf.setFontSize(8); // Reduced for compact header
         pdf.setFont('helvetica', 'normal');
+        pdf.setTextColor(100, 116, 139); // Gray text
         const dateWidth = pdf.getTextWidth(reportDate);
-        pdf.text(reportDate, pdfWidth - margin - dateWidth, headerHeight - 8);
+        pdf.text(reportDate, pdfWidth - margin - dateWidth, headerHeight / 2 + 1);
         
-        pdf.setFontSize(10);
-        const reportTypeWidth = pdf.getTextWidth('Research Report');
-        pdf.text('Research Report', pdfWidth - margin - reportTypeWidth, headerHeight - 3);
+        // Add separator line
+        pdf.setDrawColor(226, 232, 240); // Light gray
+        pdf.setLineWidth(0.2); // Thinner line for compact header
+        pdf.line(margin, headerHeight - 0.5, pdfWidth - margin, headerHeight - 0.5);
       };
       
       // Function to add footer to each page
       const addFooter = (pageNum: number, totalPages: number) => {
-        const footerY = pdfHeight - footerHeight;
+        const footerY = pdfHeight - footerHeight; // Position footer at the very bottom
         pdf.setFillColor(248, 250, 252); // Light gray background
         pdf.rect(0, footerY, pdfWidth, footerHeight, 'F');
         
-        pdf.setFontSize(9);
+        pdf.setFontSize(7); // Reduced for compact footer
         pdf.setTextColor(100, 116, 139); // Gray text
         pdf.setFont('helvetica', 'normal');
         
-        const footerText = `Generated by Fyers Research Platform | Page ${pageNum} of ${totalPages}`;
+        const footerText = `Generated by FYERS Intelligent Assistant | Page ${pageNum} of ${totalPages}`;
         const footerDate = `Report Date: ${reportDate}`;
         
         const textWidth = pdf.getTextWidth(footerText);
-        pdf.text(footerText, (pdfWidth - textWidth) / 2, footerY + 8);
-        pdf.text(footerDate, (pdfWidth - pdf.getTextWidth(footerDate)) / 2, footerY + 12);
+        pdf.text(footerText, (pdfWidth - textWidth) / 2, footerY + 4); // Adjusted for compact footer
+        pdf.text(footerDate, (pdfWidth - pdf.getTextWidth(footerDate)) / 2, footerY + 7.5); // Adjusted for compact footer
       };
       
-      // Calculate total pages needed
-      const totalPages = Math.ceil(imgHeight / usableHeight);
-      
-      // Handle multi-page content with proper page breaks
+      // Handle multi-page content with improved page break logic
       if (imgHeight <= usableHeight) {
         // Content fits on one page
         addHeader(1, 1);
-        pdf.addImage(imgData, 'PNG', margin, margin + headerHeight, imgWidth, imgHeight);
+        const contentStartY = margin + headerHeight + contentPadding;
+        pdf.addImage(imgData, 'PNG', margin, contentStartY, imgWidth, imgHeight);
         addFooter(1, 1);
       } else {
-        // Content spans multiple pages - split the image properly
-        // Use PNG format for better quality and to preserve all image data
+        // Multi-page content with smart breaks
+        // First pass: Calculate actual number of pages needed with same logic as rendering
+        let tempRemainingHeight = imgHeight;
+        let tempSourceY = 0;
+        let actualTotalPages = 0;
+        
+        while (tempRemainingHeight > 0 && actualTotalPages < 50) { // Max 50 pages safety
+          actualTotalPages++;
+          let pageContentHeight = Math.min(usableHeight - 5, tempRemainingHeight);
+          
+          const containerHeight = tempDiv.scrollHeight || tempDiv.offsetHeight;
+          const scaleFactor = canvas.height / containerHeight;
+          const sourceYpxForCheck = (tempSourceY / imgHeight) * canvas.height;
+          const idealPageEndPx = sourceYpxForCheck + (pageContentHeight / imgHeight) * canvas.height;
+          
+          // Find natural break points
+          let bestBreakPoint = pageContentHeight;
+          let foundNaturalBreak = false;
+          
+          for (const element of breakableElements) {
+            const elementTopPx = element.top * scaleFactor;
+            const elementBottomPx = element.bottom * scaleFactor;
+            const elementHeightPx = element.height * scaleFactor;
+            const buffer = element.type === 'table' 
+              ? Math.max(elementHeightPx * 0.25, 50) 
+              : Math.max(elementHeightPx * 0.15, 30);
+            const safeTop = elementTopPx - buffer;
+            const safeBottom = elementBottomPx + buffer;
+            
+            const wouldCutElement = sourceYpxForCheck < safeBottom && idealPageEndPx > safeTop;
+            
+            if (wouldCutElement) {
+              if (safeTop > sourceYpxForCheck && safeTop < idealPageEndPx) {
+                const breakHeightPx = safeTop - sourceYpxForCheck;
+                const breakHeightMm = (breakHeightPx / canvas.height) * imgHeight;
+                if (breakHeightMm >= 50) {
+                  bestBreakPoint = breakHeightMm - 5;
+                  foundNaturalBreak = true;
+                  break;
+                }
+              }
+              
+              if (sourceYpxForCheck >= safeTop && sourceYpxForCheck < safeBottom) {
+                const skipToMm = (safeBottom / canvas.height) * imgHeight;
+                tempSourceY = skipToMm;
+                tempRemainingHeight = imgHeight - tempSourceY;
+                pageContentHeight = Math.min(usableHeight - 5, tempRemainingHeight);
+                continue;
+              }
+            }
+          }
+          
+          if (foundNaturalBreak) {
+            pageContentHeight = bestBreakPoint;
+          }
+          
+          tempSourceY += pageContentHeight;
+          tempRemainingHeight -= pageContentHeight;
+        }
+        
+        // Second pass: Actually create the pages with correct total count
         let remainingHeight = imgHeight;
         let sourceY = 0;
         let pageNum = 1;
@@ -504,56 +732,83 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
             pdf.addPage();
           }
           
-          addHeader(pageNum, totalPages);
+          addHeader(pageNum, actualTotalPages);
           
-          // Calculate how much content fits on this page
-          let pageContentHeight = Math.min(usableHeight, remainingHeight);
+          // Start with conservative page height with minimal buffer
+          let pageContentHeight = Math.min(usableHeight - 5, remainingHeight);
           
-          // Check if we're about to split through a table
-          // Convert sourceY (in mm) to pixels in the original HTML
+          // Convert current position to canvas pixels
           const containerHeight = tempDiv.scrollHeight || tempDiv.offsetHeight;
           const scaleFactor = canvas.height / containerHeight;
+          const sourceYpxForCheck = (sourceY / imgHeight) * canvas.height;
+          const idealPageEndPx = sourceYpxForCheck + (pageContentHeight / imgHeight) * canvas.height;
           
-          const sourceYInPixels = sourceY / (imgHeight / canvas.height);
-          const pageEndInPixels = sourceYInPixels + (pageContentHeight / (imgHeight / canvas.height));
+          // Find the best break point - look for natural breaks (between messages, before tables)
+          // Smart break: Don't cut content too close to top or bottom
+          const minContentHeight = 40; // Minimum content per page (mm) - reduced from 50
+          let bestBreakPoint = pageContentHeight;
+          let foundNaturalBreak = false;
           
-          // Check each table position to see if we're cutting through it
-          for (const tablePos of tablePositions) {
-            const tableTopInCanvas = tablePos.top * scaleFactor;
-            const tableBottomInCanvas = tablePos.bottom * scaleFactor;
-            const tableHeightInCanvas = tablePos.height * scaleFactor;
+          // Look through all breakable elements to find a good break point
+          for (const element of breakableElements) {
+            const elementTopPx = element.top * scaleFactor;
+            const elementBottomPx = element.bottom * scaleFactor;
+            const elementHeightPx = element.height * scaleFactor;
             
-            // Add a buffer zone (10% of table height) to avoid cutting too close
-            const buffer = tableHeightInCanvas * 0.1;
-            const safeTableTop = tableTopInCanvas - buffer;
-            const safeTableBottom = tableBottomInCanvas + buffer;
+            // Add larger buffer for tables and messages to prevent cutting
+            // Tables need more protection (25% of height or minimum 50px)
+            // Messages need moderate protection (15% or minimum 30px)
+            const buffer = element.type === 'table' 
+              ? Math.max(elementHeightPx * 0.25, 50) 
+              : Math.max(elementHeightPx * 0.15, 30);
+            const safeTop = elementTopPx - buffer;
+            const safeBottom = elementBottomPx + buffer;
             
-            // If the split point is within a table or its buffer zone
-            if (sourceYInPixels < safeTableBottom && pageEndInPixels > safeTableTop) {
-              // We're cutting through a table - adjust to avoid it
-              if (sourceYInPixels < safeTableTop) {
-                // Start of page is before table, but end cuts through it
-                // Reduce page content height to end before table
-                const maxHeightBeforeTable = safeTableTop - sourceYInPixels;
-                const maxHeightInMm = (maxHeightBeforeTable / scaleFactor) * (imgHeight / canvas.height);
-                if (maxHeightInMm > 30) { // Only adjust if we have at least 30mm of space
-                  pageContentHeight = Math.min(pageContentHeight, maxHeightInMm);
-                } else {
-                  // Not enough space, move to next page to start table on new page
-                  const newSourceY = (safeTableTop / scaleFactor) * (imgHeight / canvas.height);
-                  sourceY = Math.max(sourceY, newSourceY);
-                  remainingHeight = imgHeight - sourceY;
-                  pageContentHeight = Math.min(usableHeight, remainingHeight);
+            // Check if we're cutting through this element
+            const wouldCutElement = sourceYpxForCheck < safeBottom && idealPageEndPx > safeTop;
+            
+            if (wouldCutElement) {
+              // Case 1: Element starts after current position but before ideal end
+              // This is a good natural break point!
+              if (safeTop > sourceYpxForCheck && safeTop < idealPageEndPx) {
+                const breakHeightPx = safeTop - sourceYpxForCheck;
+                const breakHeightMm = (breakHeightPx / canvas.height) * imgHeight;
+                
+                // Only use this break if we have reasonable content (at least 50mm)
+                // This ensures we don't create pages with too little content
+                if (breakHeightMm >= 50) {
+                  bestBreakPoint = breakHeightMm - 5; // 5mm buffer for safety (reduced from 8)
+                  foundNaturalBreak = true;
+                  break; // Use first natural break we find
                 }
-              } else if (sourceYInPixels >= safeTableTop && sourceYInPixels < safeTableBottom) {
-                // We're starting in the middle of a table - move to next page
-                const newSourceY = (safeTableBottom / scaleFactor) * (imgHeight / canvas.height);
-                sourceY = newSourceY;
-                remainingHeight = imgHeight - sourceY;
-                pageContentHeight = Math.min(usableHeight, remainingHeight);
               }
-              break; // Only handle first table we encounter
+              
+              // Case 2: We're starting in middle of element - skip past it
+              if (sourceYpxForCheck >= safeTop && sourceYpxForCheck < safeBottom) {
+                const skipToMm = (safeBottom / canvas.height) * imgHeight;
+                sourceY = skipToMm;
+                remainingHeight = imgHeight - sourceY;
+                pageContentHeight = Math.min(usableHeight - 10, remainingHeight);
+                continue; // Re-evaluate with new position
+              }
+              
+              // Case 3: Element fits entirely on page - keep going
+              if (sourceYpxForCheck <= safeTop && idealPageEndPx >= safeBottom) {
+                // Element fits, continue checking
+                continue;
+              }
             }
+          }
+          
+          // Use the best break point we found
+          if (foundNaturalBreak) {
+            pageContentHeight = bestBreakPoint;
+          }
+          
+          // Ensure we have minimum content per page to avoid awkward breaks
+          if (pageContentHeight < minContentHeight && remainingHeight > minContentHeight) {
+            // Not enough space, adjust to minimum or move to next page
+            pageContentHeight = Math.min(minContentHeight, remainingHeight);
           }
           
           // Calculate the source Y position in pixels (ensure we don't go beyond canvas)
@@ -561,10 +816,10 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
             Math.floor((sourceY / imgHeight) * canvas.height),
             canvas.height - 1
           );
-          const sourceHeightPx = Math.min(
+          const sourceHeightPx = Math.max(1, Math.min(
             Math.ceil((pageContentHeight / imgHeight) * canvas.height),
             canvas.height - sourceYpx
-          );
+          ));
           
           // Ensure we have valid dimensions
           if (sourceHeightPx > 0 && sourceYpx < canvas.height) {
@@ -592,12 +847,13 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
               // Use PNG format to preserve all image data
               const pageImgData = pageCanvas.toDataURL('image/png', 1.0);
               
-              // Add this page's content to PDF using PNG format
-              pdf.addImage(pageImgData, 'PNG', margin, margin + headerHeight, imgWidth, pageContentHeight);
+              // Add this page's content to PDF using PNG format with proper padding
+              const contentStartY = margin + headerHeight + contentPadding;
+              pdf.addImage(pageImgData, 'PNG', margin, contentStartY, imgWidth, pageContentHeight);
             }
           }
           
-          addFooter(pageNum, totalPages);
+          addFooter(pageNum, actualTotalPages);
           
           // Move to next page
           sourceY += pageContentHeight;
@@ -632,15 +888,25 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
       const fileName = pdfName.trim() || `chat-report-${conversationId}-${new Date().toISOString().replace(/[:.]/g, '-').slice(0, -5)}`;
       const pdfFileName = fileName.endsWith('.pdf') ? fileName : `${fileName}.pdf`;
       
+      // Ensure blob is fully ready before creating File
+      await new Promise(resolve => setTimeout(resolve, 100));
+      
       const pdfFile = new File([pdfBlob], pdfFileName, {
         type: 'application/pdf',
         lastModified: Date.now(),
       });
       
       // Final validation
-      if (pdfFile.size === 0) {
-        throw new Error('PDF file is empty');
+      if (!pdfFile || pdfFile.size === 0) {
+        throw new Error('PDF file is empty or not created properly');
       }
+      
+      console.log('PDF File created and validated:', {
+        name: pdfFile.name,
+        size: pdfFile.size,
+        type: pdfFile.type,
+        lastModified: pdfFile.lastModified,
+      });
       
       // Store PDF in local storage for quick access
       try {
@@ -678,7 +944,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         name: pdfFile.name,
       });
 
-      // Upload to Resources - always save to Reports folder
+      // Save report - always save to Reports folder
       // For super admin, use selectedOrgId; for regular users, use their org_id
       const orgId = userInfo?.is_super_admin ? selectedOrgId : userInfo?.org_id;
       
@@ -687,24 +953,38 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         return;
       }
 
-      // Find or create Reports folder
-      const reportsFolderId = await findOrCreateReportsFolder(orgId);
-      if (!reportsFolderId) {
-        setError('Failed to find or create Reports folder. Please try again.');
-        return;
-      }
-      
-      console.log('Uploading PDF file:', {
+      console.log('Saving PDF report:', {
         name: pdfFile.name,
         size: pdfFile.size,
         type: pdfFile.type,
         orgId,
-        folderId: reportsFolderId,
       });
 
-      // API call: POST /api/v1/documents/upload (insti-inquora)
-      // This will save to Reports folder (skips AI processing)
-      const uploadResponse: any = await saasApi.uploadFile(pdfFile, reportsFolderId, orgId);
+      // Additional wait to ensure file is fully ready
+      await new Promise(resolve => setTimeout(resolve, 200));
+      
+      // Verify file one more time before upload
+      if (!pdfFile || pdfFile.size === 0) {
+        throw new Error('PDF file became invalid before upload');
+      }
+
+      // Prepare metadata
+      const reportMetadata = {
+        conversation_id: conversationId,
+        report_type: 'chat_conversation',
+        generated_at: new Date().toISOString(),
+      };
+
+      console.log('Initiating upload with file:', {
+        fileName: pdfFile.name,
+        fileSize: pdfFile.size,
+        fileType: pdfFile.type,
+        hasFile: !!pdfFile,
+      });
+
+      // API call: POST /api/v1/documents/save-report (insti-inquora)
+      // This endpoint has no size limit and saves directly to Reports folder (no AI processing)
+      const uploadResponse: any = await saasApi.saveReport(pdfFile, orgId, reportMetadata);
       
       console.log('Upload response:', uploadResponse);
 
@@ -740,28 +1020,62 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         console.warn('Failed to store file ID in localStorage:', storageError);
       }
 
-      // Ask user if they want to download the PDF
-      // Automatically download the PDF without showing popup
-        try {
-          // API call: GET /api/v1/documents/{id}/download (insti-inquora)
-          const blob = await saasApi.downloadFile(uploadedFileId);
-          const url = window.URL.createObjectURL(blob);
-          const link = document.createElement('a');
-          link.href = url;
-          link.download = uploadedFileName || 'chat-report.pdf';
-          document.body.appendChild(link);
-          link.click();
-          document.body.removeChild(link);
+      // Download the PDF directly from the blob we created (before uploading)
+      // This ensures the user gets the exact PDF we generated
+      try {
+        const url = window.URL.createObjectURL(pdfBlob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = pdfFileName;
+        link.style.display = 'none';
+        document.body.appendChild(link);
+        link.click();
+        
+        // Clean up
+        setTimeout(() => {
+          if (document.body.contains(link)) {
+            document.body.removeChild(link);
+          }
           window.URL.revokeObjectURL(url);
-        } catch (downloadErr: any) {
-          console.error('Error downloading PDF:', downloadErr);
-          alert('Failed to download PDF. You can access it from the Resources tab.');
+        }, 100);
+        
+        console.log('PDF downloaded successfully:', pdfFileName);
+        
+        // Show success toast
+        showToast({
+          message: `PDF report "${uploadedFileName}" saved and downloaded successfully!`,
+          severity: NotificationSeverity.SUCCESS,
+          showIcon: true,
+          duration: 4000,
+        });
+      } catch (downloadErr: any) {
+        console.error('Error downloading PDF:', downloadErr);
+        // Still show success since file was uploaded
+        showToast({
+          message: `PDF report "${uploadedFileName}" saved to Reports folder!`,
+          severity: NotificationSeverity.SUCCESS,
+          showIcon: true,
+          duration: 4000,
+        });
       }
       
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to save report');
       console.error('Error saving report:', err);
+      
+      // Clean up style monitor if error occurs
+      if (styleMonitor) {
+        clearInterval(styleMonitor);
+      }
+      
+      // Restore original styles
+      document.body.style.overflow = originalBodyStyles.overflow;
+      document.body.style.width = originalBodyStyles.width;
+      document.body.style.paddingRight = originalBodyStyles.paddingRight;
+      document.body.style.position = originalBodyStyles.position; 
+      document.documentElement.style.overflow = originalHtmlStyles.overflow;
+      document.documentElement.style.width = originalHtmlStyles.width;
     } finally {
       setSaving(false);
     }
@@ -771,11 +1085,11 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6">
+      <DialogContent className="max-w-md p-6 sm:max-w-md bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Save PDF Report</DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Select a folder to save the PDF report
+            Your report will be saved to the Reports folder
           </p>
         </DialogHeader>
         {error && (
@@ -793,7 +1107,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
               <select
                 value={selectedOrgId}
                 onChange={(e) => setSelectedOrgId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
               >
                 {organizations.map((org) => (
                   <option key={org.id} value={org.id}>
@@ -816,7 +1130,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
               value={pdfName}
               onChange={(e) => setPdfName(e.target.value)}
               placeholder="Enter report name (e.g., Q4 Analysis Report)"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
+              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
               disabled={saving}
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">

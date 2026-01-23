@@ -19,7 +19,7 @@ export default function PermissionsModal({ user, permissions, onClose }: Permiss
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6">
+      <DialogContent className="max-w-3xl max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">
             Permissions for {user.email}
