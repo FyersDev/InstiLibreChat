@@ -60,6 +60,23 @@ function OTP() {
     }
   };
 
+  const handlePaste = (e: React.ClipboardEvent<HTMLInputElement>) => {
+    e.preventDefault();
+    const pastedData = e.clipboardData.getData('text').trim();
+    
+    // Check if pasted data is 6 digits
+    if (/^\d{6}$/.test(pastedData)) {
+      const newOtp = pastedData.split('');
+      setOtp(newOtp);
+      
+      // Focus the last input after pasting
+      setTimeout(() => {
+        const lastInput = document.getElementById('otp-5');
+        if (lastInput) lastInput.focus();
+      }, 10);
+    }
+  };
+
   const handleKeyDown = (
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>
@@ -306,6 +323,7 @@ function OTP() {
                     handleOtpChange(index, e.target.value)
                   }
                   onKeyDown={(e) => handleKeyDown(index, e)}
+                  onPaste={handlePaste}
                   className="w-10 h-10 sm:w-12 sm:h-12 border-2 border-gray-300 rounded-lg text-center text-base font-semibold focus:border-[#2434E7] focus:outline-none"
                 />
               ))}
