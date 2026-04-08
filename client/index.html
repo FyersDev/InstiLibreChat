@@ -50,10 +50,41 @@
       document.head.appendChild(loadingContainerStyle);
     </script>
     <script>
-      // WebView embedded mode: sync saas-api tokens from cookies to localStorage.
-      // Flutter sets saas_access_token / saas_refresh_token cookies; the Go API
-      // client (saasApi.ts) reads tokens from localStorage.
+      // Embedded auth: if ?token= is in the URL, call token-exchange to get
+      // LibreChat cookies set on this origin, then reload without the param.
+      // This enables iframe/WebView embedding with a single URL load.
       (function () {
+        var params = new URLSearchParams(window.location.search);
+        var ssoToken = params.get('token');
+        if (ssoToken) {
+          var maxAge = 7 * 24 * 60 * 60;
+          fetch('/auth/token-exchange', {
+            method: 'POST',
+            headers: {
+              'Authorization': 'Bearer ' + ssoToken,
+              'Content-Type': 'application/json',
+            },
+          })
+            .then(function (r) { return r.json(); })
+            .then(function (d) {
+              document.cookie = 'refreshToken=' + d.refresh_token + '; path=/; max-age=' + maxAge;
+              document.cookie = 'token_provider=proxy; path=/; max-age=' + maxAge;
+              document.cookie = 'libre_jwt=' + d.proxy_token + '; path=/; max-age=' + maxAge;
+              document.cookie = 'lc_access_token=' + d.access_token + '; path=/; max-age=' + maxAge;
+              document.cookie = 'embedded=true; path=/; max-age=' + maxAge;
+              document.cookie = 'saas_access_token=' + ssoToken + '; path=/; max-age=' + maxAge;
+              localStorage.setItem('access_token', ssoToken);
+              params.delete('token');
+              var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
+              window.location.replace(clean);
+            })
+            .catch(function (e) { console.error('Token exchange failed:', e); });
+          // Halt further script/React loading until redirect
+          document.querySelector('script[src*="main"]').remove();
+          return;
+        }
+
+        // Normal embedded mode: sync saas-api tokens from cookies to localStorage.
         var cookies = document.cookie.split('; ').reduce(function (acc, c) {
           var parts = c.split('=');
           acc[parts[0]] = decodeURIComponent(parts.slice(1).join('='));
