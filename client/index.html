@@ -49,6 +49,24 @@
       `;
       document.head.appendChild(loadingContainerStyle);
     </script>
+    <script>
+      // WebView embedded mode: sync saas-api tokens from cookies to localStorage.
+      // Flutter sets saas_access_token / saas_refresh_token cookies; the Go API
+      // client (saasApi.ts) reads tokens from localStorage.
+      (function () {
+        var cookies = document.cookie.split('; ').reduce(function (acc, c) {
+          var parts = c.split('=');
+          acc[parts[0]] = decodeURIComponent(parts.slice(1).join('='));
+          return acc;
+        }, {});
+        if (cookies.saas_access_token) {
+          localStorage.setItem('access_token', cookies.saas_access_token);
+        }
+        if (cookies.saas_refresh_token) {
+          localStorage.setItem('refresh_token', cookies.saas_refresh_token);
+        }
+      })();
+    </script>
     <script defer type="module" src="/src/main.jsx"></script>
   </head>
   <body>

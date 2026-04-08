@@ -14,10 +14,24 @@ const { getUserById, updateUser } = require('~/models');
  * 
  * Token provider cookie should be set to "proxy" for this strategy to be used.
  */
+const cookies = require('cookie');
+
+const fromAccessTokenCookie = (req) => {
+  const cookieHeader = req.headers.cookie;
+  if (!cookieHeader) {
+    return null;
+  }
+  const parsed = cookies.parse(cookieHeader);
+  return parsed.lc_access_token || null;
+};
+
 const proxyJwtLogin = () =>
   new JwtStrategy(
     {
-      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
+      jwtFromRequest: ExtractJwt.fromExtractors([
+        ExtractJwt.fromAuthHeaderAsBearerToken(),
+        fromAccessTokenCookie,
+      ]),
       secretOrKey: process.env.JWT_SECRET,
       passReqToCallback: false,
     },

@@ -13,7 +13,7 @@ import store from '~/store';
 
 function AccountSettings() {
   const localize = useLocalize();
-  const { user, isAuthenticated, logout } = useAuthContext();
+  const { user, isAuthenticated, logout, isEmbedded } = useAuthContext();
   const { data: startupConfig } = useGetStartupConfig();
   const balanceQuery = useGetUserBalance({
     enabled: !!isAuthenticated && startupConfig?.balance?.enabled,
@@ -161,16 +161,20 @@ function AccountSettings() {
         </Select.SelectItem>
           </>
         )}
-        <DropdownMenuSeparator />
-        <Select.SelectItem
-          aria-selected={true}
-          onClick={() => logout()}
-          value="logout"
-          className="select-item text-sm"
-        >
-          <LogOut className="icon-md" />
-          {localize('com_nav_log_out')}
-        </Select.SelectItem>
+        {!isEmbedded && (
+          <>
+            <DropdownMenuSeparator />
+            <Select.SelectItem
+              aria-selected={true}
+              onClick={() => logout()}
+              value="logout"
+              className="select-item text-sm"
+            >
+              <LogOut className="icon-md" />
+              {localize('com_nav_log_out')}
+            </Select.SelectItem>
+          </>
+        )}
       </Select.SelectPopover>
       {showFiles && <FilesView open={showFiles} onOpenChange={setShowFiles} />}
       {showSettings && <Settings open={showSettings} onOpenChange={setShowSettings} />}

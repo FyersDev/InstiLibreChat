@@ -47,6 +47,7 @@ const AuthContextProvider = ({
   });
 
   const navigate = useNavigate();
+  const isEmbedded = useRef(document.cookie.includes('embedded=true'));
 
   const setUserContext = useMemo(
     () =>
@@ -143,7 +144,7 @@ const AuthContextProvider = ({
           setUserContext({ token, isAuthenticated: true, user });
         } else {
           console.log('Token is not present. User is not authenticated.');
-          if (authConfig?.test === true) {
+          if (authConfig?.test === true || isEmbedded.current) {
             return;
           }
           navigate('/login');
@@ -151,7 +152,7 @@ const AuthContextProvider = ({
       },
       onError: (error) => {
         console.log('refreshToken mutation error:', error);
-        if (authConfig?.test === true) {
+        if (authConfig?.test === true || isEmbedded.current) {
           return;
         }
         navigate('/login');
@@ -164,7 +165,9 @@ const AuthContextProvider = ({
       setUser(userQuery.data);
     } else if (userQuery.isError) {
       doSetError((userQuery.error as Error).message);
-      navigate('/login', { replace: true });
+      if (!isEmbedded.current) {
+        navigate('/login', { replace: true });
+      }
     }
     if (error != null && error && isAuthenticated) {
       doSetError(undefined);
@@ -217,6 +220,7 @@ const AuthContextProvider = ({
         [SystemRoles.ADMIN]: adminRole,
       },
       isAuthenticated,
+      isEmbedded: isEmbedded.current,
     }),
 
     [user, error, isAuthenticated, token, userRole, adminRole],

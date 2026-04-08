@@ -466,6 +466,7 @@ export type TAuthContext = {
   logout: (redirect?: string) => void;
   setError: React.Dispatch<React.SetStateAction<string | undefined>>;
   roles?: Record<string, t.TRole | null | undefined>;
+  isEmbedded?: boolean;
 };
 
 export type TUserContext = {
