@@ -48,6 +48,18 @@
         }
       `;
       document.head.appendChild(loadingContainerStyle);
+
+      // Sync saas-api cookies to localStorage (set by /auth/embed flow)
+      (function() {
+        function getCookie(name) {
+          var m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+          return m ? decodeURIComponent(m[1]) : null;
+        }
+        var at = getCookie('saas_access_token');
+        var rt = getCookie('saas_refresh_token');
+        if (at) localStorage.setItem('access_token', at);
+        if (rt) localStorage.setItem('refresh_token', rt);
+      })();
     </script>
     <script defer type="module" src="/src/main.jsx"></script>
   </head>
