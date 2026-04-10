@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import type { ContextType } from '~/common';
 import {
@@ -28,10 +28,14 @@ export default function Root() {
   const [bannerHeight, setBannerHeight] = useState(0);
   const [navVisible, setNavVisible] = useState(() => {
     const savedNavVisible = localStorage.getItem('navVisible');
-    return savedNavVisible !== null ? JSON.parse(savedNavVisible) : true;
+    return savedNavVisible !== null ? JSON.parse(savedNavVisible) : false;
   });
 
   const { isAuthenticated, logout } = useAuthContext();
+
+  const showTopNavBar = useMemo(() => {
+    return new URLSearchParams(location.search).get('showtopnav') === '1';
+  }, [location.search]);
 
   // Only show chat history sidebar on chat routes (FIA research), not on admin/templates/screener/resources
   const shouldShowNav = !location.pathname.startsWith('/admin') && 
@@ -80,7 +84,7 @@ export default function Root() {
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
               <div className="flex flex-col bg-[#F6F8FF] dark:!bg-[#2A2A2A]" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
-                <TopNavBar />
+                {showTopNavBar && <TopNavBar />}
                 {/* Container with 12px horizontal padding and 16px gap (FYERS Design) */}
                 <div className="flex flex-1 px-3 py-2 overflow-hidden">
                   <div className="relative z-0 flex h-full w-full gap-2 overflow-hidden">
