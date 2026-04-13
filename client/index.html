@@ -23,6 +23,18 @@
       }
     </style>
     <script>
+      (function () {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var t = (p.get('theme') || '').toLowerCase();
+          if (t === 'light' || t === 'dark') {
+            localStorage.setItem('color-theme', t);
+            var root = document.documentElement;
+            root.classList.remove('dark', 'light');
+            root.classList.add(t === 'dark' ? 'dark' : 'light');
+          }
+        } catch (e) {}
+      })();
       const theme = localStorage.getItem('color-theme');
       const loadingContainerStyle = document.createElement('style');
       let backgroundColor;

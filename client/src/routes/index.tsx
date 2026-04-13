@@ -26,6 +26,7 @@ import TemplatesRoute from './TemplatesRoute';
 import ScreenerRoute from './ScreenerRoute';
 import ResourcesRoute from './ResourcesRoute';
 import FileViewRoute from './FileViewRoute';
+import ThemeFromQueryParam from '~/components/System/ThemeFromQueryParam';
 
 // Component to handle static file routes (returns null to prevent React Router from handling them)
 const StaticFileRoute = () => {
@@ -41,6 +42,7 @@ const AuthLayout = () => (
 // Wrap all routes with AuthContextProvider and ApiErrorWatcher
 const RootLayout = () => (
   <AuthContextProvider>
+    <ThemeFromQueryParam />
     <Outlet />
     <ApiErrorWatcher />
   </AuthContextProvider>
