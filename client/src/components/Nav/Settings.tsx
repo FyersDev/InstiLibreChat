@@ -7,11 +7,7 @@ import {
   useMediaQuery,
 } from '@librechat/client';
 import type { TDialogProps } from '~/common';
-import {
-  General,
-  Chat,
-  Balance,
-} from './SettingsTabs';
+import { Chat, Balance } from './SettingsTabs';
 import { useLocalize, TranslationKeys } from '~/hooks';
 import { useGetStartupConfig } from '~/data-provider';
 import { cn } from '~/utils';
@@ -20,12 +16,11 @@ export default function Settings({ open, onOpenChange }: TDialogProps) {
   const isSmallScreen = useMediaQuery('(max-width: 767px)');
   const { data: startupConfig } = useGetStartupConfig();
   const localize = useLocalize();
-  const [activeTab, setActiveTab] = useState(SettingsTabValues.GENERAL);
+  const [activeTab, setActiveTab] = useState(SettingsTabValues.CHAT);
   const tabRefs = useRef({});
 
   const handleKeyDown = (event: React.KeyboardEvent) => {
     const tabs: SettingsTabValues[] = [
-      SettingsTabValues.GENERAL,
       SettingsTabValues.CHAT,
       ...(startupConfig?.balance?.enabled ? [SettingsTabValues.BALANCE] : []),
     ];
@@ -56,11 +51,6 @@ export default function Settings({ open, onOpenChange }: TDialogProps) {
     icon: React.JSX.Element;
     label: TranslationKeys;
   }[] = [
-    {
-      value: SettingsTabValues.GENERAL,
-      icon: <img src="/assets/settings.svg" alt="Settings" className="w-4 h-4 dark:brightness-0 dark:invert" />,
-      label: 'com_nav_setting_general',
-    },
     {
       value: SettingsTabValues.CHAT,
       icon: <MessageSquare className="icon-sm" />,
@@ -174,9 +164,6 @@ export default function Settings({ open, onOpenChange }: TDialogProps) {
                     ))}
                   </Tabs.List>
                   <div className="overflow-auto sm:w-full sm:max-w-none md:pr-0.5 md:pt-0.5">
-                    <Tabs.Content value={SettingsTabValues.GENERAL} tabIndex={-1}>
-                      <General />
-                    </Tabs.Content>
                     <Tabs.Content value={SettingsTabValues.CHAT} tabIndex={-1}>
                       <Chat />
                     </Tabs.Content>

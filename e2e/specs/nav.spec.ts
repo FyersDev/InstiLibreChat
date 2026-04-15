@@ -24,35 +24,12 @@ test.describe('Navigation suite', () => {
     const modalTabList = await page.getByRole('tablist', { name: 'Settings' }).isVisible();
     expect(modalTabList).toBeTruthy();
 
-    const generalTabPanel = await page.getByRole('tabpanel', { name: 'General' }).isVisible();
-    expect(generalTabPanel).toBeTruthy();
+    const chatTabPanel = await page.getByRole('tabpanel', { name: 'Chat' }).isVisible();
+    expect(chatTabPanel).toBeTruthy();
 
     const modalClearConvos = await page.getByRole('button', { name: 'Clear' }).isVisible();
     expect(modalClearConvos).toBeTruthy();
 
-    const modalTheme = page.getByTestId('theme-selector');
-    expect(modalTheme).toBeTruthy();
-
-    async function changeMode(theme: string) {
-      // Ensure Element Visibility:
-      await page.waitForSelector('[data-testid="theme-selector"]');
-      await modalTheme.click();
-
-      await page.click(`[data-theme="${theme}"]`);
-
-      // Wait for the theme change
-      await page.waitForTimeout(1000);
-
-      // Check if the HTML element has the theme class
-      const html = await page.$eval(
-        'html',
-        (element, selectedTheme) => element.classList.contains(selectedTheme.toLowerCase()),
-        theme,
-      );
-      expect(html).toBeTruthy();
-    }
-
-    await changeMode('dark');
-    await changeMode('light');
+    await expect(page.getByTestId('font-size-selector')).toBeVisible();
   });
 });
