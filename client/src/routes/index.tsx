@@ -27,6 +27,7 @@ import ScreenerRoute from './ScreenerRoute';
 import ResourcesRoute from './ResourcesRoute';
 import FileViewRoute from './FileViewRoute';
 import ThemeFromQueryParam from '~/components/System/ThemeFromQueryParam';
+import WebViewNavigationListener from '~/components/System/WebViewNavigationListener';
 
 // Component to handle static file routes (returns null to prevent React Router from handling them)
 const StaticFileRoute = () => {
@@ -43,6 +44,7 @@ const AuthLayout = () => (
 const RootLayout = () => (
   <AuthContextProvider>
     <ThemeFromQueryParam />
+    <WebViewNavigationListener />
     <Outlet />
     <ApiErrorWatcher />
   </AuthContextProvider>
