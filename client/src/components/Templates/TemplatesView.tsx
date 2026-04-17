@@ -5,6 +5,7 @@ import { saasApi } from '~/services/saasApi';
 import { createPortal } from 'react-dom';
 import { User, Edit, Trash2, MoreVertical, ChevronDown } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { asset } from '~/utils/assetPath';
 
 export default function TemplatesView() {
   const { showToast } = useToastContext();
@@ -462,9 +463,9 @@ export default function TemplatesView() {
                       >
                         <td className="px-3 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-3">
-                            <img 
-                              src="/assets/documents.svg" 
-                              alt="Template" 
+                            <img
+                              src={asset('documents.svg')}
+                              alt="Template"
                               className="h-5 w-5 flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                             />
                             <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
@@ -584,9 +585,9 @@ export default function TemplatesView() {
                                   }}
                                   className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                 >
-                                  <img 
-                                    src="/assets/delete.svg" 
-                                    alt="Delete" 
+                                  <img
+                                    src={asset('delete.svg')}
+                                    alt="Delete"
                                     className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                                   />
                                   Delete
@@ -611,7 +612,7 @@ export default function TemplatesView() {
                         <td className="px-3 py-3 whitespace-nowrap">
                           <div className="flex items-center gap-3">
                           <img
-                            src="/assets/Leads.svg"
+                            src={asset('Leads.svg')}
                             alt="Persona"
                             className="h-5 w-5 flex-shrink-0 opacity-80 dark:invert"
                           />
@@ -695,9 +696,9 @@ export default function TemplatesView() {
                                   }}
                                   className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                 >
-                                  <img 
-                                    src="/assets/delete.svg" 
-                                    alt="Delete" 
+                                  <img
+                                    src={asset('delete.svg')}
+                                    alt="Delete"
                                     className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                                   />
                                   Delete
