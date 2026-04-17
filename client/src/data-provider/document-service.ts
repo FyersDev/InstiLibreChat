@@ -4,7 +4,12 @@
  */
 
 // External document service URL - use relative URL so it works on any domain
-const DOCUMENT_API_BASE = '/api/v1';
+const getBaseHref = () => {
+  const base = document.querySelector('base')?.getAttribute('href') || '/';
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+};
+
+const DOCUMENT_API_BASE = `${getBaseHref()}/api/v1`;
 
 export interface DocumentUploadResponse {
   code?: number;

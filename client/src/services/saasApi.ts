@@ -12,7 +12,12 @@
  * 
  */
 
-const API_BASE_URL = '/api/v1';
+const getBaseHref = () => {
+  const base = document.querySelector('base')?.getAttribute('href') || '/';
+  return base.endsWith('/') ? base.slice(0, -1) : base;
+};
+
+const API_BASE_URL = `${getBaseHref()}/api/v1`;
 
 function getAuthToken(): string | null {
   return localStorage.getItem('access_token');
