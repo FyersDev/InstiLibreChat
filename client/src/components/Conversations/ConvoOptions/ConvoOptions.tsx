@@ -115,7 +115,7 @@ function ConvoOptions({
       {
         label: localize('com_ui_delete'),
         onClick: handleDeleteClick,
-        icon: <img src="/assets/delete.svg" alt="Delete" className="icon-sm mr-2 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" />,
+        icon: <img src="/research/assets/delete.svg" alt="Delete" className="icon-sm mr-2 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" />,
         hideOnClick: false,
         ref: deleteButtonRef,
         render: (props) => <button {...props} />,

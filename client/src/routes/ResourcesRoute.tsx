@@ -39,7 +39,7 @@ interface FileNode {
 // Custom document icon component for list view
 const DocumentIcon = ({ className }: { className?: string }) => (
   <img 
-    src="/assets/documents.svg" 
+    src="/research/assets/documents.svg" 
     alt="Document" 
     className={`${className || 'h-4 w-4'} opacity-70 dark:brightness-0 dark:invert dark:opacity-70`}
   />
@@ -606,7 +606,7 @@ export default function ResourcesRoute() {
                   }}
                   className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-none"
                 >
-                  <img src="/assets/export.svg" alt="Upload" className="h-3 w-3 sm:h-3.5 sm:w-3.5 dark:invert" />
+                  <img src="/research/assets/export.svg" alt="Upload" className="h-3 w-3 sm:h-3.5 sm:w-3.5 dark:invert" />
                   <span className="hidden sm:inline">Upload document</span>
                   <span className="sm:hidden">Upload</span>
                 </button>
@@ -691,7 +691,7 @@ export default function ResourcesRoute() {
 
         {filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
           <div className="text-center py-12">
-            <img src="/assets/Folder.svg" alt="Empty Folder" className="h-12 w-12 mx-auto mb-4 opacity-40 dark:invert" />
+            <img src="/research/assets/Folder.svg" alt="Empty Folder" className="h-12 w-12 mx-auto mb-4 opacity-40 dark:invert" />
             <p className="text-gray-600 dark:text-gray-400 mb-4">This folder is empty</p>
           </div>
         ) : (
@@ -743,7 +743,7 @@ export default function ResourcesRoute() {
                     >
                       <td className="px-3 py-3 whitespace-nowrap">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <img src="/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 dark:invert" />
+                          <img src="/research/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 dark:invert" />
                           <div className="min-w-0">
                             <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{folder.name}</div>
                             {folderFileCount > 0 && (
@@ -820,7 +820,7 @@ export default function ResourcesRoute() {
                                       className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
                                       <img 
-                                        src="/assets/edit.svg" 
+                                        src="/research/assets/edit.svg" 
                                         alt="Edit" 
                                         className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                                       />
@@ -839,7 +839,7 @@ export default function ResourcesRoute() {
                                       className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                     >
                                       <img 
-                                        src="/assets/delete.svg" 
+                                        src="/research/assets/delete.svg" 
                                         alt="Delete" 
                                         className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
                                       />
@@ -960,7 +960,7 @@ export default function ResourcesRoute() {
                                         className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
                                       >
                                         <img 
-                                          src="/assets/delete.svg" 
+                                          src="/research/assets/delete.svg" 
                                           alt="Delete" 
                                           className="h-4 w-4 opacity-70 dark:invert dark:opacity-70" 
                                         />

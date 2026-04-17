@@ -8,7 +8,7 @@ export default function Regenerate({ onClick }: TGenButtonProps) {
   return (
     <Button onClick={onClick}>
       <img 
-        src="/assets/repeat.svg" 
+        src="/research/assets/repeat.svg" 
         alt="Regenerate" 
         className="h-2.5 w-2.5 flex-shrink-0 dark:invert" 
       />

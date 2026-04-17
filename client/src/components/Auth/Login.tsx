@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate, useOutletContext } from 'react-router-dom';
 import { useToastContext } from '@librechat/client';
 import type { TLoginLayoutContext } from '~/common';
+import { asset } from '~/utils/assetPath';
 
 function Login() {
   const navigate = useNavigate();
@@ -95,7 +96,7 @@ function Login() {
   <div className="flex items-center gap-2 sm:gap-3">
     <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center p-1 flex-shrink-0">
       <img
-        src="/assets/Logo.svg"
+        src={asset('Logo.svg')}
         alt="FIA Logo"
         className="w-full h-full object-contain"
       />
@@ -115,7 +116,7 @@ function Login() {
     {/* FYERS Illustration */}
     <div className="flex justify-start">
       <img
-        src="/assets/Fia Login.png"
+        src={asset('Fia Login.png')}
         alt="FYERS platform preview"
         className="w-full max-w-[900px] h-[260px] sm:h-[320px] lg:h-[420px] object-contain"
 

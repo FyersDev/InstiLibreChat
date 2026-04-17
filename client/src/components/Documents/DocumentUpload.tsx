@@ -194,7 +194,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
           ) : (
             <>
               <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <img src="/assets/export.svg" alt="Upload" className="w-6 h-6 dark:invert" />
+                <img src="/research/assets/export.svg" alt="Upload" className="w-6 h-6 dark:invert" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">

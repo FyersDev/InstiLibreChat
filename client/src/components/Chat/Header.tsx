@@ -7,6 +7,7 @@ import ModelSelector from '~/components/Chat/Menus/Endpoints/ModelSelector';
 import Settings from '~/components/Nav/Settings';
 import { useGetStartupConfig } from '~/data-provider';
 import { useLocalize } from '~/hooks';
+import { asset } from '~/utils/assetPath';
 
 export default function Header() {
   const { navVisible, setNavVisible } = useOutletContext<ContextType>();
@@ -39,7 +40,7 @@ export default function Header() {
         <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-1">
           <div className="w-8 h-8 relative rounded-sm flex items-center justify-center">
             <img
-              src="/assets/FIA.svg"
+              src={asset('FIA.svg')}
               alt="FIA"
               className="w-full h-full object-contain"
             />
@@ -65,7 +66,7 @@ export default function Header() {
               aria-label={localize('com_nav_settings')}
             >
               <img
-                src="/assets/settings.svg"
+                src="/research/assets/settings.svg"
                 alt=""
                 className="h-5 w-5 dark:brightness-0 dark:invert"
               />

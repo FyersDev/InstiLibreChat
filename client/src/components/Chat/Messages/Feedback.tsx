@@ -61,7 +61,7 @@ function FeedbackButtons({
           aria-pressed={feedback?.rating === 'thumbsUp'}
         >
           <img 
-            src="/assets/Vectorup.svg" 
+            src="/research/assets/Vectorup.svg" 
             alt="Thumbs Up" 
             className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
             style={{ width: '16px', height: '16px' }}
@@ -77,7 +77,7 @@ function FeedbackButtons({
         aria-pressed={feedback?.rating === 'thumbsDown'}
       >
         <img 
-          src="/assets/Vector.svg" 
+          src="/research/assets/Vector.svg" 
           alt="Thumbs Down" 
           className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
           style={{ width: '16px', height: '16px' }}

@@ -300,7 +300,7 @@ const FileItem = React.memo(function FileItem({
           </span>
           {!isLocalFile && (
             <img 
-              src="/assets/download.svg" 
+              src="/research/assets/download.svg" 
               alt="Download" 
               className="ml-auto h-3 w-3 opacity-70 dark:invert dark:opacity-70" 
             />
@@ -345,7 +345,7 @@ const FileItem = React.memo(function FileItem({
         </span>
         {!isLocalFile && (
           <img 
-            src="/assets/download.svg" 
+            src="/research/assets/download.svg" 
             alt="Download" 
             className="ml-auto h-3 w-3 opacity-70 dark:invert dark:opacity-70" 
           />

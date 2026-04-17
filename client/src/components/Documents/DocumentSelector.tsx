@@ -482,7 +482,7 @@ export default function DocumentSelector({
                     className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
                   >
                     <img 
-                      src="/assets/documents.svg" 
+                      src="/research/assets/documents.svg" 
                       alt="Document" 
                       className="h-3 w-3 flex-shrink-0 opacity-70 dark:invert" 
                     />
@@ -590,7 +590,7 @@ export default function DocumentSelector({
                           <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
                             <div className="flex items-center gap-3">
                               <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
-                                <img src="/assets/Folder.svg" alt="Folder" className="h-4 w-4 dark:invert" />
+                                <img src="/research/assets/Folder.svg" alt="Folder" className="h-4 w-4 dark:invert" />
                               </div>
                               <div className="min-w-0">
                                 <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
@@ -657,7 +657,7 @@ export default function DocumentSelector({
                               </div>
                               <div className="flex items-center gap-2 min-w-0">
                                 <img 
-                                  src="/assets/documents.svg" 
+                                  src="/research/assets/documents.svg" 
                                   alt="Document" 
                                   className="h-3.5 w-3.5 flex-shrink-0 opacity-70 dark:invert dark:opacity-70" 
                                 />

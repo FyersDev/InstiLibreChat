@@ -61,7 +61,7 @@ export default function NavToggle({
             {!navVisible ? (
               // Show expander icon when nav is closed (for expanding)
               <img
-                src="/assets/expander.svg"
+                src="/research/assets/expander.svg"
                 alt="Expand"
                 className="h-4 w-4 dark:invert"
                 style={transition}

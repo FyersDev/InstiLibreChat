@@ -273,7 +273,7 @@ export default function TemplateSelector() {
         disabled
         className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary opacity-50"
       >
-        <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+        <img src="/research/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
         <span>Loading...</span>
       </button>
     );
@@ -293,7 +293,7 @@ export default function TemplateSelector() {
         className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary opacity-50"
         title="No templates available"
       >
-        <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+        <img src="/research/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
         <span>{buttonText}</span>
       </button>
     );
@@ -372,7 +372,7 @@ export default function TemplateSelector() {
             style={{ height: '34px' }}
             className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
           >
-            <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+            <img src="/research/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
             <span>{buttonText}</span>
             <ChevronDown className="h-4 w-4" />
           </Ariakit.MenuButton>

@@ -347,7 +347,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <img 
-                    src="/assets/documents.svg" 
+                    src="/research/assets/documents.svg" 
                     alt="Document" 
                     className="h-3 w-3 flex-shrink-0 opacity-70 dark:invert" 
                   />

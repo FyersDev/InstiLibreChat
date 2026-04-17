@@ -273,7 +273,7 @@ const HoverButtons = ({
             title={localize('com_ui_regenerate')}
             icon={
               <img 
-                src="/assets/repeat.svg" 
+                src="/research/assets/repeat.svg" 
                 alt="Regenerate" 
                 className="dark:brightness-0 dark:invert" 
                 style={{ width: '16px', height: '16px' }}
@@ -305,7 +305,7 @@ const HoverButtons = ({
         }
         icon={
           <img 
-            src="/assets/Copy.svg" 
+            src="/research/assets/Copy.svg" 
             alt={isCopied ? "Copied" : "Copy"} 
             className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70"
             style={{ width: '16px', height: '16px' }}
@@ -323,7 +323,7 @@ const HoverButtons = ({
           title={localize('com_ui_edit')}
           icon={
             <img 
-              src="/assets/edit.svg" 
+              src="/research/assets/edit.svg" 
               alt="Edit" 
               className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
               style={{ width: '16px', height: '16px' }}
@@ -349,7 +349,7 @@ const HoverButtons = ({
           title={localize('com_ui_regenerate')}
           icon={
             <img 
-              src="/assets/repeat.svg" 
+              src="/research/assets/repeat.svg" 
               alt="Regenerate" 
               className="opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
               style={{ width: '16px', height: '16px' }}
@@ -367,7 +367,7 @@ const HoverButtons = ({
           title="Generate PDF Report"
           icon={
             <img 
-              src="/assets/documents.svg" 
+              src="/research/assets/documents.svg" 
               alt="Generate PDF" 
               className="opacity-70 dark:invert dark:opacity-70" 
               style={{ width: '16px', height: '16px' }}
