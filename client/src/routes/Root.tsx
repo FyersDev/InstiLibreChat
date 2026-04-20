@@ -83,7 +83,10 @@ export default function Root() {
           <AgentsMapContext.Provider value={agentsMap}>
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
-              <div className="flex flex-col bg-[#F6F8FF] dark:!bg-[#2A2A2A]" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
+              <div
+                className="flex flex-col bg-presentation"
+                style={{ height: `calc(100dvh - ${bannerHeight}px)` }}
+              >
                 {showTopNavBar && <TopNavBar />}
                 {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap 4px (FYERS Design) */}
                 <div className="flex flex-1 overflow-hidden p-[0px_4px_4px_4px]">
