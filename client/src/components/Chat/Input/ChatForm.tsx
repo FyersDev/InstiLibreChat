@@ -248,7 +248,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
             onClick={handleContainerClick}
             className={cn(
               'relative flex w-full flex-grow flex-col overflow-hidden rounded-[2px]',
-              'bg-white dark:bg-gray-800 border border-[#2434E7] dark:border-blue-500',
+              'bg-white dark:bg-gray-800 border border-[#2434E7]',
               'transition-all duration-200',
               isTextAreaFocused ? 'shadow-lg' : 'shadow-md',
             )}
