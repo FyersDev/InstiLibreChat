@@ -58,6 +58,15 @@
           height: 100vh;
           background-color: ${backgroundColor};
         }
+        #loading-container::after {
+          content: '';
+          width: 120px;
+          height: 120px;
+          background-image: url('/research/assets/${theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'loader_dark' : 'loader_light'}.gif');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+        }
       `;
       document.head.appendChild(loadingContainerStyle);
 
