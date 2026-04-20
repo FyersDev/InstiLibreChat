@@ -1,0 +1,30 @@
+client/src/components/Nav/SidebarEdgeTabs.tsx
+  e39ead3 1-3,5-17,19-25,27-49
+client/src/routes/Root.tsx
+  e39ead3 20,96-98
+client/src/components/Chat/Header.tsx
+  e39ead3 12,71
+client/src/components/Nav/NewChat.tsx
+  e39ead3 5,61-79
+client/src/components/Nav/index.ts
+  e39ead3 5
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "c3bd3744c8e6faf219be008308a1a5bcac1d67a7",
+  "prompts": {
+    "e39ead3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "10246257-b1de-447b-a4cc-6230e3581949",
+        "model": "claude-4.5-sonnet-thinking"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 219,
+      "total_deletions": 148,
+      "accepted_lines": 220,
+      "overriden_lines": 0
+    }
+  }
+}
