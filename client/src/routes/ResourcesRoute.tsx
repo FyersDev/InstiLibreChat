@@ -476,6 +476,9 @@ export default function ResourcesRoute() {
 
   const handlePreviewFile = (file: FileNode) => {
     try {
+      // Get base path from meta tag or default to /research/
+      const basePath = import.meta.env.BASE_URL || '/research/';
+      
       // Build the URL first
       let fileUrl: string;
       
@@ -488,11 +491,11 @@ export default function ResourcesRoute() {
         } else if (filePath.startsWith('/' + storagePath + '/')) {
           filePath = filePath.substring(storagePath.length + 2);
         }
-        // Use full URL to avoid React Router intercepting it
-        fileUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
+        // Use full URL with base path to avoid React Router intercepting it
+        fileUrl = `${window.location.origin}${basePath}static/resources/folder/file/${filePath}`;
       } else {
-        // Fallback to file ID route
-        fileUrl = `${window.location.origin}/files/${file.id}?direct=true`;
+        // Fallback to file ID route with base path
+        fileUrl = `${window.location.origin}${basePath}files/${file.id}?direct=true`;
       }
 
       // Try to open in parent window first (for iframe context), fallback to current window
