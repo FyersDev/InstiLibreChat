@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { createPortal } from 'react-dom';
-import { Button, useToastContext } from '@librechat/client';
+import { Button, useToastContext, Spinner } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
 import { PermissionManager } from '~/utils/permissions';
 import { 
@@ -512,7 +512,7 @@ export default function ResourcesRoute() {
     return (
       <div className="flex h-screen items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-500 mx-auto mb-4"></div>
+          <Spinner size={48} className="mx-auto mb-4" />
           <p className="text-gray-600 dark:text-gray-400">Loading resources...</p>
         </div>
       </div>

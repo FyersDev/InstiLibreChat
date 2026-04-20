@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { RefreshCw, X, Calendar, Check, ChevronRight, Home } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, useToastContext } from '@librechat/client';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, useToastContext, Spinner } from '@librechat/client';
 import { useLocalize, useMCPServerManager } from '~/hooks';
 import { type DocumentListItem } from '~/data-provider/document-service';
 import { Constants } from 'librechat-data-provider';
@@ -538,7 +538,7 @@ export default function DocumentSelector({
           <div className="flex-1 overflow-y-auto min-h-0">
             {loading ? (
               <div className="flex items-center justify-center h-64">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+                <Spinner size={32} />
               </div>
             ) : currentFolder.folders.length === 0 && currentFiles.length === 0 ? (
               <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
