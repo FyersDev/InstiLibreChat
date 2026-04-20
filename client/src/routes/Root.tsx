@@ -17,7 +17,7 @@ import {
 } from '~/Providers';
 import { useUserTermsQuery, useGetStartupConfig } from '~/data-provider';
 import { TermsAndConditionsModal } from '~/components/ui';
-import { Nav, MobileNav } from '~/components/Nav';
+import { Nav, MobileNav, SidebarEdgeTabs } from '~/components/Nav';
 import TopNavBar from '~/components/Nav/TopNavBar';
 import { useHealthCheck } from '~/data-provider';
 import { Banner } from '~/components/Banners';
@@ -93,6 +93,9 @@ export default function Root() {
                   <div className="relative z-0 flex h-full w-full gap-[4px] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
                     <div className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden">
+                      {shouldShowNav && (
+                        <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
+                      )}
                       {shouldShowNav && <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />}
                       <Outlet context={{ navVisible, setNavVisible } satisfies ContextType} />
                     </div>
