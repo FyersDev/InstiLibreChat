@@ -474,8 +474,18 @@ export default function ResourcesRoute() {
   };
 
 
-  const handlePreviewFile = async (file: FileNode) => {
+  const handlePreviewFile = (file: FileNode) => {
     try {
+      // Open window immediately (synchronously) to avoid popup blocker
+      const newWindow = window.open('about:blank', '_blank');
+      if (!newWindow) {
+        showToast({
+          message: 'Please allow popups for this site to preview files',
+          status: 'error',
+        });
+        return;
+      }
+
       // Use static route if storage_key is available, otherwise fallback to file ID route
       if (file.storage_key) {
         const storagePath = 'uploads';
@@ -489,15 +499,18 @@ export default function ResourcesRoute() {
         // Use full URL to avoid React Router intercepting it
         // Authentication handled by cookies/Authorization header
         const staticUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
-        window.open(staticUrl, '_blank');
+        newWindow.location.href = staticUrl;
       } else {
         // Fallback to file ID route
         const fileUrl = `${window.location.origin}/files/${file.id}?direct=true`;
-        window.open(fileUrl, '_blank');
+        newWindow.location.href = fileUrl;
       }
     } catch (err: any) {
       console.error('Preview error:', err);
-      alert(err.message || 'Failed to preview file');
+      showToast({
+        message: err.message || 'Failed to preview file',
+        status: 'error',
+      });
     }
   };
 
