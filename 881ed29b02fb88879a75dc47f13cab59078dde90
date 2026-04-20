@@ -1,0 +1,26 @@
+client/src/components/Chat/Input/ChatForm.tsx
+  e39ead3 202,251
+client/src/style.css
+  e39ead3 361,371-376,380,528-529,536,543,549-550,555,590,597,607-608,616,624-625,627,653,665
+client/src/routes/Root.tsx
+  e39ead3 86-89
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "6e6efc00676bc4421ca35bb5e13e994cbf4a6cb2",
+  "prompts": {
+    "e39ead3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "10246257-b1de-447b-a4cc-6230e3581949",
+        "model": "claude-4.5-sonnet-thinking"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 143,
+      "total_deletions": 114,
+      "accepted_lines": 4047,
+      "overriden_lines": 0
+    }
+  }
+}
