@@ -85,9 +85,9 @@ export default function Root() {
               <Banner onHeightChange={setBannerHeight} />
               <div className="flex flex-col bg-[#F6F8FF] dark:!bg-[#2A2A2A]" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
                 {showTopNavBar && <TopNavBar />}
-                {/* Container with 12px horizontal padding and 16px gap (FYERS Design) */}
-                <div className="flex flex-1 px-3 py-2 overflow-hidden">
-                  <div className="relative z-0 flex h-full w-full gap-2 overflow-hidden">
+                {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap 4px (FYERS Design) */}
+                <div className="flex flex-1 overflow-hidden p-[0px_4px_4px_4px]">
+                  <div className="relative z-0 flex h-full w-full gap-[4px] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
                     <div className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden">
                       {shouldShowNav && <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />}

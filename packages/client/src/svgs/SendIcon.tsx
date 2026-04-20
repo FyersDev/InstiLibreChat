@@ -7,7 +7,7 @@ export default function SendIcon({ size = 24, className = '' }) {
       height={size}
       viewBox={'0 0 24 24'}
       fill="none"
-      className={cn('text-white dark:text-black', className)}
+      className={cn('text-white', className)}
     >
       <path
         d="M7 11L12 6L17 11M12 18V7"
