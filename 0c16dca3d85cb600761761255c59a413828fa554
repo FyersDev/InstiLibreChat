@@ -1,0 +1,28 @@
+client/src/routes/Root.tsx
+  e39ead3 88-90
+client/src/components/Chat/Input/ChatForm.tsx
+  e39ead3 251
+client/src/components/Chat/Input/SendButton.tsx
+  e39ead3 26
+packages/client/src/svgs/SendIcon.tsx
+  e39ead3 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "10e69fa72a51b79630172b52cdbfbca6e464b84b",
+  "prompts": {
+    "e39ead3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "10246257-b1de-447b-a4cc-6230e3581949",
+        "model": "claude-4.5-sonnet-thinking"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 18,
+      "total_deletions": 18,
+      "accepted_lines": 403,
+      "overriden_lines": 0
+    }
+  }
+}
