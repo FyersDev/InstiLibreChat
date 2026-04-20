@@ -476,17 +476,9 @@ export default function ResourcesRoute() {
 
   const handlePreviewFile = (file: FileNode) => {
     try {
-      // Open window immediately (synchronously) to avoid popup blocker
-      const newWindow = window.open('about:blank', '_blank');
-      if (!newWindow) {
-        showToast({
-          message: 'Please allow popups for this site to preview files',
-          status: 'error',
-        });
-        return;
-      }
-
-      // Use static route if storage_key is available, otherwise fallback to file ID route
+      // Build the URL first
+      let fileUrl: string;
+      
       if (file.storage_key) {
         const storagePath = 'uploads';
         let filePath = file.storage_key;
@@ -497,13 +489,47 @@ export default function ResourcesRoute() {
           filePath = filePath.substring(storagePath.length + 2);
         }
         // Use full URL to avoid React Router intercepting it
-        // Authentication handled by cookies/Authorization header
-        const staticUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
-        newWindow.location.href = staticUrl;
+        fileUrl = `${window.location.origin}/static/resources/folder/file/${filePath}`;
       } else {
         // Fallback to file ID route
-        const fileUrl = `${window.location.origin}/files/${file.id}?direct=true`;
-        newWindow.location.href = fileUrl;
+        fileUrl = `${window.location.origin}/files/${file.id}?direct=true`;
+      }
+
+      // Try to open in parent window first (for iframe context), fallback to current window
+      let newWindow: Window | null = null;
+      
+      try {
+        // If we're in an iframe, try to use parent window
+        if (window.parent && window.parent !== window) {
+          newWindow = window.parent.open(fileUrl, '_blank');
+        }
+      } catch (e) {
+        // Parent access blocked, will try current window
+        console.log('Parent window access blocked, trying current window');
+      }
+      
+      // If parent didn't work, try top window
+      if (!newWindow) {
+        try {
+          if (window.top && window.top !== window) {
+            newWindow = window.top.open(fileUrl, '_blank');
+          }
+        } catch (e) {
+          // Top access blocked, will try current window
+          console.log('Top window access blocked, trying current window');
+        }
+      }
+      
+      // If neither parent nor top worked, try current window
+      if (!newWindow) {
+        newWindow = window.open(fileUrl, '_blank');
+      }
+      
+      if (!newWindow) {
+        showToast({
+          message: 'Please allow popups for this site to preview files',
+          status: 'error',
+        });
       }
     } catch (err: any) {
       console.error('Preview error:', err);
