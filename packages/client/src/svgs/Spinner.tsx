@@ -1,5 +1,5 @@
 import { cn } from '~/utils/';
-import { useTheme } from '~/hooks';
+import { useTheme } from '../theme';
 
 interface SpinnerProps {
   className?: string;
@@ -17,7 +17,10 @@ export default function Spinner({
   
   // Determine which loader GIF to use based on theme
   const isDark = theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  const loaderSrc = `/research/assets/loader_${isDark ? 'dark' : 'light'}.gif`;
+  
+  // Use import.meta.env.BASE_URL which comes from Vite config (configurable via VITE_BASE_PATH)
+  const basePath = import.meta.env.BASE_URL || '/research/';
+  const loaderSrc = `${basePath}assets/loader_${isDark ? 'dark' : 'light'}.gif`;
 
   return (
     <img
