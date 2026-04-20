@@ -54,7 +54,7 @@ export default function Header() {
         </div>
 
         {/* Right: model row + Settings inside same scale-75 block (gear sits beside model button) */}
-        <div className="mx-1 flex items-center">
+        {/* <div className="mx-1 flex items-center">
           <div className="flex flex-row items-center gap-2 scale-75 origin-right">
             <div className="min-w-0 max-w-md flex-1">
               <ModelSelector startupConfig={startupConfig} />
@@ -72,7 +72,7 @@ export default function Header() {
               />
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
       {showSettings && (
         <Settings open={showSettings} onOpenChange={setShowSettings} />
