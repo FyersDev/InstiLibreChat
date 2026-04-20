@@ -358,10 +358,9 @@ button[role="switch"],
 }
 
 
-/* Specific component overrides */
+/* Specific component overrides (dialogs use 4px — see next block) */
 [data-radix-popper-content-wrapper],
 [data-radix-portal],
-[data-radix-dialog-content],
 [data-radix-dropdown-content],
 [data-radix-popover-content],
 [data-radix-select-content],
@@ -369,9 +368,16 @@ button[role="switch"],
   border-radius: 2px !important;
 }
 
+/* Dialog / modal panels — 4px radius (overrides global 2px and rounded-* utilities) */
+[role='dialog'],
+[data-radix-dialog-content],
+div[id^='headlessui-dialog-panel'] {
+  border-radius: 4px !important;
+}
+
 /* Custom Variables */
 :root {
-  --white: #fff;
+  --white: #ffffff;
   --black: #000;
   --gray-20: #ececf1;
   --gray-50: #f7f7f8;
@@ -519,33 +525,34 @@ button[role="switch"],
 }
 html {
   --brand-purple: #ab68ff;
-  --presentation: var(--white);
+  /* App canvas / primary surfaces — light theme */
+  --presentation: #ffffff;
   --text-primary: var(--gray-800);
   --text-secondary: var(--gray-600);
   --text-secondary-alt: var(--gray-500);
   --text-tertiary: var(--gray-500);
   --text-warning: var(--amber-500);
   --ring-primary: var(--gray-500);
-  --header-primary: var(--white);
+  --header-primary: #ffffff;
   --header-hover: var(--gray-50);
   --header-button-hover: var(--gray-50);
   --surface-active: var(--gray-100);
   --surface-active-alt: var(--gray-200);
   --surface-hover: var(--gray-200);
   --surface-hover-alt: var(--gray-300);
-  --surface-primary: var(--white);
+  --surface-primary: #ffffff;
   --surface-primary-alt: var(--gray-50);
   --surface-primary-contrast: var(--gray-100);
   --surface-secondary: var(--gray-50);
   --surface-secondary-alt: var(--gray-200);
   --surface-tertiary: var(--gray-100);
-  --surface-tertiary-alt: var(--white);
-  --surface-dialog: var(--white);
+  --surface-tertiary-alt: #ffffff;
+  --surface-dialog: #ffffff;
   --surface-submit: var(--green-700);
   --surface-submit-hover: var(--green-800);
   --surface-destructive: var(--red-700);
   --surface-destructive-hover: var(--red-800);
-  --surface-chat: var(--white);
+  --surface-chat: #ffffff;
   --border-light: var(--gray-200);
   --border-medium-alt: var(--gray-300);
   --border-medium: var(--gray-300);
@@ -580,13 +587,14 @@ html {
 }
 .dark {
   --brand-purple: #ab68ff;
+  /* App canvas / primary surfaces — dark theme (#111111) */
   --presentation: #111111;
   --text-primary: var(--gray-100);
   --text-secondary: var(--gray-300);
   --text-secondary-alt: var(--gray-400);
   --text-tertiary: var(--gray-500);
   --text-warning: var(--amber-500);
-  --header-primary: var(--gray-700);
+  --header-primary: #111111;
   --header-hover: var(--gray-600);
   --header-button-hover: var(--gray-700);
   --surface-active: var(--gray-500);
@@ -596,8 +604,8 @@ html {
   --surface-primary: #111111;
   --surface-primary-alt: #111111;
   --surface-primary-contrast: #111111;
-  --surface-secondary: #2A2A2A;
-  --surface-secondary-alt: #2A2A2A;
+  --surface-secondary: #2a2a2a;
+  --surface-secondary-alt: #2a2a2a;
   --surface-tertiary: var(--gray-700);
   --surface-tertiary-alt: var(--gray-700);
   --surface-dialog: #111111;
@@ -605,7 +613,7 @@ html {
   --surface-submit-hover: var(--green-800);
   --surface-destructive: var(--red-800);
   --surface-destructive-hover: var(--red-900);
-  --surface-chat: var(--gray-700);
+  --surface-chat: #111111;
   --border-light: var(--gray-700);
   --border-medium-alt: var(--gray-600);
   --border-medium: var(--gray-600);
@@ -613,9 +621,10 @@ html {
   --border-xheavy: var(--gray-400);
   /* These are test styles */
 
-  --background: 0 0% 7%;
+  /* #111111 — matches primary surface tokens */
+  --background: 0 0% 6.67%;
   --foreground: 0 0% 98%;
-  --card: 0 0% 3.9%;
+  --card: 0 0% 6.67%;
   --card-foreground: 0 0% 98%;
   --primary: 0 0% 98%;
   --primary-foreground: 0 0% 9%;
@@ -641,7 +650,7 @@ html {
   --text-primary: var(--gizmo-gray-950);
   --text-secondary: var(--gizmo-gray-600);
   --text-tertiary: var(--gizmo-gray-500);
-  --surface-primary: var(--white);
+  --surface-primary: #ffffff;
   --surface-secondary: var(--gray-50);
   --surface-tertiary: var(--gray-100);
   --border-light: rgba(0, 0, 0, 0.1);
@@ -653,7 +662,7 @@ html {
   --text-primary: var(--gray-100);
   --text-secondary: var(--gray-300);
   --text-tertiary: var(--gizmo-gray-500);
-  --surface-primary: var(--gray-900);
+  --surface-primary: #111111;
   --surface-secondary: var(--gray-800);
   --surface-tertiary: var(--gray-700);
   --border-light: rgba(217, 217, 227, 0.1);

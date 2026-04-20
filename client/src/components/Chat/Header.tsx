@@ -1,16 +1,15 @@
+import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
 import type { ContextType } from '~/common';
-import { HeaderNewChat, OpenSidebar } from './Menus';
-import { AnimatePresence, motion } from 'framer-motion';
-import ModelSelector from '~/components/Chat/Menus/Endpoints/ModelSelector';
 import Settings from '~/components/Nav/Settings';
 import { useGetStartupConfig } from '~/data-provider';
 import { useLocalize } from '~/hooks';
 import { asset } from '~/utils/assetPath';
+import { HeaderNewChat } from './Menus';
 
 export default function Header() {
-  const { navVisible, setNavVisible } = useOutletContext<ContextType>();
+  const { navVisible } = useOutletContext<ContextType>();
   const { data: startupConfig } = useGetStartupConfig();
   const localize = useLocalize();
   const [showSettings, setShowSettings] = useState(false);
@@ -29,7 +28,6 @@ export default function Header() {
                 transition={{ duration: 0.2 }}
                 key="header-buttons"
               >
-                <OpenSidebar setNavVisible={setNavVisible} className="max-md:hidden" />
                 <HeaderNewChat />
               </motion.div>
             )}
@@ -37,16 +35,12 @@ export default function Header() {
         </div>
 
         {/* Center: FIA Logo and Text */}
-        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 flex items-center justify-center gap-1">
-          <div className="w-8 h-8 relative rounded-sm flex items-center justify-center">
-            <img
-              src={asset('FIA.svg')}
-              alt="FIA"
-              className="w-full h-full object-contain"
-            />
+        <div className="absolute left-1/2 top-1/2 flex -translate-x-1/2 -translate-y-1/2 items-center justify-center gap-1">
+          <div className="relative flex h-8 w-8 items-center justify-center rounded-sm">
+            <img src={asset('FIA.svg')} alt="FIA" className="h-full w-full object-contain" />
           </div>
-          <div 
-            className="text-[20px] font-sans leading-5 text-text-primary dark:text-gray-100"
+          <div
+            className="font-sans text-[20px] leading-5 text-text-primary dark:text-gray-100"
             style={{ fontSize: '20px' }}
           >
             FIA - FYERS Intelligent Assistant
@@ -54,7 +48,7 @@ export default function Header() {
         </div>
 
         {/* Right: model row + Settings inside same scale-75 block (gear sits beside model button) */}
-        <div className="mx-1 flex items-center">
+        {/* <div className="mx-1 flex items-center">
           <div className="flex flex-row items-center gap-2 scale-75 origin-right">
             <div className="min-w-0 max-w-md flex-1">
               <ModelSelector startupConfig={startupConfig} />
@@ -72,11 +66,9 @@ export default function Header() {
               />
             </button>
           </div>
-        </div>
+        </div> */}
       </div>
-      {showSettings && (
-        <Settings open={showSettings} onOpenChange={setShowSettings} />
-      )}
+      {showSettings && <Settings open={showSettings} onOpenChange={setShowSettings} />}
     </div>
   );
 }

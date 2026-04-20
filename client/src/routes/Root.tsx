@@ -17,7 +17,7 @@ import {
 } from '~/Providers';
 import { useUserTermsQuery, useGetStartupConfig } from '~/data-provider';
 import { TermsAndConditionsModal } from '~/components/ui';
-import { Nav, MobileNav } from '~/components/Nav';
+import { Nav, MobileNav, SidebarEdgeTabs } from '~/components/Nav';
 import TopNavBar from '~/components/Nav/TopNavBar';
 import { useHealthCheck } from '~/data-provider';
 import { Banner } from '~/components/Banners';
@@ -83,13 +83,19 @@ export default function Root() {
           <AgentsMapContext.Provider value={agentsMap}>
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
-              <div className="flex flex-col bg-[#F6F8FF] dark:!bg-[#2A2A2A]" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
+              <div
+                className="flex flex-col bg-presentation"
+                style={{ height: `calc(100dvh - ${bannerHeight}px)` }}
+              >
                 {showTopNavBar && <TopNavBar />}
                 {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap 4px (FYERS Design) */}
                 <div className="flex flex-1 overflow-hidden p-[0px_4px_4px_4px]">
                   <div className="relative z-0 flex h-full w-full gap-[4px] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
                     <div className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden">
+                      {shouldShowNav && (
+                        <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
+                      )}
                       {shouldShowNav && <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />}
                       <Outlet context={{ navVisible, setNavVisible } satisfies ContextType} />
                     </div>

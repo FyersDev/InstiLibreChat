@@ -2,7 +2,7 @@ import React, { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, Constants } from 'librechat-data-provider';
-import { TooltipAnchor, NewChatIcon, MobileSidebar, Sidebar, Button } from '@librechat/client';
+import { TooltipAnchor, NewChatIcon, MobileSidebar, Button } from '@librechat/client';
 import type { TMessage } from 'librechat-data-provider';
 import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache } from '~/utils';
@@ -58,22 +58,25 @@ export default function NewChat({
   return (
     <>
       <div className="flex items-center justify-between py-[2px] md:py-2">
-        <TooltipAnchor
-          description={localize('com_nav_close_sidebar')}
-          render={
-            <Button
-              size="icon"
-              variant="outline"
-              data-testid="close-sidebar-button"
-              aria-label={localize('com_nav_close_sidebar')}
-              className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
-              onClick={toggleNav}
-            >
-              <Sidebar className="max-md:hidden" />
-              <MobileSidebar className="m-1 inline-flex size-10 items-center justify-center md:hidden" />
-            </Button>
-          }
-        />
+        {isSmallScreen ? (
+          <TooltipAnchor
+            description={localize('com_nav_close_sidebar')}
+            render={
+              <Button
+                size="icon"
+                variant="outline"
+                data-testid="close-sidebar-button"
+                aria-label={localize('com_nav_close_sidebar')}
+                className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
+                onClick={toggleNav}
+              >
+                <MobileSidebar className="m-1 inline-flex size-10 items-center justify-center" />
+              </Button>
+            }
+          />
+        ) : (
+          <div className="min-w-0 shrink-0" aria-hidden />
+        )}
         <div className="flex gap-0.5">
           {headerButtons}
 
