@@ -699,7 +699,7 @@ export default function ResourcesRoute() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search files and folders..."
-                      className="w-64 rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+                      className="box-border h-8 w-64 rounded-lg border border-[#EDEDED] bg-[#ffffff] py-0 pl-10 pr-10 text-sm leading-8 text-gray-900 focus:border-[#2434E7] focus:outline-none focus:ring-2 focus:ring-[#2434E7]/25 dark:border-[#3e3e3e] dark:bg-[#111111] dark:text-gray-100 dark:focus:border-[#2434E7]"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') {
@@ -725,10 +725,10 @@ export default function ResourcesRoute() {
                     onClick={() => {
                       setShowSearch(true);
                     }}
-                    className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg p-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                     title="Search files and folders"
                   >
-                    <Search className="h-5 w-5" />
+                    <Search className="h-4 w-4" />
                   </button>
                 )}
               </div>
