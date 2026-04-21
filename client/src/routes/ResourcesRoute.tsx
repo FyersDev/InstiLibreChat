@@ -1,16 +1,20 @@
-import { useState, useEffect, useMemo, useRef } from 'react';
-import { createPortal } from 'react-dom';
-import { Button, useToastContext, Spinner } from '@librechat/client';
-import { saasApi } from '~/services/saasApi';
-import { PermissionManager } from '~/utils/permissions';
-import { 
-  File, Plus, Trash2, Edit, ChevronRight, Home, 
-  Eye, List, MoreVertical, Search, X
+import { Spinner, useToastContext } from '@librechat/client';
+import {
+  ChevronRight,
+  Home,
+  MoreVertical,
+  Plus,
+  Search,
+  X
 } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import CreateFolderModal from '~/components/Resources/Modals/CreateFolderModal';
+import EditFileModal from '~/components/Resources/Modals/EditFileModal';
 import EditFolderModal from '~/components/Resources/Modals/EditFolderModal';
 import UploadFileModal from '~/components/Resources/Modals/UploadFileModal';
-import EditFileModal from '~/components/Resources/Modals/EditFileModal';
+import { saasApi } from '~/services/saasApi';
+import { PermissionManager } from '~/utils/permissions';
 
 interface FolderNode {
   id: string;
@@ -38,10 +42,10 @@ interface FileNode {
 
 // Custom document icon component for list view
 const DocumentIcon = ({ className }: { className?: string }) => (
-  <img 
-    src="/research/assets/documents.svg" 
-    alt="Document" 
-    className={`${className || 'h-4 w-4'} opacity-70 dark:brightness-0 dark:invert dark:opacity-70`}
+  <img
+    src="/research/assets/documents.svg"
+    alt="Document"
+    className={`${className || 'h-4 w-4'} opacity-70 dark:opacity-70 dark:brightness-0 dark:invert`}
   />
 );
 
@@ -55,7 +59,7 @@ const formatDate = (dateString: string | undefined | null) => {
   if (!dateString) {
     return 'N/A';
   }
-  
+
   try {
     const date = new Date(dateString);
     // Check if date is valid
@@ -74,11 +78,18 @@ export default function ResourcesRoute() {
   const { showToast } = useToastContext();
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Home' }]);
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([
+    { id: null, name: 'Home' },
+  ]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedItem, setSelectedItem] = useState<{ type: 'folder' | 'file'; id: string | number } | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{
+    type: 'folder' | 'file';
+    id: string | number;
+  } | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(
+    null,
+  );
   const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const [showEditFolderModal, setShowEditFolderModal] = useState(false);
@@ -163,21 +174,32 @@ export default function ResourcesRoute() {
       setUserInfo(user);
       if (user) {
         let permissions = user.permissions || [];
-        
+
         // If superadmin, grant ALL permissions automatically
         if (user.is_super_admin === true) {
-          const resources = ['organizations', 'users', 'roles', 'permissions', 'folders', 'files', 'documents'];
+          const resources = [
+            'organizations',
+            'users',
+            'roles',
+            'permissions',
+            'folders',
+            'files',
+            'documents',
+          ];
           const actions = ['read', 'create', 'update', 'delete'];
-          
+
           permissions = resources.flatMap((resource: string) =>
             actions.map((action: string) => ({
               id: `${resource}-${action}`,
               resource,
               action,
-            }))
+            })),
           );
-          
-          console.log('🔑 ResourcesRoute - Superadmin detected - granting all permissions:', permissions.length);
+
+          console.log(
+            '🔑 ResourcesRoute - Superadmin detected - granting all permissions:',
+            permissions.length,
+          );
         } else if (!permissions || permissions.length === 0) {
           const storedPerms = localStorage.getItem('permissions');
           if (storedPerms) {
@@ -188,7 +210,7 @@ export default function ResourcesRoute() {
             }
           }
         }
-        
+
         const pm = new PermissionManager(permissions as any[]);
         setPermissionManager(pm);
       }
@@ -201,12 +223,12 @@ export default function ResourcesRoute() {
     try {
       const data = await saasApi.getOrganizations(isSuperAdmin, undefined);
       // Handle both response formats
-      const orgs = Array.isArray(data) 
-        ? data 
+      const orgs = Array.isArray(data)
+        ? data
         : (data as any).organizations || (data as any).data || ((data as any).id ? [data] : []);
       console.log('🏢 ResourcesRoute - Loaded organizations:', { count: orgs.length, orgs });
       setOrganizations(orgs);
-      
+
       if (orgs.length > 0) {
         const savedOrgId = localStorage.getItem('resources_selected_org_id');
         if (savedOrgId && orgs.some((org: any) => org.id === savedOrgId)) {
@@ -231,7 +253,7 @@ export default function ResourcesRoute() {
     try {
       setLoading(true);
       setError(null);
-      
+
       if (isSuperAdmin) {
         if (organizations.length > 0 && !orgId && !selectedOrgId) {
           setAllFolders([]);
@@ -251,7 +273,7 @@ export default function ResourcesRoute() {
         setAllFolders(Array.isArray(data) ? data : []);
         return;
       }
-      
+
       const targetOrgId = orgId || userOrgId;
       if (!targetOrgId) {
         setError('Organization ID is required.');
@@ -259,7 +281,7 @@ export default function ResourcesRoute() {
         setLoading(false);
         return;
       }
-      
+
       const data = await saasApi.getFolderTree(targetOrgId);
       setAllFolders(Array.isArray(data) ? data : []);
     } catch (err: any) {
@@ -321,27 +343,27 @@ export default function ResourcesRoute() {
     // Completely exclude Reports folder from Documents tab (recursively)
     const reportsFolder = findReportsFolder(allFolders);
     const reportsFolderId = reportsFolder?.id;
-    
+
     // Helper function to recursively filter out Reports folder
     const filterReportsFolder = (folders: FolderNode[]): FolderNode[] => {
       return folders
-        .filter(f => f.id !== reportsFolderId)
-        .map(folder => ({
+        .filter((f) => f.id !== reportsFolderId)
+        .map((folder) => ({
           ...folder,
           children: folder.children ? filterReportsFolder(folder.children) : undefined,
         }));
     };
-    
+
     if (!currentFolderId) {
       // Root level - return all root folders except Reports
       // Backend already filters by user_id, so we only show what the user has access to
-      const rootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
+      const rootFolders = allFolders.filter((f) => !f.parent_id && f.id !== reportsFolderId);
       return {
         folders: rootFolders,
         files: [],
       };
     }
-    
+
     // Inside a folder
     const folder = findFolder(allFolders, currentFolderId);
     if (!folder) {
@@ -350,7 +372,7 @@ export default function ResourcesRoute() {
         files: [],
       };
     }
-    
+
     return {
       folders: folder.children ? filterReportsFolder(folder.children) : [],
       files: folder.files || [],
@@ -364,8 +386,8 @@ export default function ResourcesRoute() {
     }
     const query = searchQuery.toLowerCase();
     return {
-      folders: currentFolder.folders.filter(f => f.name.toLowerCase().includes(query)),
-      files: currentFolder.files.filter(f => f.name.toLowerCase().includes(query)),
+      folders: currentFolder.folders.filter((f) => f.name.toLowerCase().includes(query)),
+      files: currentFolder.files.filter((f) => f.name.toLowerCase().includes(query)),
     };
   }, [currentFolder, searchQuery]);
 
@@ -375,20 +397,30 @@ export default function ResourcesRoute() {
       setBreadcrumbs([{ id: null, name: 'Home' }]);
     } else {
       // Build breadcrumbs by finding path to folder
-      const buildBreadcrumbs = (folders: FolderNode[], targetId: string, path: Array<{ id: string; name: string }> = []): Array<{ id: string; name: string }> | null => {
+      const buildBreadcrumbs = (
+        folders: FolderNode[],
+        targetId: string,
+        path: Array<{ id: string; name: string }> = [],
+      ): Array<{ id: string; name: string }> | null => {
         for (const folder of folders) {
           if (folder.id === targetId) {
             return [...path, { id: folder.id, name: folder.name }];
           }
           if (folder.children) {
-            const result = buildBreadcrumbs(folder.children, targetId, [...path, { id: folder.id, name: folder.name }]);
+            const result = buildBreadcrumbs(folder.children, targetId, [
+              ...path,
+              { id: folder.id, name: folder.name },
+            ]);
             if (result) return result;
           }
         }
         return null;
       };
       const crumbs = buildBreadcrumbs(allFolders, folderId);
-      setBreadcrumbs([{ id: null, name: 'Home' }, ...(crumbs || [{ id: folderId, name: folderName }])]);
+      setBreadcrumbs([
+        { id: null, name: 'Home' },
+        ...(crumbs || [{ id: folderId, name: folderName }]),
+      ]);
     }
     setSelectedItem(null);
   };
@@ -397,7 +429,7 @@ export default function ResourcesRoute() {
     const folderNameLower = folder.name.toLowerCase();
     const isFyersResources = folderNameLower === 'fyers resources';
     const isResources = folderNameLower === 'resources';
-    
+
     // Users can delete Fyers Resources folder but cannot rename it
     if (!confirm(`Delete folder "${folder.name}" and all its contents?`)) return;
     try {
@@ -428,15 +460,15 @@ export default function ResourcesRoute() {
         throw new Error('Invalid file ID');
       }
       await saasApi.deleteFile(fileId);
-      
+
       showToast({
         message: `File "${file.name}" deleted successfully`,
         status: 'success',
       });
-      
+
       // Remove from selected documents in all conversations
       const allKeys = Object.keys(localStorage);
-      allKeys.forEach(key => {
+      allKeys.forEach((key) => {
         if (key.startsWith('persona_documents_')) {
           try {
             const data = JSON.parse(localStorage.getItem(key) || '{}');
@@ -447,10 +479,13 @@ export default function ResourcesRoute() {
                 if (filteredDocs.length === 0) {
                   localStorage.removeItem(key);
                 } else {
-                  localStorage.setItem(key, JSON.stringify({
-                    documents: filteredDocs,
-                    timestamp: Date.now(),
-                  }));
+                  localStorage.setItem(
+                    key,
+                    JSON.stringify({
+                      documents: filteredDocs,
+                      timestamp: Date.now(),
+                    }),
+                  );
                 }
               }
             }
@@ -459,10 +494,10 @@ export default function ResourcesRoute() {
           }
         }
       });
-      
+
       // Dispatch event to notify other components
       window.dispatchEvent(new Event('documentsUpdated'));
-      
+
       loadFolders(isSuperAdmin ? selectedOrgId : userOrgId);
     } catch (err: any) {
       const errorMessage = err.message || 'Failed to delete file';
@@ -473,15 +508,14 @@ export default function ResourcesRoute() {
     }
   };
 
-
   const handlePreviewFile = (file: FileNode) => {
     try {
       // Get base path from meta tag or default to /research/
       const basePath = import.meta.env.BASE_URL || '/research/';
-      
+
       // Build the URL first
       let fileUrl: string;
-      
+
       if (file.storage_key) {
         const storagePath = 'uploads';
         let filePath = file.storage_key;
@@ -500,7 +534,7 @@ export default function ResourcesRoute() {
 
       // Try to open in parent window first (for iframe context), fallback to current window
       let newWindow: Window | null = null;
-      
+
       try {
         // If we're in an iframe, try to use parent window
         if (window.parent && window.parent !== window) {
@@ -510,7 +544,7 @@ export default function ResourcesRoute() {
         // Parent access blocked, will try current window
         console.log('Parent window access blocked, trying current window');
       }
-      
+
       // If parent didn't work, try top window
       if (!newWindow) {
         try {
@@ -522,12 +556,12 @@ export default function ResourcesRoute() {
           console.log('Top window access blocked, trying current window');
         }
       }
-      
+
       // If neither parent nor top worked, try current window
       if (!newWindow) {
         newWindow = window.open(fileUrl, '_blank');
       }
-      
+
       if (!newWindow) {
         showToast({
           message: 'Please allow popups for this site to preview files',
@@ -548,7 +582,8 @@ export default function ResourcesRoute() {
   const hasFileUpdatePermission = permissionManager?.canUpdate('files') || false;
   const hasFileDeletePermission = permissionManager?.canDelete('files') || false;
   const canManage = isSuperAdmin || isOrgAdmin || hasFolderPermission || hasFilePermission;
-  const canManageFiles = isSuperAdmin || isOrgAdmin || hasFileUpdatePermission || hasFileDeletePermission;
+  const canManageFiles =
+    isSuperAdmin || isOrgAdmin || hasFileUpdatePermission || hasFileDeletePermission;
 
   if (loading) {
     return (
@@ -562,14 +597,14 @@ export default function ResourcesRoute() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-gray-50 dark:bg-gray-900">
+    <div className="flex h-screen flex-col bg-[#ffffff] px-2 pb-2 pt-0 dark:bg-[#111111]">
       {/* Header - Responsive */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-3 py-3 sm:py-4">
+      <div className="pt-2">
         <div className="flex flex-col gap-3">
           {/* First Row: Org selector (if super admin) */}
           {isSuperAdmin && organizations.length > 0 && (
             <div className="flex items-center gap-2">
-              <label className="text-xs sm:text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              <label className="whitespace-nowrap text-xs font-medium text-gray-700 dark:text-gray-300 sm:text-sm">
                 Org:
               </label>
               <select
@@ -582,7 +617,7 @@ export default function ResourcesRoute() {
                     navigateToFolder(null, 'Home');
                   }
                 }}
-                className="px-2 sm:px-3 py-1.5 sm:py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-xs sm:text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 flex-1 sm:flex-none sm:min-w-[200px] md:min-w-[300px] lg:max-w-[500px]"
+                className="flex-1 rounded-lg border border-gray-300 px-2 py-1.5 text-xs text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:text-gray-100 sm:min-w-[200px] sm:flex-none sm:px-3 sm:py-2 sm:text-sm md:min-w-[300px] lg:max-w-[500px]"
               >
                 {organizations.map((org) => (
                   <option key={org.id} value={org.id}>
@@ -592,9 +627,9 @@ export default function ResourcesRoute() {
               </select>
             </div>
           )}
-          
+
           {/* Second Row: Tabs + Actions */}
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+          <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             {/* Tabs */}
             <div className="flex items-center gap-4 sm:gap-6">
               <button
@@ -603,10 +638,10 @@ export default function ResourcesRoute() {
                   navigateToFolder(null, 'Home');
                   setShowSearch(false);
                 }}
-                className={`px-0 py-3 text-[14px] leading-[20px] font-normal transition-colors border-b-2 ${
+                className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
                   activeTab === 'documents'
-                    ? 'text-[#2A2A2A] dark:text-gray-100 border-[#2434E7]'
-                    : 'text-[#6D6D6D] dark:text-gray-400 hover:text-[#2A2A2A] dark:hover:text-gray-200 border-transparent'
+                    ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
+                    : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
               >
@@ -618,27 +653,27 @@ export default function ResourcesRoute() {
                   setSearchQuery('');
                   setShowSearch(false);
                 }}
-                className={`px-0 py-3 text-[14px] leading-[20px] font-normal transition-colors border-b-2 ${
+                className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
                   activeTab === 'reports'
-                    ? 'text-[#2A2A2A] dark:text-gray-100 border-[#2434E7]'
-                    : 'text-[#6D6D6D] dark:text-gray-400 hover:text-[#2A2A2A] dark:hover:text-gray-200 border-transparent'
+                    ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
+                    : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
                 }`}
                 style={{ fontFamily: 'Inter, sans-serif' }}
               >
                 Reports
               </button>
             </div>
-            
+
             {/* Action Buttons */}
             {canManage && (
-              <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+              <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
                 <button
                   onClick={() => {
                     setShowCreateFolderModal(true);
                   }}
-                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-none"
+                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-2 text-xs font-medium leading-none text-white transition-colors hover:bg-blue-700 sm:flex-none sm:gap-2 sm:px-3"
                 >
-                  <Plus className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                  <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span className="hidden sm:inline">Create folder</span>
                   <span className="sm:hidden">Folder</span>
                 </button>
@@ -646,9 +681,13 @@ export default function ResourcesRoute() {
                   onClick={() => {
                     setShowUploadFileModal(true);
                   }}
-                  className="flex items-center justify-center gap-1.5 sm:gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-400 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg text-xs sm:text-sm font-medium transition-colors flex-1 sm:flex-none"
+                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium leading-none text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:flex-none sm:gap-2 sm:px-3"
                 >
-                  <img src="/research/assets/export.svg" alt="Upload" className="h-3 w-3 sm:h-3.5 sm:w-3.5 dark:invert" />
+                  <img
+                    src="/research/assets/export.svg"
+                    alt="Upload"
+                    className="h-3 w-3 dark:invert sm:h-3.5 sm:w-3.5"
+                  />
                   <span className="hidden sm:inline">Upload document</span>
                   <span className="sm:hidden">Upload</span>
                 </button>
@@ -660,7 +699,7 @@ export default function ResourcesRoute() {
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
                       placeholder="Search files and folders..."
-                      className="pl-10 pr-10 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 w-64"
+                      className="w-64 rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-10 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
                       autoFocus
                       onKeyDown={(e) => {
                         if (e.key === 'Escape') {
@@ -669,13 +708,13 @@ export default function ResourcesRoute() {
                         }
                       }}
                     />
-                    <Search className="absolute left-2 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                    <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
                     <button
                       onClick={() => {
                         setShowSearch(false);
                         setSearchQuery('');
                       }}
-                      className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
+                      className="absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
                       title="Close search"
                     >
                       <X className="h-4 w-4" />
@@ -686,7 +725,7 @@ export default function ResourcesRoute() {
                     onClick={() => {
                       setShowSearch(true);
                     }}
-                    className="p-2 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-200 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-lg transition-colors"
+                    className="rounded-lg p-2 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
                     title="Search files and folders"
                   >
                     <Search className="h-5 w-5" />
@@ -698,9 +737,9 @@ export default function ResourcesRoute() {
         </div>
       </div>
 
-      {/* Breadcrumbs - Responsive */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700">
-        <div className="px-3 py-2 sm:py-3">
+      {/* Breadcrumbs — mt-2 = 8px gap under header; inner pt-0 replaces former py-* top padding */}
+      <div className="mt-2">
+        <div className="pb-2 pt-1">
           {/* Breadcrumbs - only show for Documents tab */}
           {activeTab === 'documents' ? (
             <div className="flex items-center gap-2 text-sm">
@@ -709,11 +748,11 @@ export default function ResourcesRoute() {
                   {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400" />}
                   <button
                     onClick={() => navigateToFolder(crumb.id, crumb.name)}
-                    className={`px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 ${
+                    className={`rounded px-2 py-1 text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700 ${
                       index === breadcrumbs.length - 1 ? 'font-semibold' : ''
                     }`}
                   >
-                    {index === 0 ? <Home className="h-4 w-4 inline mr-1" /> : null}
+                    {index === 0 ? <Home className="mr-1 inline h-4 w-4" /> : null}
                     {crumb.name}
                   </button>
                 </div>
@@ -724,41 +763,51 @@ export default function ResourcesRoute() {
       </div>
 
       {/* Content View */}
-      <div className="flex-1 overflow-auto bg-gray-50 dark:bg-gray-900">
+      <div className="flex-1 overflow-auto">
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 m-6 text-red-700 dark:text-red-400">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
 
         {filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
-          <div className="text-center py-12">
-            <img src="/research/assets/Folder.svg" alt="Empty Folder" className="h-12 w-12 mx-auto mb-4 opacity-40 dark:invert" />
-            <p className="text-gray-600 dark:text-gray-400 mb-4">This folder is empty</p>
+          <div className="py-12 text-center">
+            <img
+              src="/research/assets/Folder.svg"
+              alt="Empty Folder"
+              className="mx-auto mb-4 h-12 w-12 opacity-40 dark:invert"
+            />
+            <p className="mb-4 text-gray-600 dark:text-gray-400">This folder is empty</p>
           </div>
         ) : (
           /* List/Table View - Responsive */
-          <div className="bg-white dark:bg-gray-800 overflow-x-auto mb-4 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="mb-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="w-full min-w-[640px]">
-              <thead className="bg-gray-50 dark:bg-gray-700/50 border-b border-gray-200 dark:border-gray-700">
+              <thead className="border-b border-[#ededed] bg-[#EDEDED] dark:border-[#3e3e3e] dark:bg-[#2a2a2a]">
                 <tr>
                   <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Name
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden md:table-cell">Owner</th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 hidden sm:table-cell">Created date</th>
-                  <th className="px-3 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">Actions</th>
+                  <th className="hidden px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 md:table-cell">
+                    Owner
+                  </th>
+                  <th className="hidden px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 sm:table-cell">
+                    Created date
+                  </th>
+                  <th className="px-3 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                    Actions
+                  </th>
                 </tr>
               </thead>
-              <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
                 {/* Folders */}
-                {filteredContent.folders.map((folder) => {
+                {filteredContent.folders.map((folder, folderIndex) => {
                   const folderFileCount = folder.files?.length || 0;
                   const folderNameLower = folder.name.toLowerCase();
                   const isFyersResources = folderNameLower === 'fyers resources';
                   const isResources = folderNameLower === 'resources';
                   const currentUserId = userInfo?.user_id || userInfo?.id;
-                  
+
                   // FYERS Resources folder restrictions:
                   // - Only super admin can rename/delete FYERS Resources folder
                   // Resources folder (for user uploads) can be deleted by users when empty
@@ -766,41 +815,55 @@ export default function ResourcesRoute() {
                   const canModifyFolder = isFyersResources
                     ? isSuperAdmin // Only super admin can modify FYERS Resources
                     : isSuperAdmin || isOrgAdmin || folder.created_by === currentUserId; // Others follow normal rules
-                  
+
                   // Check if folder can be renamed
                   // - FYERS Resources: only superadmin can rename
                   // - Resources: users cannot rename (it's the default folder)
-                  const canRenameFolder = isFyersResources 
+                  const canRenameFolder = isFyersResources
                     ? isSuperAdmin // Only super admin can rename FYERS Resources
                     : !isResources && canModifyFolder; // Resources folder cannot be renamed by anyone
                   return (
                     <tr
                       key={folder.id}
-                      className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                      className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                        folderIndex % 2 === 0
+                          ? 'bg-[#ffffff] dark:bg-[#111111]'
+                          : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
+                      }`}
                       onDoubleClick={(e) => {
-                        if (!(e.target as HTMLElement).closest('.dropdown-trigger, .dropdown-menu')) {
+                        if (
+                          !(e.target as HTMLElement).closest('.dropdown-trigger, .dropdown-menu')
+                        ) {
                           navigateToFolder(folder.id, folder.name);
                         }
                       }}
                     >
-                      <td className="px-3 py-3 whitespace-nowrap">
+                      <td className="whitespace-nowrap px-3 py-3">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <img src="/research/assets/Folder.svg" alt="Folder" className="h-3.5 w-3.5 sm:h-4 sm:w-4 flex-shrink-0 dark:invert" />
+                          <img
+                            src="/research/assets/Folder.svg"
+                            alt="Folder"
+                            className="h-3.5 w-3.5 flex-shrink-0 dark:invert sm:h-4 sm:w-4"
+                          />
                           <div className="min-w-0">
-                            <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{folder.name}</div>
+                            <div className="truncate text-xs font-medium text-gray-900 dark:text-gray-100 sm:text-sm">
+                              {folder.name}
+                            </div>
                             {folderFileCount > 0 && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">{folderFileCount} doc{folderFileCount !== 1 ? 's' : ''}</div>
+                              <div className="text-xs text-gray-500 dark:text-gray-400">
+                                {folderFileCount} doc{folderFileCount !== 1 ? 's' : ''}
+                              </div>
                             )}
                           </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400 md:table-cell">
                         {folder.created_by_name || 'Unknown'}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-gray-500 dark:text-gray-400 sm:table-cell sm:text-sm">
                         {formatDate(folder.created_at)}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           {canModifyFolder && (
                             <div className="relative">
@@ -816,7 +879,9 @@ export default function ResourcesRoute() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
-                                  const isCurrentlySelected = selectedItem?.type === 'folder' && selectedItem.id === folder.id;
+                                  const isCurrentlySelected =
+                                    selectedItem?.type === 'folder' &&
+                                    selectedItem.id === folder.id;
                                   if (isCurrentlySelected) {
                                     setSelectedItem(null);
                                     setDropdownPosition(null);
@@ -832,65 +897,68 @@ export default function ResourcesRoute() {
                                     setSelectedItem({ type: 'folder', id: folder.id });
                                   }
                                 }}
-                                className="dropdown-trigger p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                                 title="More options"
                               >
                                 <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               </button>
-                              {selectedItem?.type === 'folder' && selectedItem.id === folder.id && dropdownPosition && createPortal(
-                                <div 
-                                  className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
-                                  style={{
-                                    top: `${dropdownPosition.top}px`,
-                                    right: `${dropdownPosition.right}px`,
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="py-1">
-                                    {canRenameFolder && (
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        // Set the folder to edit directly
-                                        setFolderToEdit(folder);
-                                        setShowEditFolderModal(true);
-                                        setSelectedItem(null);
-                                        setDropdownPosition(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                    >
-                                      <img 
-                                        src="/research/assets/edit.svg" 
-                                        alt="Edit" 
-                                        className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                      />
-                                      Rename
-                                    </button>
-                                    )}
-                                    <button
-                                      type="button"
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        e.preventDefault();
-                                        handleDeleteFolder(folder);
-                                        setSelectedItem(null);
-                                        setDropdownPosition(null);
-                                      }}
-                                      className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                    >
-                                      <img 
-                                        src="/research/assets/delete.svg" 
-                                        alt="Delete" 
-                                        className="h-3.5 w-3.5 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                      />
-                                      Delete
-                                    </button>
-                                  </div>
-                                </div>,
-                                document.body
-                              )}
+                              {selectedItem?.type === 'folder' &&
+                                selectedItem.id === folder.id &&
+                                dropdownPosition &&
+                                createPortal(
+                                  <div
+                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    style={{
+                                      top: `${dropdownPosition.top}px`,
+                                      right: `${dropdownPosition.right}px`,
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      {canRenameFolder && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            // Set the folder to edit directly
+                                            setFolderToEdit(folder);
+                                            setShowEditFolderModal(true);
+                                            setSelectedItem(null);
+                                            setDropdownPosition(null);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                        >
+                                          <img
+                                            src="/research/assets/edit.svg"
+                                            alt="Edit"
+                                            className="h-3.5 w-3.5 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                          />
+                                          Rename
+                                        </button>
+                                      )}
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          handleDeleteFolder(folder);
+                                          setSelectedItem(null);
+                                          setDropdownPosition(null);
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                      >
+                                        <img
+                                          src="/research/assets/delete.svg"
+                                          alt="Delete"
+                                          className="h-3.5 w-3.5 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                        />
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>,
+                                  document.body,
+                                )}
                             </div>
                           )}
                         </div>
@@ -899,39 +967,46 @@ export default function ResourcesRoute() {
                   );
                 })}
                 {/* Files */}
-                {filteredContent.files.map((file) => {
+                {filteredContent.files.map((file, fileIndex) => {
                   const FileIcon = getFileIcon(file.extension);
                   const currentUserId = userInfo?.user_id || userInfo?.id;
-                  
+
                   // File modification permissions:
                   // - Files in "FYERS Resources": only super admin can delete
                   // - Files in other folders: super admin, org admins, or file creator can delete
                   const currentFolderObj = findFolder(allFolders, currentFolderId);
                   const currentFolderNameLower = currentFolderObj?.name.toLowerCase() || '';
                   const isInFyersResources = currentFolderNameLower === 'fyers resources';
-                  
+
                   const canModifyFile = isInFyersResources
                     ? isSuperAdmin // Only super admin can delete files in FYERS Resources
-                    : (isSuperAdmin || isOrgAdmin || file.created_by === currentUserId); // Normal rules for other folders
+                    : isSuperAdmin || isOrgAdmin || file.created_by === currentUserId; // Normal rules for other folders
+                  const rowIndex = filteredContent.folders.length + fileIndex;
                   return (
                     <tr
                       key={file.id}
-                      className="group hover:bg-gray-50 dark:hover:bg-gray-700/50 cursor-pointer"
+                      className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                        rowIndex % 2 === 0
+                          ? 'bg-[#ffffff] dark:bg-[#111111]'
+                          : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
+                      }`}
                       onDoubleClick={() => handlePreviewFile(file)}
                     >
-                      <td className="px-3 py-3 whitespace-nowrap">
-                        <div className="flex items-center gap-2 sm:gap-3 min-w-0">
-                          <FileIcon className="h-4 w-4 sm:h-5 sm:w-5 text-gray-500 flex-shrink-0" />
-                          <div className="text-xs sm:text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{file.name}</div>
+                      <td className="whitespace-nowrap px-3 py-3">
+                        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                          <FileIcon className="h-4 w-4 flex-shrink-0 text-gray-500 sm:h-5 sm:w-5" />
+                          <div className="truncate text-xs font-medium text-gray-900 dark:text-gray-100 sm:text-sm">
+                            {file.name}
+                          </div>
                         </div>
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400 hidden md:table-cell">
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400 md:table-cell">
                         {file.created_by_name || 'Unknown'}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-xs sm:text-sm text-gray-500 dark:text-gray-400 hidden sm:table-cell">
+                      <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-gray-500 dark:text-gray-400 sm:table-cell sm:text-sm">
                         {formatDate(file.created_at)}
                       </td>
-                      <td className="px-3 py-3 whitespace-nowrap text-right text-sm font-medium">
+                      <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-medium">
                         <div className="flex items-center justify-end gap-2">
                           {/* <button
                             onClick={(e) => {
@@ -957,7 +1032,8 @@ export default function ResourcesRoute() {
                                 onClick={(e) => {
                                   e.stopPropagation();
                                   e.preventDefault();
-                                  const isCurrentlySelected = selectedItem?.type === 'file' && selectedItem.id === file.id;
+                                  const isCurrentlySelected =
+                                    selectedItem?.type === 'file' && selectedItem.id === file.id;
                                   if (isCurrentlySelected) {
                                     setSelectedItem(null);
                                     setDropdownPosition(null);
@@ -973,46 +1049,49 @@ export default function ResourcesRoute() {
                                     setSelectedItem({ type: 'file', id: file.id });
                                   }
                                 }}
-                                className="dropdown-trigger p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
                                 title="More options"
                               >
                                 <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
                               </button>
-                              {selectedItem?.type === 'file' && selectedItem.id === file.id && dropdownPosition && createPortal(
-                                <div 
-                                  className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
-                                  style={{
-                                    top: `${dropdownPosition.top}px`,
-                                    right: `${dropdownPosition.right}px`,
-                                  }}
-                                  onClick={(e) => e.stopPropagation()}
-                                >
-                                  <div className="py-1">
-                                    {/* Rename option removed - users cannot rename documents */}
-                                    {canModifyFile && (
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          handleDeleteFile(file);
-                                          setSelectedItem(null);
-                                          setDropdownPosition(null);
-                                        }}
-                                        className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                      >
-                                        <img 
-                                          src="/research/assets/delete.svg" 
-                                          alt="Delete" 
-                                          className="h-4 w-4 opacity-70 dark:invert dark:opacity-70" 
-                                        />
-                                        Delete
-                                      </button>
-                                    )}
-                                  </div>
-                                </div>,
-                                document.body
-                              )}
+                              {selectedItem?.type === 'file' &&
+                                selectedItem.id === file.id &&
+                                dropdownPosition &&
+                                createPortal(
+                                  <div
+                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    style={{
+                                      top: `${dropdownPosition.top}px`,
+                                      right: `${dropdownPosition.right}px`,
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      {/* Rename option removed - users cannot rename documents */}
+                                      {canModifyFile && (
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleDeleteFile(file);
+                                            setSelectedItem(null);
+                                            setDropdownPosition(null);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                        >
+                                          <img
+                                            src="/research/assets/delete.svg"
+                                            alt="Delete"
+                                            className="h-4 w-4 opacity-70 dark:opacity-70 dark:invert"
+                                          />
+                                          Delete
+                                        </button>
+                                      )}
+                                    </div>
+                                  </div>,
+                                  document.body,
+                                )}
                             </div>
                           )}
                         </div>
@@ -1082,13 +1161,13 @@ export default function ResourcesRoute() {
           file={(() => {
             if (selectedItem?.type === 'file') {
               // Find file in current folder
-              const foundFile = filteredContent.files.find(f => f.id === selectedItem.id);
+              const foundFile = filteredContent.files.find((f) => f.id === selectedItem.id);
               return foundFile || { id: String(selectedItem.id), name: '' };
             }
             // Fallback - try to find by stored file ID
             const storedFileId = localStorage.getItem('editing_file_id');
             if (storedFileId) {
-              const foundFile = filteredContent.files.find(f => String(f.id) === storedFileId);
+              const foundFile = filteredContent.files.find((f) => String(f.id) === storedFileId);
               localStorage.removeItem('editing_file_id');
               return foundFile || { id: storedFileId, name: '' };
             }

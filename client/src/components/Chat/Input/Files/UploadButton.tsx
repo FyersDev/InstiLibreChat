@@ -35,7 +35,7 @@ const UploadButton = () => {
             aria-label="Upload Document"
             style={{ width: '34px', height: '34px' }}
             className={cn(
-              'flex items-center justify-center rounded-full p-1 transition-colors hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
+              'flex cursor-pointer items-center justify-center rounded-lg border border-border-light bg-transparent p-1 transition-all hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
             )}
           >
             <div className="flex w-full items-center justify-center gap-2">
