@@ -631,7 +631,7 @@ export default function ResourcesRoute() {
           {/* Second Row: Tabs + Actions */}
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             {/* Tabs */}
-            <div className="flex items-center gap-4 sm:gap-6">
+            <div className="flex items-center gap-4 sm:gap-4">
               <button
                 onClick={() => {
                   setActiveTab('documents');
@@ -671,7 +671,7 @@ export default function ResourcesRoute() {
                   onClick={() => {
                     setShowCreateFolderModal(true);
                   }}
-                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-2 text-xs font-medium leading-none text-white transition-colors hover:bg-blue-700 sm:flex-none sm:gap-2 sm:px-3"
+                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#2434E7] hover:bg-[#2434E7]/90 px-2 text-xs font-medium leading-none text-white transition-colors sm:flex-none sm:gap-2 sm:px-3"
                 >
                   <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                   <span className="hidden sm:inline">Create folder</span>
