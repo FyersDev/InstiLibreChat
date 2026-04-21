@@ -1,13 +1,13 @@
-import { useRecoilValue } from 'recoil';
-import { useEffect, useMemo } from 'react';
 import { FileSources, LocalStorageKeys } from 'librechat-data-provider';
+import { useEffect, useMemo } from 'react';
+import { useRecoilValue } from 'recoil';
 import type { ExtendedFile } from '~/common';
-import { useDeleteFilesMutation } from '~/data-provider';
-import DragDropWrapper from '~/components/Chat/Input/Files/DragDropWrapper';
-import { EditorProvider, SidePanelProvider, ArtifactsProvider } from '~/Providers';
 import Artifacts from '~/components/Artifacts/Artifacts';
+import DragDropWrapper from '~/components/Chat/Input/Files/DragDropWrapper';
 import { SidePanelGroup } from '~/components/SidePanel';
+import { useDeleteFilesMutation } from '~/data-provider';
 import { useSetFilesToDelete } from '~/hooks';
+import { ArtifactsProvider, EditorProvider, SidePanelProvider } from '~/Providers';
 import store from '~/store';
 
 export default function Presentation({ children }: { children: React.ReactNode }) {
@@ -83,7 +83,10 @@ export default function Presentation({ children }: { children: React.ReactNode }
           defaultCollapsed={defaultCollapsed}
           artifacts={artifactsElement}
         >
-          <main className="flex h-full flex-col overflow-y-auto bg-white dark:!bg-[#111111] border border-[#EDEDED] dark:border-gray-700 rounded-[2px]" role="main">
+          <main
+            className="flex h-full flex-col overflow-y-auto rounded-[2px] border border-[#EDEDED] bg-[#ffffff] dark:border-gray-700 dark:!bg-[#111111]"
+            role="main"
+          >
             {children}
           </main>
         </SidePanelGroup>

@@ -358,7 +358,7 @@ export default function TemplatesView() {
   const isLoading = activeTab === 'templates' ? templatesLoading : personasLoading;
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-850">
+    <div className="flex h-full flex-col bg-transparent">
       {/* Tabs */}
       <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
         <div className="flex items-center justify-between">
