@@ -1,0 +1,22 @@
+client/src/routes/ResourcesRoute.tsx
+  41bb3b5 702,728,731
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "ddc0b3dc19641362c1a9c01d2600f96d6326367e",
+  "prompts": {
+    "41bb3b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f33d807c-7928-4218-9fff-2c103ed1ed9f",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 4,
+      "total_deletions": 4,
+      "accepted_lines": 3,
+      "overriden_lines": 0
+    }
+  }
+}
