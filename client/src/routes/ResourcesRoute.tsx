@@ -840,11 +840,13 @@ export default function ResourcesRoute() {
                     >
                       <td className="whitespace-nowrap px-3 py-3">
                         <div className="flex items-center gap-2 sm:gap-3">
-                          <img
-                            src="/research/assets/Folder.svg"
-                            alt="Folder"
-                            className="h-3.5 w-3.5 flex-shrink-0 dark:invert sm:h-4 sm:w-4"
-                          />
+                          <div className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]">
+                            <img
+                              src="/research/assets/Folder.svg"
+                              alt="Folder"
+                              className="block h-full w-full max-h-[20px] max-w-[20px] flex-shrink-0 object-contain dark:invert"
+                            />
+                          </div>
                           <div className="min-w-0">
                             <div className="truncate text-xs font-medium text-gray-900 dark:text-gray-100 sm:text-sm">
                               {folder.name}
@@ -994,7 +996,12 @@ export default function ResourcesRoute() {
                     >
                       <td className="whitespace-nowrap px-3 py-3">
                         <div className="flex min-w-0 items-center gap-2 sm:gap-3">
-                          <FileIcon className="h-4 w-4 flex-shrink-0 text-gray-500 sm:h-5 sm:w-5" />
+                          <div
+                            className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]"
+                            aria-hidden
+                          >
+                            <FileIcon className="h-5 w-5 max-h-full max-w-full flex-shrink-0 object-contain text-gray-500 [&_img]:object-contain [&_svg]:h-full [&_svg]:w-full" />
+                          </div>
                           <div className="truncate text-xs font-medium text-gray-900 dark:text-gray-100 sm:text-sm">
                             {file.name}
                           </div>
