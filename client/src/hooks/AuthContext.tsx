@@ -220,6 +220,7 @@ const AuthContextProvider = ({
         [SystemRoles.ADMIN]: adminRole,
       },
       isAuthenticated,
+      isEmbedded: isEmbedded.current,
     }),
 
     [user, error, isAuthenticated, token, userRole, adminRole],
