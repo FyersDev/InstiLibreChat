@@ -1,0 +1,45 @@
+client/src/components/Chat/Presentation.tsx
+  e39ead3 2,6,86,88-89
+client/src/components/Templates/TemplatesView.tsx
+  e39ead3 361
+client/src/components/SidePanel/SidePanelGroup.tsx
+  e39ead3 109
+client/src/components/Nav/Nav.tsx
+  41bb3b5 188
+client/src/components/Nav/SidebarEdgeTabs.tsx
+  41bb3b5 30,36,39-40,44-48,50-54
+client/src/style.css
+  41bb3b5 360-379
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "e54daa8db9b431466eefab902999368d3959d87e",
+  "prompts": {
+    "41bb3b5": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "f33d807c-7928-4218-9fff-2c103ed1ed9f",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 6642,
+      "total_deletions": 3768,
+      "accepted_lines": 4224,
+      "overriden_lines": 0
+    },
+    "e39ead3": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "10246257-b1de-447b-a4cc-6230e3581949",
+        "model": "claude-4.5-sonnet-thinking"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 14,
+      "total_deletions": 14,
+      "accepted_lines": 2031,
+      "overriden_lines": 0
+    }
+  }
+}
