@@ -273,7 +273,7 @@ export default function TemplateSelector() {
         disabled
         className="flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-soft bg-transparent px-1.5 text-sm font-normal leading-5 text-fig-Text-body opacity-50"
       >
-        <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+        <img src="/research/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
         <span>Loading...</span>
       </button>
     );
@@ -371,7 +371,7 @@ export default function TemplateSelector() {
           <Ariakit.MenuButton
             className="flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-soft bg-transparent px-1.5 text-sm font-normal leading-5 text-fig-Text-body transition-colors hover:bg-fig-Surface-one-standard"
           >
-            <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+            <img src="/research/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
             <span>{buttonText}</span>
             <ChevronDown className="h-4 w-4" />
           </Ariakit.MenuButton>
