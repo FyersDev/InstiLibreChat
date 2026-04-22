@@ -268,7 +268,7 @@ export default function PersonaSelector() {
       <button
         type="button"
         disabled
-        className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary opacity-50"
+        className="flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-soft bg-transparent px-1.5 text-sm font-normal leading-5 text-fig-Text-body opacity-50"
       >
         <User className="h-4 w-4" />
         <span>Loading...</span>
@@ -287,7 +287,7 @@ export default function PersonaSelector() {
       <button
         type="button"
         disabled
-        className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 py-2 text-sm font-medium text-text-primary opacity-50"
+        className="flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-soft bg-transparent px-1.5 text-sm font-normal leading-5 text-fig-Text-body opacity-50"
         title="No personas available"
       >
         <User className="h-4 w-4" />
@@ -368,8 +368,7 @@ export default function PersonaSelector() {
         setIsOpen={setIsOpen}
         trigger={
           <Ariakit.MenuButton
-            style={{ height: '34px' }}
-            className="flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover"
+            className="flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-soft bg-transparent px-1.5 text-sm font-normal leading-5 text-fig-Text-body transition-colors hover:bg-fig-Surface-one-standard"
           >
             <User className="h-4 w-4" />
             <span>{buttonText}</span>

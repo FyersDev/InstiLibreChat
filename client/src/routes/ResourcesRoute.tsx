@@ -1,12 +1,5 @@
 import { Spinner, useToastContext } from '@librechat/client';
-import {
-  ChevronRight,
-  Home,
-  MoreVertical,
-  Plus,
-  Search,
-  X
-} from 'lucide-react';
+import { ChevronRight, Home, MoreVertical, Plus, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import CreateFolderModal from '~/components/Resources/Modals/CreateFolderModal';
@@ -14,6 +7,7 @@ import EditFileModal from '~/components/Resources/Modals/EditFileModal';
 import EditFolderModal from '~/components/Resources/Modals/EditFolderModal';
 import UploadFileModal from '~/components/Resources/Modals/UploadFileModal';
 import { saasApi } from '~/services/saasApi';
+import { cn } from '~/utils';
 import { PermissionManager } from '~/utils/permissions';
 
 interface FolderNode {
@@ -45,7 +39,7 @@ const DocumentIcon = ({ className }: { className?: string }) => (
   <img
     src="/research/assets/documents.svg"
     alt="Document"
-    className={`${className || 'h-4 w-4'} opacity-70 dark:opacity-70 dark:brightness-0 dark:invert`}
+    className={`${className || 'h-3 w-3'} opacity-70 dark:opacity-70 dark:brightness-0 dark:invert`}
   />
 );
 
@@ -631,34 +625,36 @@ export default function ResourcesRoute() {
           {/* Second Row: Tabs + Actions */}
           <div className="flex flex-col items-start justify-between gap-3 sm:flex-row sm:items-center">
             {/* Tabs */}
-            <div className="flex items-center gap-4 sm:gap-4">
+            <div className="flex items-center gap-[var(--Gap-group)] sm:gap-[var(--Gap-group)]">
               <button
+                type="button"
                 onClick={() => {
                   setActiveTab('documents');
                   navigateToFolder(null, 'Home');
                   setShowSearch(false);
                 }}
-                className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
+                className={cn(
+                  'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                   activeTab === 'documents'
-                    ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
-                    : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
-                }`}
-                style={{ fontFamily: 'Inter, sans-serif' }}
+                    ? 'border-fig-Stroke-primary text-fig-Subject-standard pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
+                    : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+                )}
               >
                 Documents
               </button>
               <button
+                type="button"
                 onClick={() => {
                   setActiveTab('reports');
                   setSearchQuery('');
                   setShowSearch(false);
                 }}
-                className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
+                className={cn(
+                  'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                   activeTab === 'reports'
-                    ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
-                    : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
-                }`}
-                style={{ fontFamily: 'Inter, sans-serif' }}
+                    ? 'border-fig-Stroke-primary text-fig-Subject-standard pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
+                    : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+                )}
               >
                 Reports
               </button>
@@ -666,67 +662,106 @@ export default function ResourcesRoute() {
 
             {/* Action Buttons */}
             {canManage && (
-              <div className="flex w-full items-center gap-2 sm:w-auto sm:gap-3">
-                <button
-                  onClick={() => {
-                    setShowCreateFolderModal(true);
-                  }}
-                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg bg-[#2434E7] hover:bg-[#2434E7]/90 px-2 text-xs font-medium leading-none text-white transition-colors sm:flex-none sm:gap-2 sm:px-3"
-                >
-                  <Plus className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
-                  <span className="hidden sm:inline">Create folder</span>
-                  <span className="sm:hidden">Folder</span>
-                </button>
-                <button
-                  onClick={() => {
-                    setShowUploadFileModal(true);
-                  }}
-                  className="flex h-8 flex-1 items-center justify-center gap-1.5 rounded-lg border border-gray-300 bg-white px-2 text-xs font-medium leading-none text-gray-700 transition-colors hover:bg-gray-50 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-300 dark:hover:bg-gray-700 sm:flex-none sm:gap-2 sm:px-3"
-                >
-                  <img
-                    src="/research/assets/export.svg"
-                    alt="Upload"
-                    className="h-3 w-3 dark:invert sm:h-3.5 sm:w-3.5"
-                  />
-                  <span className="hidden sm:inline">Upload document</span>
-                  <span className="sm:hidden">Upload</span>
-                </button>
-                {showSearch ? (
-                  <div className="relative">
-                    <input
-                      id="resources-search"
-                      type="text"
-                      value={searchQuery}
-                      onChange={(e) => setSearchQuery(e.target.value)}
-                      placeholder="Search files and folders..."
-                      className="box-border h-8 w-64 rounded-lg border border-[#EDEDED] bg-[#ffffff] py-0 pl-10 pr-10 text-sm leading-8 text-gray-900 focus:border-[#2434E7] focus:outline-none focus:ring-2 focus:ring-[#2434E7]/25 dark:border-[#3e3e3e] dark:bg-[#111111] dark:text-gray-100 dark:focus:border-[#2434E7]"
-                      autoFocus
-                      onKeyDown={(e) => {
-                        if (e.key === 'Escape') {
-                          setShowSearch(false);
-                          setSearchQuery('');
-                        }
-                      }}
+              <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto sm:flex-nowrap">
+                <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCreateFolderModal(true);
+                    }}
+                    className={cn(
+                      'border-fig-Stroke-primary flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border',
+                      'bg-fig-Surface-two-primary px-[var(--Dimensions-Size-xs3)] py-px',
+                      'font-inter text-fig-Subject-two-primary text-xs font-normal leading-4',
+                      'transition-opacity hover:opacity-90 sm:flex-none',
+                    )}
+                  >
+                    <Plus className="h-3 w-3 shrink-0" aria-hidden />
+                    <span className="hidden sm:inline">Create folder</span>
+                    <span className="sm:hidden">Folder</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowUploadFileModal(true);
+                    }}
+                    className={cn(
+                      'border-fig-Stroke-standard flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border',
+                      'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
+                      'font-inter text-fig-Subject-standard text-xs font-normal leading-4',
+                      'hover:bg-fig-Surface-one-standard transition-colors sm:flex-none',
+                    )}
+                  >
+                    <img
+                      src="/research/assets/export.svg"
+                      alt=""
+                      className="h-3 w-3 shrink-0 opacity-90 dark:opacity-100"
                     />
-                    <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-400" />
-                    <button
-                      onClick={() => {
-                        setShowSearch(false);
-                        setSearchQuery('');
-                      }}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 transform text-gray-400 hover:text-gray-600 dark:hover:text-gray-200"
-                      title="Close search"
+                    <span className="hidden sm:inline">Upload document</span>
+                    <span className="sm:hidden">Upload</span>
+                  </button>
+                </div>
+                {showSearch ? (
+                  <div className="relative min-w-0 sm:min-w-[16rem]">
+                    <div
+                      className={cn(
+                        'border-fig-Stroke-soft bg-fig-Surface-standard flex h-[var(--Size-zero-button)] w-full min-w-0 max-w-md items-stretch',
+                        'overflow-hidden rounded-[2px] border transition-[border-color,box-shadow] duration-200',
+                        'focus-within:border-fig-Stroke-primary focus-within:ring-fig-Stroke-primary/20 focus-within:ring-2',
+                      )}
                     >
-                      <X className="h-4 w-4" />
-                    </button>
+                      <div className="flex min-w-0 flex-1 items-center gap-1 pl-1.5 pr-1">
+                        <Search
+                          className="text-fig-Subject-standard h-3.5 w-3.5 shrink-0"
+                          aria-hidden
+                        />
+                        <input
+                          id="resources-search"
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Search files and folders..."
+                          className={cn(
+                            'm-0 min-w-0 flex-1 border-0 bg-transparent p-0',
+                            'text-fig-Text-body caret-fig-Text-body placeholder:text-fig-Subject-soft',
+                            'text-xs font-normal leading-4',
+                            'focus-visible:outline-none',
+                          )}
+                          autoFocus
+                          onKeyDown={(e) => {
+                            if (e.key === 'Escape') {
+                              setShowSearch(false);
+                              setSearchQuery('');
+                            }
+                          }}
+                        />
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowSearch(false);
+                            setSearchQuery('');
+                          }}
+                          className="text-fig-Subject-standard hover:text-fig-Text-body focus-visible:ring-fig-Stroke-soft flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border-0 bg-transparent p-0 transition-opacity focus-visible:outline-none focus-visible:ring-2"
+                          title="Close search"
+                        >
+                          <X className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
                   </div>
                 ) : (
                   <button
+                    type="button"
                     onClick={() => {
                       setShowSearch(true);
                     }}
-                    className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg p-0 text-gray-600 transition-colors hover:bg-gray-100 hover:text-gray-900 dark:text-gray-400 dark:hover:bg-gray-700 dark:hover:text-gray-200"
+                    className={cn(
+                      'text-fig-Subject-standard flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center',
+                      'rounded-[2px] p-0 transition-colors',
+                      'hover:bg-fig-Surface-one-standard hover:text-fig-Text-body',
+                    )}
                     title="Search files and folders"
+                    aria-label="Search files and folders"
                   >
                     <Search className="h-4 w-4" />
                   </button>
@@ -783,23 +818,49 @@ export default function ResourcesRoute() {
           /* List/Table View - Responsive */
           <div className="mb-4 overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="w-full min-w-[640px]">
-              <thead className="border-b border-[#ededed] bg-[#EDEDED] dark:border-[#3e3e3e] dark:bg-[#2a2a2a]">
+              <thead className="bg-fig-Surface-one-neutral dark:bg-fig-Surface-one-neutral">
                 <tr>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Name
                   </th>
-                  <th className="hidden px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 md:table-cell">
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                      'hidden md:table-cell',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Owner
                   </th>
-                  <th className="hidden px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 sm:table-cell">
-                    Created date
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
+                      'hidden sm:table-cell',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
+                    Date created
                   </th>
-                  <th className="px-3 py-3 text-right text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="">
                 {/* Folders */}
                 {filteredContent.folders.map((folder, folderIndex) => {
                   const folderFileCount = folder.files?.length || 0;
@@ -825,11 +886,13 @@ export default function ResourcesRoute() {
                   return (
                     <tr
                       key={folder.id}
-                      className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                      className={cn(
+                        'group cursor-pointer',
+                        'hover:bg-fig-Surface-neutral',
                         folderIndex % 2 === 0
-                          ? 'bg-[#ffffff] dark:bg-[#111111]'
-                          : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
-                      }`}
+                          ? 'bg-fig-Surface-standard'
+                          : 'bg-fig-Surface-zero-neutral',
+                      )}
                       onDoubleClick={(e) => {
                         if (
                           !(e.target as HTMLElement).closest('.dropdown-trigger, .dropdown-menu')
@@ -838,35 +901,62 @@ export default function ResourcesRoute() {
                         }
                       }}
                     >
-                      <td className="whitespace-nowrap px-3 py-3">
-                        <div className="flex items-center gap-2 sm:gap-3">
-                          <div className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                          'overflow-hidden',
+                        )}
+                      >
+                        <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                          <div
+                            className={cn(
+                              'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                              folderIndex % 2 === 0
+                                ? 'bg-fig-Surface-neutral'
+                                : 'bg-fig-Surface-one-neutral',
+                            )}
+                          >
                             <img
                               src="/research/assets/Folder.svg"
                               alt="Folder"
-                              className="block h-full w-full max-h-[20px] max-w-[20px] flex-shrink-0 object-contain dark:invert"
+                              className="block h-5 w-5 flex-shrink-0 object-contain dark:invert"
                             />
                           </div>
-                          <div className="min-w-0">
-                            <div className="truncate text-xs font-medium text-gray-900 dark:text-gray-100 sm:text-sm">
+                          <div className="flex min-w-0 flex-col gap-0">
+                            <div className="fy-typography-title-small text-fig-Subject-standard truncate">
                               {folder.name}
                             </div>
-                            {folderFileCount > 0 && (
-                              <div className="text-xs text-gray-500 dark:text-gray-400">
-                                {folderFileCount} doc{folderFileCount !== 1 ? 's' : ''}
-                              </div>
-                            )}
+                            <div className="fy-typography-body-tiny text-fig-Subject-neutral">
+                              {folderFileCount} Doc{folderFileCount !== 1 ? 's' : ''}
+                            </div>
                           </div>
                         </div>
                       </td>
-                      <td className="hidden whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400 md:table-cell">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'font-inter',
+                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 md:table-cell',
+                        )}
+                      >
                         {folder.created_by_name || 'Unknown'}
                       </td>
-                      <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-gray-500 dark:text-gray-400 sm:table-cell sm:text-sm">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'font-inter',
+                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-right align-middle text-sm font-normal leading-5 sm:table-cell',
+                        )}
+                      >
                         {formatDate(folder.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] text-right align-middle',
+                          'font-inter text-sm font-medium leading-5',
+                        )}
+                      >
+                        <div className="flex h-full min-h-0 items-center justify-end gap-2">
                           {canModifyFolder && (
                             <div className="relative">
                               <button
@@ -899,17 +989,17 @@ export default function ResourcesRoute() {
                                     setSelectedItem({ type: 'folder', id: folder.id });
                                   }
                                 }}
-                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
                                 title="More options"
                               >
-                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                <MoreVertical className="h-3 w-3" aria-hidden />
                               </button>
                               {selectedItem?.type === 'folder' &&
                                 selectedItem.id === folder.id &&
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -929,7 +1019,7 @@ export default function ResourcesRoute() {
                                             setSelectedItem(null);
                                             setDropdownPosition(null);
                                           }}
-                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                          className="text-fig-Subject-standard hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5"
                                         >
                                           <img
                                             src="/research/assets/edit.svg"
@@ -948,7 +1038,7 @@ export default function ResourcesRoute() {
                                           setSelectedItem(null);
                                           setDropdownPosition(null);
                                         }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                        className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
                                       >
                                         <img
                                           src="/research/assets/delete.svg"
@@ -987,34 +1077,63 @@ export default function ResourcesRoute() {
                   return (
                     <tr
                       key={file.id}
-                      className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                      className={cn(
+                        'group cursor-pointer',
+                        'hover:bg-fig-Surface-neutral',
                         rowIndex % 2 === 0
-                          ? 'bg-[#ffffff] dark:bg-[#111111]'
-                          : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
-                      }`}
+                          ? 'bg-fig-Surface-standard'
+                          : 'bg-fig-Surface-zero-neutral',
+                      )}
                       onDoubleClick={() => handlePreviewFile(file)}
                     >
-                      <td className="whitespace-nowrap px-3 py-3">
-                        <div className="flex min-w-0 items-center gap-2 sm:gap-3">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                          'overflow-hidden',
+                        )}
+                      >
+                        <div className="flex h-full min-w-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
                           <div
-                            className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]"
+                            className={cn(
+                              'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                              rowIndex % 2 === 0
+                                ? 'bg-fig-Surface-neutral'
+                                : 'bg-fig-Surface-one-neutral',
+                            )}
                             aria-hidden
                           >
-                            <FileIcon className="h-5 w-5 max-h-full max-w-full flex-shrink-0 object-contain text-gray-500 [&_img]:object-contain [&_svg]:h-full [&_svg]:w-full" />
+                            <FileIcon className="block h-5 w-5 flex-shrink-0 object-contain" />
                           </div>
-                          <div className="truncate text-xs font-medium text-gray-900 dark:text-gray-100 sm:text-sm">
+                          <div className="font-inter text-fig-Subject-standard min-w-0 truncate text-sm font-medium leading-4">
                             {file.name}
                           </div>
                         </div>
                       </td>
-                      <td className="hidden whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400 md:table-cell">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'font-inter',
+                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 md:table-cell',
+                        )}
+                      >
                         {file.created_by_name || 'Unknown'}
                       </td>
-                      <td className="hidden whitespace-nowrap px-3 py-3 text-xs text-gray-500 dark:text-gray-400 sm:table-cell sm:text-sm">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'font-inter',
+                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-right align-middle text-sm font-normal leading-5 sm:table-cell',
+                        )}
+                      >
                         {formatDate(file.created_at)}
                       </td>
-                      <td className="whitespace-nowrap px-3 py-3 text-right text-sm font-medium">
-                        <div className="flex items-center justify-end gap-2">
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] text-right align-middle',
+                          'font-inter text-sm font-medium leading-5',
+                        )}
+                      >
+                        <div className="flex h-full min-h-0 items-center justify-end gap-2">
                           {/* <button
                             onClick={(e) => {
                               e.stopPropagation();
@@ -1056,17 +1175,17 @@ export default function ResourcesRoute() {
                                     setSelectedItem({ type: 'file', id: file.id });
                                   }
                                 }}
-                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
                                 title="More options"
                               >
-                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                <MoreVertical className="h-3 w-3" aria-hidden />
                               </button>
                               {selectedItem?.type === 'file' &&
                                 selectedItem.id === file.id &&
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -1085,7 +1204,7 @@ export default function ResourcesRoute() {
                                             setSelectedItem(null);
                                             setDropdownPosition(null);
                                           }}
-                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                          className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
                                         >
                                           <img
                                             src="/research/assets/delete.svg"

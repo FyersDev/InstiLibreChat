@@ -1,5 +1,7 @@
 // const { fontFamily } = require('tailwindcss/defaultTheme');
 
+const figmaThemeColors = require('./src/styles/tokens/figma-tailwind-colors.cjs');
+
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: [
@@ -152,6 +154,8 @@ module.exports = {
           DEFAULT: 'hsl(var(--card))',
           foreground: 'hsl(var(--card-foreground))',
         },
+        /* Figma theme semantic tokens: e.g. bg-fig-Surface-standard text-fig-Text-body */
+        fig: figmaThemeColors,
       },
       borderRadius: {
         none: '0',

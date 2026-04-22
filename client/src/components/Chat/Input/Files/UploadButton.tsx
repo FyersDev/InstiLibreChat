@@ -33,17 +33,16 @@ const UploadButton = () => {
             onClick={handleClick}
             id="upload-document-button"
             aria-label="Upload Document"
-            style={{ width: '34px', height: '34px' }}
             className={cn(
-              'flex cursor-pointer items-center justify-center rounded-lg border border-border-light bg-transparent p-1 transition-all hover:bg-surface-hover focus:outline-none focus:ring-2 focus:ring-primary focus:ring-opacity-50',
+              'flex h-8 w-8 cursor-pointer items-center justify-center rounded-[2px] border border-fig-Stroke-standard',
+              'bg-transparent p-px transition-colors hover:bg-fig-Surface-one-standard focus:outline-none focus:ring-2 focus:ring-fig-Stroke-primary focus:ring-opacity-40',
             )}
           >
-            <div className="flex w-full items-center justify-center gap-2">
+            <div className="flex w-full items-center justify-center">
               <img
-                src="/research/assets/export.svg"
+                src="/assets/export.svg"
                 alt="Upload Document"
-                className="icon-md dark:invert"
-                style={{ width: '18px', height: '18px' }}
+                className="icon-md h-5 w-5 dark:invert"
               />
             </div>
           </button>

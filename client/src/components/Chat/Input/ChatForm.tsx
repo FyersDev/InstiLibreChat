@@ -45,7 +45,6 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [, setIsScrollable] = useState(false);
   const [visualRowCount, setVisualRowCount] = useState(1);
-  const [isTextAreaFocused, setIsTextAreaFocused] = useState(false);
   const [backupBadges, setBackupBadges] = useState<Pick<BadgeItem, 'id'>[]>([]);
 
   const SpeechToText = useRecoilValue(store.speechToText);
@@ -197,13 +196,14 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
   const baseClasses = useMemo(
     () =>
       cn(
-        'px-1.5 pt-3 pb-1 m-0 w-full resize-none font-inter',
-        'placeholder-gray-400 dark:placeholder-gray-500',
-        'bg-transparent',
-        'text-gray-900 dark:text-gray-100',
-        'text-base',
+        'm-0 w-full resize-none font-inter font-normal',
+        'bg-transparent text-fig-Text-body',
+        'text-xs leading-4',
+        'placeholder:text-fig-Subject-soft',
         isCollapsed ? 'max-h-[52px]' : 'max-h-[45vh] md:max-h-[55vh]',
-        isMoreThanThreeRows ? 'pl-5' : 'px-5',
+        isMoreThanThreeRows
+          ? 'p-[var(--Padding-boundary)] pl-5'
+          : 'p-[var(--Padding-boundary)]',
       ),
     [isCollapsed, isMoreThanThreeRows],
   );
@@ -247,10 +247,8 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           <div
             onClick={handleContainerClick}
             className={cn(
-              'relative flex w-full flex-grow flex-col overflow-hidden rounded-[2px]',
-              'bg-transparent border border-[#2434E7]',
-              'transition-all duration-200',
-              isTextAreaFocused ? 'shadow-lg' : 'shadow-md',
+              'relative flex w-full min-h-[93px] flex-grow flex-col overflow-hidden rounded-[2px] border',
+              'border-fig-Stroke-primary bg-fig-Surface-standard shadow-none transition-[border-color] duration-200',
             )}
           >
             <TextareaHeader addedConvo={addedConvo} setAddedConvo={setAddedConvo} />
@@ -281,14 +279,10 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
                     tabIndex={0}
                     data-testid="text-input"
                     rows={1}
-                    onFocus={() => {
-                      handleFocusOrClick();
-                      setIsTextAreaFocused(true);
-                    }}
-                    onBlur={setIsTextAreaFocused.bind(null, false)}
+                    onFocus={handleFocusOrClick}
                     aria-label={localize('com_ui_message_input')}
                     onClick={handleFocusOrClick}
-                    style={{ height: 44, overflowY: 'auto' }}
+                    style={{ overflowY: 'auto' }}
                     className={cn(
                       baseClasses,
                       removeFocusRings,
@@ -317,7 +311,8 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
             )}
             <div
               className={cn(
-                '@container items-between flex gap-2 pt-1 pb-1 px-3',
+                '@container items-between flex gap-2',
+                'pt-[var(--Padding-boundary)] pb-[var(--Padding-spacer)] px-[var(--Padding-spacer)]',
                 isRTL ? 'flex-row-reverse' : 'flex-row',
               )}
             >

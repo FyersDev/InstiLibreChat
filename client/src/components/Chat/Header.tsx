@@ -15,7 +15,7 @@ export default function Header() {
   const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <div className="sticky top-0 z-10 flex h-14 w-full items-center justify-between bg-white p-2 font-semibold text-text-primary dark:!bg-[#111111]">
+    <div className="bg-fig-Surface-standard text-fig-Text-heading sticky top-0 z-10 flex h-14 w-full items-center justify-between p-2 font-semibold">
       <div className="hide-scrollbar flex w-full items-center justify-between gap-2 overflow-x-auto">
         <div className="mx-1 flex items-center">
           <AnimatePresence initial={false}>
@@ -39,12 +39,7 @@ export default function Header() {
           <div className="relative flex h-8 w-8 items-center justify-center rounded-sm">
             <img src={asset('FIA.svg')} alt="FIA" className="h-full w-full object-contain" />
           </div>
-          <div
-            className="font-sans text-[20px] leading-5 text-text-primary dark:text-gray-100"
-            style={{ fontSize: '20px' }}
-          >
-            FIA - FYERS Intelligent Assistant
-          </div>
+          <div className="fy-typography-title">FIA - FYERS Intelligent Assistant</div>
         </div>
 
         {/* Right: model row + Settings inside same scale-75 block (gear sits beside model button) */}
@@ -60,7 +55,7 @@ export default function Header() {
               aria-label={localize('com_nav_settings')}
             >
               <img
-                src="/research/assets/settings.svg"
+                src="/assets/settings.svg"
                 alt=""
                 className="h-5 w-5 dark:brightness-0 dark:invert"
               />
