@@ -357,6 +357,27 @@ button[role="switch"],
   border-radius: 9999px !important;
 }
 
+/* Sidebar main-column seam tab (SidebarEdgeTabs): global * and :hover { border-radius: 2px !important }
+   flatten asymmetric radii; component uses Tailwind ! utilities — this backup matches those corners */
+button[data-sidebar-edge-tab][data-testid='close-sidebar-button'],
+button[data-sidebar-edge-tab][data-testid='close-sidebar-button']:hover,
+button[data-sidebar-edge-tab][data-testid='close-sidebar-button']:focus,
+button[data-sidebar-edge-tab][data-testid='close-sidebar-button']:focus-visible {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+  border-top-right-radius: 8px !important;
+  border-bottom-right-radius: 8px !important;
+}
+button[data-sidebar-edge-tab][data-testid='open-sidebar-button'],
+button[data-sidebar-edge-tab][data-testid='open-sidebar-button']:hover,
+button[data-sidebar-edge-tab][data-testid='open-sidebar-button']:focus,
+button[data-sidebar-edge-tab][data-testid='open-sidebar-button']:focus-visible {
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-left-radius: 8px !important;
+  border-bottom-left-radius: 8px !important;
+}
+
 
 /* Specific component overrides (dialogs use 4px — see next block) */
 [data-radix-popper-content-wrapper],

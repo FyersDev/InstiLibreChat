@@ -185,7 +185,7 @@ const Nav = memo(
               transition={{ duration: 0.2 }}
               key="nav"
             >
-              <div className="h-full w-[320px] md:w-[300px] bg-white dark:!bg-[#111111] border border-[#EDEDED] dark:border-gray-700 rounded-[2px]">
+              <div className="h-full w-[320px] md:w-[300px] rounded-[2px] bg-white dark:!bg-[#111111]">
                 <div className="flex h-full flex-col">
                   <nav
                     id="chat-history-nav"

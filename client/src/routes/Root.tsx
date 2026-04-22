@@ -1,26 +1,25 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import type { ContextType } from '~/common';
+import { Banner } from '~/components/Banners';
+import { MobileNav, Nav, SidebarEdgeTabs } from '~/components/Nav';
+import TopNavBar from '~/components/Nav/TopNavBar';
+import { TermsAndConditionsModal } from '~/components/ui';
+import { useGetStartupConfig, useHealthCheck, useUserTermsQuery } from '~/data-provider';
 import {
-  useSearchEnabled,
+  useAgentsMap,
   useAssistantsMap,
   useAuthContext,
-  useAgentsMap,
   useFileMap,
+  useSearchEnabled,
 } from '~/hooks';
 import {
-  PromptGroupsProvider,
-  AssistantsMapContext,
   AgentsMapContext,
-  SetConvoProvider,
+  AssistantsMapContext,
   FileMapContext,
+  PromptGroupsProvider,
+  SetConvoProvider,
 } from '~/Providers';
-import { useUserTermsQuery, useGetStartupConfig } from '~/data-provider';
-import { TermsAndConditionsModal } from '~/components/ui';
-import { Nav, MobileNav, SidebarEdgeTabs } from '~/components/Nav';
-import TopNavBar from '~/components/Nav/TopNavBar';
-import { useHealthCheck } from '~/data-provider';
-import { Banner } from '~/components/Banners';
 
 export default function Root() {
   const location = useLocation();
@@ -38,10 +37,11 @@ export default function Root() {
   }, [location.search]);
 
   // Only show chat history sidebar on chat routes (FIA research), not on admin/templates/screener/resources
-  const shouldShowNav = !location.pathname.startsWith('/admin') && 
-                        !location.pathname.startsWith('/templates') && 
-                        !location.pathname.startsWith('/screener') &&
-                        !location.pathname.startsWith('/resources');
+  const shouldShowNav =
+    !location.pathname.startsWith('/admin') &&
+    !location.pathname.startsWith('/templates') &&
+    !location.pathname.startsWith('/screener') &&
+    !location.pathname.startsWith('/resources');
 
   // Global health check - runs once per authenticated session
   useHealthCheck(isAuthenticated);
@@ -84,7 +84,7 @@ export default function Root() {
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
               <div
-                className="flex flex-col bg-presentation"
+                className="flex flex-col bg-[#f6f8ff] dark:bg-[#2a2a2a]"
                 style={{ height: `calc(100dvh - ${bannerHeight}px)` }}
               >
                 {showTopNavBar && <TopNavBar />}
@@ -96,7 +96,9 @@ export default function Root() {
                       {shouldShowNav && (
                         <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
                       )}
-                      {shouldShowNav && <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />}
+                      {shouldShowNav && (
+                        <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />
+                      )}
                       <Outlet context={{ navVisible, setNavVisible } satisfies ContextType} />
                     </div>
                   </div>

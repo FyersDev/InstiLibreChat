@@ -1,10 +1,20 @@
-import { useState, useEffect, useRef } from 'react';
 import * as Ariakit from '@ariakit/react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, useToastContext, DropdownPopup } from '@librechat/client';
-import { saasApi } from '~/services/saasApi';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DropdownPopup,
+  Input,
+  TextareaAutosize,
+  useToastContext,
+} from '@librechat/client';
+import { ChevronDown, Edit, MoreVertical } from 'lucide-react';
+import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
-import { User, Edit, Trash2, MoreVertical, ChevronDown } from 'lucide-react';
 import { useSearchParams } from 'react-router-dom';
+import { saasApi } from '~/services/saasApi';
 import { asset } from '~/utils/assetPath';
 
 export default function TemplatesView() {
@@ -15,8 +25,13 @@ export default function TemplatesView() {
   const [personas, setPersonas] = useState<any[]>([]);
   const [templatesLoading, setTemplatesLoading] = useState(false);
   const [personasLoading, setPersonasLoading] = useState(false);
-  const [selectedItem, setSelectedItem] = useState<{ type: 'template' | 'persona'; id: string } | null>(null);
-  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(null);
+  const [selectedItem, setSelectedItem] = useState<{
+    type: 'template' | 'persona';
+    id: string;
+  } | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{ top: number; right: number } | null>(
+    null,
+  );
   const buttonRefs = useRef<Map<string, HTMLButtonElement>>(new Map());
   const [showCreateTemplateModal, setShowCreateTemplateModal] = useState(false);
   const [showCreatePersonaModal, setShowCreatePersonaModal] = useState(false);
@@ -35,20 +50,22 @@ export default function TemplatesView() {
   useEffect(() => {
     const tab = searchParams.get('tab');
     const action = searchParams.get('action');
-  
+
     // Only update tab if explicitly set in URL
     if (tab === 'personas') {
       setActiveTab('personas');
     } else if (tab === 'templates') {
       setActiveTab('templates');
     }
-  
+
     // Only open modal if action is 'create' AND we're not already showing a modal
-    if (action === 'create' && 
-        !showCreateTemplateModal && 
-        !showCreatePersonaModal && 
-        !showEditTemplateModal && 
-        !showEditPersonaModal) {
+    if (
+      action === 'create' &&
+      !showCreateTemplateModal &&
+      !showCreatePersonaModal &&
+      !showEditTemplateModal &&
+      !showEditPersonaModal
+    ) {
       const currentTab = tab || activeTab;
       if (currentTab === 'personas') {
         setShowCreatePersonaModal(true);
@@ -70,11 +87,11 @@ export default function TemplatesView() {
         setTemplates([]);
         return;
       }
-      const templatesList = Array.isArray((data as any).data) 
-        ? (data as any).data 
-        : Array.isArray(data) 
-        ? data 
-        : ((data as any).data || []);
+      const templatesList = Array.isArray((data as any).data)
+        ? (data as any).data
+        : Array.isArray(data)
+          ? data
+          : (data as any).data || [];
       setTemplates(templatesList);
     } catch (error) {
       console.error('Error fetching templates:', error);
@@ -93,11 +110,11 @@ export default function TemplatesView() {
         setPersonas([]);
         return;
       }
-      const personasList = Array.isArray((data as any).data) 
-        ? (data as any).data 
-        : Array.isArray(data) 
-        ? data 
-        : ((data as any).data || []);
+      const personasList = Array.isArray((data as any).data)
+        ? (data as any).data
+        : Array.isArray(data)
+          ? data
+          : (data as any).data || [];
       setPersonas(personasList);
     } catch (error) {
       console.error('Error fetching personas:', error);
@@ -127,7 +144,9 @@ export default function TemplatesView() {
       window.dispatchEvent(new Event('templatesListUpdated'));
     } catch (error: any) {
       showToast({
-        message: error.message || (template.id ? 'Failed to update Template' : 'Failed to create Template'),
+        message:
+          error.message ||
+          (template.id ? 'Failed to update Template' : 'Failed to create Template'),
         status: 'error',
       });
       throw error;
@@ -154,7 +173,8 @@ export default function TemplatesView() {
       window.dispatchEvent(new Event('personasListUpdated'));
     } catch (error: any) {
       showToast({
-        message: error.message || (persona.id ? 'Failed to update Agent' : 'Failed to create Agent'),
+        message:
+          error.message || (persona.id ? 'Failed to update Agent' : 'Failed to create Agent'),
         status: 'error',
       });
       throw error;
@@ -164,27 +184,30 @@ export default function TemplatesView() {
   const deleteTemplate = async (id: string) => {
     try {
       // Find the template being deleted to check if it's currently selected
-      const templateToDelete = templates.find(t => t.id === id);
-      
+      const templateToDelete = templates.find((t) => t.id === id);
+
       await saasApi.deleteTemplate(id);
       showToast({
         message: 'Template deleted successfully',
         status: 'success',
       });
-      
+
       // Clear the deleted template from localStorage if it's currently selected
       if (templateToDelete) {
         // Check all possible conversation IDs in localStorage
         const keys = Object.keys(localStorage);
-        const templateKeys = keys.filter(key => key.startsWith('template_data_'));
-        
-        templateKeys.forEach(key => {
+        const templateKeys = keys.filter((key) => key.startsWith('template_data_'));
+
+        templateKeys.forEach((key) => {
           try {
             const storedData = localStorage.getItem(key);
             if (storedData) {
               const templateData = JSON.parse(storedData);
               // Check if this is the deleted template
-              if (templateData.template === templateToDelete.name || templateData.name === templateToDelete.name) {
+              if (
+                templateData.template === templateToDelete.name ||
+                templateData.name === templateToDelete.name
+              ) {
                 // Clear it from localStorage
                 localStorage.removeItem(key);
                 console.log(`🗑️ Cleared deleted template "${templateToDelete.name}" from ${key}`);
@@ -194,7 +217,7 @@ export default function TemplatesView() {
             console.error('Error checking template data:', e);
           }
         });
-        
+
         // Dispatch event to notify all components that template was updated/removed
         window.dispatchEvent(new Event('templateUpdated'));
       }
@@ -214,27 +237,30 @@ export default function TemplatesView() {
   const deletePersona = async (id: string) => {
     try {
       // Find the persona being deleted to check if it's currently selected
-      const personaToDelete = personas.find(p => p.id === id);
-      
+      const personaToDelete = personas.find((p) => p.id === id);
+
       await saasApi.deletePersona(id);
       showToast({
         message: 'Agent deleted successfully',
         status: 'success',
       });
-      
+
       // Clear the deleted persona from localStorage if it's currently selected
       if (personaToDelete) {
         // Check all possible conversation IDs in localStorage
         const keys = Object.keys(localStorage);
-        const personaKeys = keys.filter(key => key.startsWith('persona_data_'));
-        
-        personaKeys.forEach(key => {
+        const personaKeys = keys.filter((key) => key.startsWith('persona_data_'));
+
+        personaKeys.forEach((key) => {
           try {
             const storedData = localStorage.getItem(key);
             if (storedData) {
               const personaData = JSON.parse(storedData);
               // Check if this is the deleted persona
-              if (personaData.persona === personaToDelete.name || personaData.name === personaToDelete.name) {
+              if (
+                personaData.persona === personaToDelete.name ||
+                personaData.name === personaToDelete.name
+              ) {
                 // Clear it from localStorage
                 localStorage.removeItem(key);
                 console.log(`🗑️ Cleared deleted persona "${personaToDelete.name}" from ${key}`);
@@ -244,7 +270,7 @@ export default function TemplatesView() {
             console.error('Error checking persona data:', e);
           }
         });
-        
+
         // Dispatch event to notify all components that persona was updated/removed
         window.dispatchEvent(new Event('personaUpdated'));
       }
@@ -352,27 +378,33 @@ export default function TemplatesView() {
       clearTimeout(timeoutId);
       document.removeEventListener('mousedown', handleClickOutside);
     };
-  }, [selectedItem, showCreateTemplateModal, showCreatePersonaModal, showEditTemplateModal, showEditPersonaModal]);
+  }, [
+    selectedItem,
+    showCreateTemplateModal,
+    showCreatePersonaModal,
+    showEditTemplateModal,
+    showEditPersonaModal,
+  ]);
 
   const currentItems = activeTab === 'templates' ? templates : personas;
   const isLoading = activeTab === 'templates' ? templatesLoading : personasLoading;
 
   return (
-    <div className="h-full flex flex-col bg-white dark:bg-gray-850">
+    <div className="flex h-screen flex-col bg-[#ffffff] px-2 pb-2 pt-0 dark:bg-[#111111]">
       {/* Tabs */}
-      <div className="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-6">
+      <div className="pt-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="flex items-center gap-4 sm:gap-4">
             <button
               onClick={() => {
                 setActiveTab('personas');
                 setSelectedItem(null);
                 setDropdownPosition(null);
               }}
-              className={`px-0 py-3 text-[14px] leading-[20px] font-normal transition-colors ${
+              className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
                 activeTab === 'personas'
-                  ? 'text-[#2A2A2A] dark:text-gray-100 border-b-2 border-[#2434E7]'
-                  : 'text-[#6D6D6D] dark:text-gray-400 hover:text-[#2A2A2A] dark:hover:text-gray-100'
+                  ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
+                  : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
               }`}
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
@@ -384,10 +416,10 @@ export default function TemplatesView() {
                 setSelectedItem(null);
                 setDropdownPosition(null);
               }}
-              className={`px-0 py-3 text-[14px] leading-[20px] font-normal transition-colors ${
+              className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
                 activeTab === 'templates'
-                  ? 'text-[#2A2A2A] dark:text-gray-100 border-b-2 border-[#2434E7]'
-                  : 'text-[#6D6D6D] dark:text-gray-400 hover:text-[#2A2A2A] dark:hover:text-gray-100'
+                  ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
+                  : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
               }`}
               style={{ fontFamily: 'Inter, sans-serif' }}
             >
@@ -402,7 +434,7 @@ export default function TemplatesView() {
                 setShowCreatePersonaModal(true);
               }
             }}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+            className="h-8 rounded-lg bg-[#2434E7] px-4 py-2 font-medium text-white hover:bg-[#2434E7]/90"
           >
             + Create {activeTab === 'templates' ? 'template' : 'agent'}
           </Button>
@@ -410,14 +442,14 @@ export default function TemplatesView() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-6 py-4">
+      <div className="flex-1 overflow-auto py-4">
         {isLoading ? (
-          <div className="flex items-center justify-center h-64">
+          <div className="flex h-64 items-center justify-center">
             <p className="text-gray-500 dark:text-gray-400">Loading...</p>
           </div>
         ) : currentItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-64">
-            <p className="text-gray-500 dark:text-gray-400 mb-4">
+          <div className="flex h-64 flex-col items-center justify-center">
+            <p className="mb-4 text-gray-500 dark:text-gray-400">
               No {activeTab === 'templates' ? 'templates' : 'agents'} created yet.
             </p>
             <Button
@@ -428,291 +460,321 @@ export default function TemplatesView() {
                   setShowCreatePersonaModal(true);
                 }
               }}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg font-medium"
+              className="h-8 rounded-lg bg-[#2434E7] px-4 py-2 font-medium text-white hover:bg-[#2434E7]/90"
             >
               + Create {activeTab === 'templates' ? 'template' : 'agent'}
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700">
+          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
             <table className="min-w-full border-separate border-spacing-0">
-              <thead className="bg-gray-50 dark:bg-gray-700/50">
+              <thead className="border-b border-[#ededed] bg-[#EDEDED] dark:border-[#3e3e3e] dark:bg-[#2a2a2a]">
                 <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Name
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Short description
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Date created
                   </th>
-                  <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300 whitespace-nowrap">
+                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
                     Actions
                   </th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                {activeTab === 'templates' ? (
-                  templates.map((template) => {
-                    const isSelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
-                    return (
-                      <tr
-                        key={template.id}
-                        className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                      >
-                        <td className="px-3 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                            <img
-                              src={asset('documents.svg')}
-                              alt="Template"
-                              className="h-5 w-5 flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                            />
-                            <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
-                              {template.name}
+                {activeTab === 'templates'
+                  ? templates.map((template, rowIndex) => {
+                      const isSelected =
+                        selectedItem?.type === 'template' && selectedItem.id === template.id;
+                      return (
+                        <tr
+                          key={template.id}
+                          className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                            rowIndex % 2 === 0
+                              ? 'bg-[#ffffff] dark:bg-[#111111]'
+                              : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
+                          }`}
+                        >
+                          <td className="whitespace-nowrap px-3 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]">
+                                <img
+                                  src={asset('documents.svg')}
+                                  alt="Template"
+                                  className="block h-full w-full max-h-[20px] max-w-[20px] flex-shrink-0 object-contain opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                />
+                              </div>
+                              <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
+                                {template.name}
+                              </div>
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="text-sm text-gray-500 dark:text-gray-400 whitespace-pre-wrap max-w-md">
-                            {(() => {
-                              const templateContent = template.detailedPrompt || template.description || '';
-                              if (!templateContent) return template.framework || 'No template content';
-                              
-                              // Format template content to show structure (Role, Task, Format)
-                              const lines = templateContent.split('\n').filter(line => line.trim());
-                              if (lines.length === 0) return templateContent;
-                              
-                              // Extract ROLE, TASK, FORMAT from the structure
-                              let role = '';
-                              let task = '';
-                              let format = '';
-                              
-                              lines.forEach((line) => {
-                                const lowerLine = line.toLowerCase();
-                                if (lowerLine.includes('role') || lowerLine.includes('act as')) {
-                                  role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
-                                } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
-                                  task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
-                                } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
-                                  format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
-                                }
-                              });
-                              
-                              // Build formatted display showing the structure
-                              if (role || task || format) {
-                                const parts: string[] = [];
-                                if (role) parts.push(`Role: ${role}`);
-                                if (task) parts.push(`Task: ${task}`);
-                                if (format) parts.push(`Format: ${format}`);
-                                return parts.join('\n');
-                              }
-                              
-                              // Fallback: show the full content (truncated if too long)
-                              return templateContent.length > 200 
-                                ? `${templateContent.substring(0, 200)}...` 
-                                : templateContent;
-                            })()}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(template.created_at)}
-                        </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm">
-                          <div className="relative inline-block text-left">
-                            <button
-                              ref={(el) => {
-                                if (el) {
-                                  buttonRefs.current.set(`template-${template.id}`, el);
-                                } else {
-                                  buttonRefs.current.delete(`template-${template.id}`);
-                                }
-                              }}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const isCurrentlySelected = selectedItem?.type === 'template' && selectedItem.id === template.id;
-                                if (isCurrentlySelected) {
-                                  setSelectedItem(null);
-                                  setDropdownPosition(null);
-                                } else {
-                                  const button = buttonRefs.current.get(`template-${template.id}`);
-                                  if (button) {
-                                    const rect = button.getBoundingClientRect();
-                                    setDropdownPosition({
-                                      top: rect.bottom + 4,
-                                      right: window.innerWidth - rect.right,
-                                    });
-                                  }
-                                  setSelectedItem({ type: 'template', id: template.id });
-                                }
-                              }}
-                              className="dropdown-trigger p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="max-w-md whitespace-pre-wrap text-sm text-gray-500 dark:text-gray-400">
+                              {(() => {
+                                const templateContent =
+                                  template.detailedPrompt || template.description || '';
+                                if (!templateContent)
+                                  return template.framework || 'No template content';
 
-                              title="More options"
-                            >
-                              <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            </button>
-                            {isSelected && dropdownPosition && createPortal(
-                              <div
-                                className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
-                                style={{
-                                  top: `${dropdownPosition.top}px`,
-                                  right: `${dropdownPosition.right}px`,
-                                }}
-                                onClick={(e) => e.stopPropagation()}
-                              >
-                                <div className="py-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleEditTemplate(template);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                    handleDeleteTemplate(template);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                >
-                                  <img
-                                    src={asset('delete.svg')}
-                                    alt="Delete"
-                                    className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                  />
-                                  Delete
-                                </button>
-                                </div>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                ) : (
-                  personas.map((persona) => {
-                    const isSelected = selectedItem?.type === 'persona' && selectedItem.id === persona.id;
-                    return (
-                      <tr
-                        key={persona.id}
-                        className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors"
-                      >
-                        <td className="px-3 py-3 whitespace-nowrap">
-                          <div className="flex items-center gap-3">
-                          <img
-                            src={asset('Leads.svg')}
-                            alt="Persona"
-                            className="h-5 w-5 flex-shrink-0 opacity-80 dark:invert"
-                          />
-                            <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
-                              {persona.name}
+                                // Format template content to show structure (Role, Task, Format)
+                                const lines = templateContent
+                                  .split('\n')
+                                  .filter((line) => line.trim());
+                                if (lines.length === 0) return templateContent;
+
+                                // Extract ROLE, TASK, FORMAT from the structure
+                                let role = '';
+                                let task = '';
+                                let format = '';
+
+                                lines.forEach((line) => {
+                                  const lowerLine = line.toLowerCase();
+                                  if (lowerLine.includes('role') || lowerLine.includes('act as')) {
+                                    role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
+                                  } else if (
+                                    lowerLine.includes('task') ||
+                                    lowerLine.includes('create')
+                                  ) {
+                                    task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
+                                  } else if (
+                                    lowerLine.includes('format') ||
+                                    lowerLine.includes('show as')
+                                  ) {
+                                    format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
+                                  }
+                                });
+
+                                // Build formatted display showing the structure
+                                if (role || task || format) {
+                                  const parts: string[] = [];
+                                  if (role) parts.push(`Role: ${role}`);
+                                  if (task) parts.push(`Task: ${task}`);
+                                  if (format) parts.push(`Format: ${format}`);
+                                  return parts.join('\n');
+                                }
+
+                                // Fallback: show the full content (truncated if too long)
+                                return templateContent.length > 200
+                                  ? `${templateContent.substring(0, 200)}...`
+                                  : templateContent;
+                              })()}
                             </div>
-                          </div>
-                        </td>
-                        <td className="px-3 py-3">
-                          <div className="text-sm text-gray-500 dark:text-gray-400">
-                            {persona.description || 'No description'}
-                          </div>
-                        </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-500 dark:text-gray-400">
-                          {formatDate(persona.created_at)}
-                        </td>
-                        <td className="px-3 py-3 whitespace-nowrap text-sm">
-                          <div className="relative inline-block text-left">
-                            <button
-                              ref={(el) => {
-                                if (el) {
-                                  buttonRefs.current.set(`persona-${persona.id}`, el);
-                                } else {
-                                  buttonRefs.current.delete(`persona-${persona.id}`);
-                                }
-                              }}
-                              type="button"
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                e.preventDefault();
-                                const isCurrentlySelected = selectedItem?.type === 'persona' && selectedItem.id === persona.id;
-                                if (isCurrentlySelected) {
-                                  setSelectedItem(null);
-                                  setDropdownPosition(null);
-                                } else {
-                                  const button = buttonRefs.current.get(`persona-${persona.id}`);
-                                  if (button) {
-                                    const rect = button.getBoundingClientRect();
-                                    setDropdownPosition({
-                                      top: rect.bottom + 4,
-                                      right: window.innerWidth - rect.right,
-                                    });
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(template.created_at)}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3 text-sm">
+                            <div className="relative inline-block text-left">
+                              <button
+                                ref={(el) => {
+                                  if (el) {
+                                    buttonRefs.current.set(`template-${template.id}`, el);
+                                  } else {
+                                    buttonRefs.current.delete(`template-${template.id}`);
                                   }
-                                  setSelectedItem({ type: 'persona', id: persona.id });
-                                }
-                              }}
-                              className="dropdown-trigger p-1 hover:bg-gray-100 dark:hover:bg-gray-700 rounded"
-
-                              title="More options"
-                            >
-                              <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
-                            </button>
-                            {isSelected && dropdownPosition && createPortal(
-                              <div
-                                className="fixed w-48 bg-white dark:bg-gray-800 rounded-md shadow-lg border border-gray-200 dark:border-gray-700 z-[9999]"
-                                style={{
-                                  top: `${dropdownPosition.top}px`,
-                                  right: `${dropdownPosition.right}px`,
                                 }}
-                                onClick={(e) => e.stopPropagation()}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  const isCurrentlySelected =
+                                    selectedItem?.type === 'template' &&
+                                    selectedItem.id === template.id;
+                                  if (isCurrentlySelected) {
+                                    setSelectedItem(null);
+                                    setDropdownPosition(null);
+                                  } else {
+                                    const button = buttonRefs.current.get(
+                                      `template-${template.id}`,
+                                    );
+                                    if (button) {
+                                      const rect = button.getBoundingClientRect();
+                                      setDropdownPosition({
+                                        top: rect.bottom + 4,
+                                        right: window.innerWidth - rect.right,
+                                      });
+                                    }
+                                    setSelectedItem({ type: 'template', id: template.id });
+                                  }
+                                }}
+                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                title="More options"
                               >
-                                <div className="py-1">
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      e.preventDefault();
-                                      handleEditPersona(persona);
+                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              </button>
+                              {isSelected &&
+                                dropdownPosition &&
+                                createPortal(
+                                  <div
+                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    style={{
+                                      top: `${dropdownPosition.top}px`,
+                                      right: `${dropdownPosition.right}px`,
                                     }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
+                                    onClick={(e) => e.stopPropagation()}
                                   >
-                                    <Edit className="h-4 w-4" />
-                                    Edit
-                                  </button>
-                                  <button
-                                    type="button"
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                    e.preventDefault();
-                                    handleDeletePersona(persona);
-                                  }}
-                                  className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-gray-700 flex items-center gap-2"
-                                >
-                                  <img
-                                    src={asset('delete.svg')}
-                                    alt="Delete"
-                                    className="h-4 w-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
-                                  />
-                                  Delete
-                                </button>
-                                </div>
-                              </div>,
-                              document.body
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    );
-                  })
-                )}
+                                    <div className="py-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          handleEditTemplate(template);
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          handleDeleteTemplate(template);
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                      >
+                                        <img
+                                          src={asset('delete.svg')}
+                                          alt="Delete"
+                                          className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                        />
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>,
+                                  document.body,
+                                )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })
+                  : personas.map((persona, rowIndex) => {
+                      const isSelected =
+                        selectedItem?.type === 'persona' && selectedItem.id === persona.id;
+                      return (
+                        <tr
+                          key={persona.id}
+                          className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                            rowIndex % 2 === 0
+                              ? 'bg-[#ffffff] dark:bg-[#111111]'
+                              : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
+                          }`}
+                        >
+                          <td className="whitespace-nowrap px-3 py-3">
+                            <div className="flex items-center gap-3">
+                              <div className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]">
+                                <img
+                                  src={asset('Leads.svg')}
+                                  alt="Persona"
+                                  className="block h-full w-full max-h-[20px] max-w-[20px] flex-shrink-0 object-contain opacity-80 dark:invert"
+                                />
+                              </div>
+                              <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
+                                {persona.name}
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-3 py-3">
+                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                              {persona.description || 'No description'}
+                            </div>
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                            {formatDate(persona.created_at)}
+                          </td>
+                          <td className="whitespace-nowrap px-3 py-3 text-sm">
+                            <div className="relative inline-block text-left">
+                              <button
+                                ref={(el) => {
+                                  if (el) {
+                                    buttonRefs.current.set(`persona-${persona.id}`, el);
+                                  } else {
+                                    buttonRefs.current.delete(`persona-${persona.id}`);
+                                  }
+                                }}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  const isCurrentlySelected =
+                                    selectedItem?.type === 'persona' &&
+                                    selectedItem.id === persona.id;
+                                  if (isCurrentlySelected) {
+                                    setSelectedItem(null);
+                                    setDropdownPosition(null);
+                                  } else {
+                                    const button = buttonRefs.current.get(`persona-${persona.id}`);
+                                    if (button) {
+                                      const rect = button.getBoundingClientRect();
+                                      setDropdownPosition({
+                                        top: rect.bottom + 4,
+                                        right: window.innerWidth - rect.right,
+                                      });
+                                    }
+                                    setSelectedItem({ type: 'persona', id: persona.id });
+                                  }
+                                }}
+                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                title="More options"
+                              >
+                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                              </button>
+                              {isSelected &&
+                                dropdownPosition &&
+                                createPortal(
+                                  <div
+                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    style={{
+                                      top: `${dropdownPosition.top}px`,
+                                      right: `${dropdownPosition.right}px`,
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          handleEditPersona(persona);
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                        Edit
+                                      </button>
+                                      <button
+                                        type="button"
+                                        onClick={(e) => {
+                                          e.stopPropagation();
+                                          e.preventDefault();
+                                          handleDeletePersona(persona);
+                                        }}
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                      >
+                                        <img
+                                          src={asset('delete.svg')}
+                                          alt="Delete"
+                                          className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                        />
+                                        Delete
+                                      </button>
+                                    </div>
+                                  </div>,
+                                  document.body,
+                                )}
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
               </tbody>
             </table>
           </div>
@@ -721,145 +783,144 @@ export default function TemplatesView() {
 
       {/* Modals */}
 
+      {/* Create Template Modal */}
+      {showCreateTemplateModal && (
+        <CreateTemplateModal
+          onClose={() => {
+            setShowCreateTemplateModal(false);
+            setSelectedItem(null);
+            setDropdownPosition(null);
+          }}
+          onSave={async (template) => {
+            try {
+              await saveTemplate(template);
+              // First close modal
+              setShowCreateTemplateModal(false);
+              // Then switch tab and clear state
+              setActiveTab('templates');
+              setSelectedItem(null);
+              setDropdownPosition(null);
+            } catch (error) {
+              // Error is handled in modal
+            }
+          }}
+        />
+      )}
 
-{/* Create Template Modal */}
-{showCreateTemplateModal && (
-  <CreateTemplateModal
-    onClose={() => {
-      setShowCreateTemplateModal(false);
-      setSelectedItem(null);
-      setDropdownPosition(null);
-    }}
-    onSave={async (template) => {
-      try {
-        await saveTemplate(template);
-        // First close modal
-        setShowCreateTemplateModal(false);
-        // Then switch tab and clear state
-        setActiveTab('templates');
-        setSelectedItem(null);
-        setDropdownPosition(null);
-      } catch (error) {
-        // Error is handled in modal
-      }
-    }}
-  />
-)}
+      {/* Edit Template Modal */}
+      {showEditTemplateModal && selectedTemplate && (
+        <EditTemplateModal
+          template={selectedTemplate}
+          onClose={() => {
+            setShowEditTemplateModal(false);
+            setSelectedTemplate(null);
+            setSelectedItem(null);
+            setDropdownPosition(null);
+          }}
+          onSave={async (template) => {
+            try {
+              await saveTemplate({ ...template, id: selectedTemplate.id });
+              setShowEditTemplateModal(false);
+              setSelectedTemplate(null);
+              setActiveTab('templates');
+              setSelectedItem(null);
+              setDropdownPosition(null);
+            } catch (error) {
+              // Error is handled in modal
+            }
+          }}
+        />
+      )}
 
-{/* Edit Template Modal */}
-{showEditTemplateModal && selectedTemplate && (
-  <EditTemplateModal
-    template={selectedTemplate}
-    onClose={() => {
-      setShowEditTemplateModal(false);
-      setSelectedTemplate(null);
-      setSelectedItem(null);
-      setDropdownPosition(null);
-    }}
-    onSave={async (template) => {
-      try {
-        await saveTemplate({ ...template, id: selectedTemplate.id });
-        setShowEditTemplateModal(false);
-        setSelectedTemplate(null);
-        setActiveTab('templates');
-        setSelectedItem(null);
-        setDropdownPosition(null);
-      } catch (error) {
-        // Error is handled in modal
-      }
-    }}
-  />
-)}
+      {/* Create Persona Modal */}
+      {showCreatePersonaModal && (
+        <CreatePersonaModal
+          onClose={() => {
+            setShowCreatePersonaModal(false);
+            setSelectedItem(null);
+            setDropdownPosition(null);
+          }}
+          onSave={async (persona) => {
+            try {
+              await savePersona(persona);
+              // First close modal
+              setShowCreatePersonaModal(false);
+              // Then switch tab and clear state
+              setActiveTab('personas');
+              setSelectedItem(null);
+              setDropdownPosition(null);
+            } catch (error) {
+              // Error is handled in modal
+            }
+          }}
+        />
+      )}
 
-{/* Create Persona Modal */}
-{showCreatePersonaModal && (
-  <CreatePersonaModal
-    onClose={() => {
-      setShowCreatePersonaModal(false);
-      setSelectedItem(null);
-      setDropdownPosition(null);
-    }}
-    onSave={async (persona) => {
-      try {
-        await savePersona(persona);
-        // First close modal
-        setShowCreatePersonaModal(false);
-        // Then switch tab and clear state
-        setActiveTab('personas');
-        setSelectedItem(null);
-        setDropdownPosition(null);
-      } catch (error) {
-        // Error is handled in modal
-      }
-    }}
-  />
-)}
+      {/* Edit Persona Modal */}
+      {showEditPersonaModal && selectedPersona && (
+        <EditPersonaModal
+          persona={selectedPersona}
+          onClose={() => {
+            setShowEditPersonaModal(false);
+            setSelectedPersona(null);
+            setSelectedItem(null);
+            setDropdownPosition(null);
+          }}
+          onSave={async (persona) => {
+            try {
+              await savePersona({ ...persona, id: selectedPersona.id });
+              setShowEditPersonaModal(false);
+              setSelectedPersona(null);
+              setActiveTab('personas');
+              setSelectedItem(null);
+              setDropdownPosition(null);
+            } catch (error) {
+              // Error is handled in modal
+            }
+          }}
+        />
+      )}
 
-{/* Edit Persona Modal */}
-{showEditPersonaModal && selectedPersona && (
-  <EditPersonaModal
-    persona={selectedPersona}
-    onClose={() => {
-      setShowEditPersonaModal(false);
-      setSelectedPersona(null);
-      setSelectedItem(null);
-      setDropdownPosition(null);
-    }}
-    onSave={async (persona) => {
-      try {
-        await savePersona({ ...persona, id: selectedPersona.id });
-        setShowEditPersonaModal(false);
-        setSelectedPersona(null);
-        setActiveTab('personas');
-        setSelectedItem(null);
-        setDropdownPosition(null);
-      } catch (error) {
-        // Error is handled in modal
-      }
-    }}
-  />
-)}
+      {showCreatePersonaModal && (
+        <CreatePersonaModal
+          onClose={() => setShowCreatePersonaModal(false)}
+          onSave={async (persona) => {
+            try {
+              await savePersona(persona);
+              setShowCreatePersonaModal(false);
+              // Switch to personas tab to show the newly created persona
+              setActiveTab('personas');
+              setSelectedItem(null);
+              setDropdownPosition(null);
+            } catch (error) {
+              // Error is handled in modal
+            }
+          }}
+        />
+      )}
 
-{showCreatePersonaModal && (
-  <CreatePersonaModal
-    onClose={() => setShowCreatePersonaModal(false)}
-    onSave={async (persona) => {
-      try {
-        await savePersona(persona);
-        setShowCreatePersonaModal(false);
-        // Switch to personas tab to show the newly created persona
-        setActiveTab('personas');
-        setSelectedItem(null);
-        setDropdownPosition(null);
-      } catch (error) {
-        // Error is handled in modal
-      }
-    }}
-  />
-)}
-
-{showEditPersonaModal && selectedPersona && (
-  <EditPersonaModal
-    persona={selectedPersona}
-    onClose={() => {
-      setShowEditPersonaModal(false);
-      setSelectedPersona(null);
-    }}
-    onSave={async (persona) => {
-      try {
-        await savePersona({ ...persona, id: selectedPersona.id });
-        setShowEditPersonaModal(false);
-        setSelectedPersona(null);
-        // Ensure we stay on personas tab
-        setActiveTab('personas');
-        setSelectedItem(null);
-        setDropdownPosition(null);
-      } catch (error) {
-        // Error is handled in modal
-      }
-    }}
-  />
-)}
+      {showEditPersonaModal && selectedPersona && (
+        <EditPersonaModal
+          persona={selectedPersona}
+          onClose={() => {
+            setShowEditPersonaModal(false);
+            setSelectedPersona(null);
+          }}
+          onSave={async (persona) => {
+            try {
+              await savePersona({ ...persona, id: selectedPersona.id });
+              setShowEditPersonaModal(false);
+              setSelectedPersona(null);
+              // Ensure we stay on personas tab
+              setActiveTab('personas');
+              setSelectedItem(null);
+              setDropdownPosition(null);
+            } catch (error) {
+              // Error is handled in modal
+            }
+          }}
+        />
+      )}
     </div>
   );
 }
@@ -1000,18 +1061,18 @@ function CreateTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Create Template</DialogTitle>
         </DialogHeader>
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Template Name *
             </label>
             <Input
@@ -1019,12 +1080,12 @@ function CreateTemplateModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Select Framework
             </label>
             <div className="relative">
@@ -1038,12 +1099,12 @@ function CreateTemplateModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
                   >
                     <span>
-                      {formData.customTemplate 
+                      {formData.customTemplate
                         ? 'Create Custom Template'
-                        : formData.framework 
+                        : formData.framework
                           ? (frameworks as any)[formData.framework].name
                           : '-- Select Framework --'}
                     </span>
@@ -1073,47 +1134,51 @@ function CreateTemplateModal({
                     },
                   },
                 ]}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
                 itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               />
             </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-5 mt-5">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 {(frameworks as any)[formData.framework].name}
               </h3>
-              {Object.entries((frameworks as any)[formData.framework].fields).map(([key, label]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {String(label)}
-                  </label>
-                  <TextareaAutosize
-                    value={formData.fields[key] || ''}
-                    onChange={(e) => handleFieldChange(key, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder={`Enter ${String(label).toLowerCase()}`}
-                    required
-                    minRows={3}
-                    maxRows={8}
-                    aria-label={String(label)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100 resize-none"
-                  />
-                </div>
-              ))}
+              {Object.entries((frameworks as any)[formData.framework].fields).map(
+                ([key, label]) => (
+                  <div key={key}>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {String(label)}
+                    </label>
+                    <TextareaAutosize
+                      value={formData.fields[key] || ''}
+                      onChange={(e) => handleFieldChange(key, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                        }
+                      }}
+                      placeholder={`Enter ${String(label).toLowerCase()}`}
+                      required
+                      minRows={3}
+                      maxRows={8}
+                      aria-label={String(label)}
+                      className="w-full resize-none rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+                    />
+                  </div>
+                ),
+              )}
             </div>
           )}
 
           {formData.customTemplate && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-5 mt-5">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">Custom Template</h3>
+            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Custom Template
+              </h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Template Content *
                 </label>
                 <TextareaAutosize
@@ -1124,19 +1189,28 @@ function CreateTemplateModal({
                   placeholder="Enter your custom template here..."
                   required
                   aria-label="Custom template content"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
-            {loading ? 'Creating...' : 'Save Template'}
-          </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+            >
+              {loading ? 'Creating...' : 'Save Template'}
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -1158,7 +1232,7 @@ function EditTemplateModal({
     name: template.name || '',
     framework: template.framework || '',
     customTemplate: template.is_custom || false,
-    fields: template.content || {} as Record<string, string>,
+    fields: template.content || ({} as Record<string, string>),
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -1282,18 +1356,18 @@ function EditTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit Template</DialogTitle>
         </DialogHeader>
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Template Name *
             </label>
             <Input
@@ -1301,13 +1375,12 @@ function EditTemplateModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
-              
+              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
             />
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Select Framework
             </label>
             <div className="relative">
@@ -1321,12 +1394,12 @@ function EditTemplateModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
                   >
                     <span>
-                      {formData.customTemplate 
+                      {formData.customTemplate
                         ? 'Create Custom Template'
-                        : formData.framework 
+                        : formData.framework
                           ? (frameworks as any)[formData.framework].name
                           : '-- Select Framework --'}
                     </span>
@@ -1356,47 +1429,51 @@ function EditTemplateModal({
                     },
                   },
                 ]}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
                 itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               />
             </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-5 mt-5">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">
+            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
                 {(frameworks as any)[formData.framework].name}
               </h3>
-              {Object.entries((frameworks as any)[formData.framework].fields).map(([key, label]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {String(label)}
-                  </label>
-                  <TextareaAutosize
-                    value={formData.fields[key] || ''}
-                    onChange={(e) => handleFieldChange(key, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder={`Enter ${String(label).toLowerCase()}`}
-                    required
-                    minRows={3}
-                    maxRows={8}
-                    aria-label={String(label)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100 resize-none"
-                  />
-                </div>
-              ))}
+              {Object.entries((frameworks as any)[formData.framework].fields).map(
+                ([key, label]) => (
+                  <div key={key}>
+                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                      {String(label)}
+                    </label>
+                    <TextareaAutosize
+                      value={formData.fields[key] || ''}
+                      onChange={(e) => handleFieldChange(key, e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && !e.shiftKey) {
+                          e.preventDefault();
+                        }
+                      }}
+                      placeholder={`Enter ${String(label).toLowerCase()}`}
+                      required
+                      minRows={3}
+                      maxRows={8}
+                      aria-label={String(label)}
+                      className="w-full resize-none rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+                    />
+                  </div>
+                ),
+              )}
             </div>
           )}
 
           {formData.customTemplate && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-5 mt-5">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">Custom Template</h3>
+            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
+              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+                Custom Template
+              </h3>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
                   Template Content *
                 </label>
                 <TextareaAutosize
@@ -1407,17 +1484,26 @@ function EditTemplateModal({
                   placeholder="Enter your custom template here..."
                   required
                   aria-label="Custom template content"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
                 />
               </div>
             </div>
           )}
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+            >
               {loading ? 'Updating...' : 'Update Template'}
             </Button>
           </div>
@@ -1594,7 +1680,7 @@ function CreatePersonaModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
-  
+
   // Handle predefined persona selection
   const handlePredefinedSelect = (predefinedId: string) => {
     const predefined = PREDEFINED_PERSONAS.find((_, idx) => idx.toString() === predefinedId);
@@ -1641,30 +1727,32 @@ function CreatePersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Create Agents</DialogTitle>
         </DialogHeader>
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name *</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Name *
+            </label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
             />
           </div>
 
           {/* Predefined Personas - Above description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Select Predefined Agent (optional)
             </label>
             <div className="relative">
@@ -1678,10 +1766,10 @@ function CreatePersonaModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
                   >
                     <span>
-                      {formData.selectedPredefinedId 
+                      {formData.selectedPredefinedId
                         ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
                         : '-- Select Predefined Agent (Optional) --'}
                     </span>
@@ -1704,19 +1792,20 @@ function CreatePersonaModal({
                     },
                   })),
                 ]}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
                 itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               />
             </div>
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                Agent template will be auto-filled below. Just edit the variables like {`{{variable_name}}`} with your values.
+                Agent template will be auto-filled below. Just edit the variables like{' '}
+                {`{{variable_name}}`} with your values.
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Description {formData.selectedPredefinedId ? '' : '*'}
             </label>
             <TextareaAutosize
@@ -1726,23 +1815,39 @@ function CreatePersonaModal({
               maxRows={10}
               required={!formData.selectedPredefinedId}
               aria-label="Persona description"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-              placeholder={formData.selectedPredefinedId ? "Edit variables like {{focus_area}} with your values" : "Enter persona description..."}
+              className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+              placeholder={
+                formData.selectedPredefinedId
+                  ? 'Edit variables like {{focus_area}} with your values'
+                  : 'Enter persona description...'
+              }
             />
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Variables to edit: {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map(v => `{{${v}}}`).join(', ')}
+                Variables to edit:{' '}
+                {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
+                  .map((v) => `{{${v}}}`)
+                  .join(', ')}
               </p>
             )}
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
+            >
               Cancel
             </Button>
-              <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400 focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm">
-            {loading ? 'Creating...' : 'Save Agents'}
-          </Button>
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400"
+            >
+              {loading ? 'Creating...' : 'Save Agents'}
+            </Button>
           </div>
         </form>
       </DialogContent>
@@ -1769,12 +1874,12 @@ function EditPersonaModal({
       selectedPredefinedId: '',
     };
   };
-  
+
   const [formData, setFormData] = useState(getInitialFormData());
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
-  
+
   // Handle predefined persona selection
   const handlePredefinedSelect = (predefinedId: string) => {
     const predefined = PREDEFINED_PERSONAS.find((_, idx) => idx.toString() === predefinedId);
@@ -1807,7 +1912,7 @@ function EditPersonaModal({
       is_custom_template: false,
       content: {},
     };
-    
+
     console.log('Updating persona with:', updatedPersona);
 
     setLoading(true);
@@ -1823,30 +1928,32 @@ function EditPersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6 bg-[#F7F7F7] dark:bg-[#222222]">
+      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit Agents</DialogTitle>
         </DialogHeader>
         {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
+          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
             {error}
           </div>
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Name *</label>
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+              Name *
+            </label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
             />
           </div>
 
           {/* Predefined Personas - Above description */}
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Select Predefined Persona (optional)
             </label>
             <div className="relative">
@@ -1860,10 +1967,10 @@ function EditPersonaModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
+                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
                   >
                     <span>
-                      {formData.selectedPredefinedId 
+                      {formData.selectedPredefinedId
                         ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
                         : '-- Select Predefined Persona (Optional) --'}
                     </span>
@@ -1886,19 +1993,20 @@ function EditPersonaModal({
                     },
                   })),
                 ]}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
+                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
                 itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
               />
             </div>
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
-                Persona template will be auto-filled below. Just edit the variables like {`{{variable_name}}`} with your values.
+                Persona template will be auto-filled below. Just edit the variables like{' '}
+                {`{{variable_name}}`} with your values.
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
               Description {formData.selectedPredefinedId ? '' : '*'}
             </label>
             <TextareaAutosize
@@ -1908,21 +2016,37 @@ function EditPersonaModal({
               maxRows={10}
               required={!formData.selectedPredefinedId}
               aria-label="Persona description"
-              className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-              placeholder={formData.selectedPredefinedId ? "Edit variables like {{focus_area}} with your values" : "Enter persona description..."}
+              className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+              placeholder={
+                formData.selectedPredefinedId
+                  ? 'Edit variables like {{focus_area}} with your values'
+                  : 'Enter persona description...'
+              }
             />
             {formData.selectedPredefinedId && (
               <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
-                Variables to edit: {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map(v => `{{${v}}}`).join(', ')}
+                Variables to edit:{' '}
+                {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
+                  .map((v) => `{{${v}}}`)
+                  .join(', ')}
               </p>
             )}
           </div>
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
+          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+            <Button
+              type="button"
+              onClick={onClose}
+              variant="outline"
+              className="flex-1 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+            >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
+            <Button
+              type="submit"
+              disabled={loading}
+              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+            >
               {loading ? 'Updating...' : 'Update Agent'}
             </Button>
           </div>
