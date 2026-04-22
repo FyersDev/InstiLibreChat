@@ -5,7 +5,6 @@ import { PermissionManager, type Permission } from '~/utils/permissions';
 import { saasApi } from '~/services/saasApi';
 import Settings from './Settings';
 import { asset } from '~/utils/assetPath';
-import { absoluteUrl } from '~/utils/remoteApiOrigin';
 
 // interface NiftyData {
 //   symbol: string;
@@ -254,7 +253,7 @@ export default function TopNavBar() {
       if (token && refreshToken) {
         // Call logout endpoint if available
         try {
-          await fetch(absoluteUrl('/api/v1/auth/logout'), {
+          await fetch('/api/v1/auth/logout', {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
