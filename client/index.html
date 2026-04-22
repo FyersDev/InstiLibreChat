@@ -2,17 +2,17 @@
 <html lang="en-US">
   <head>
     <meta charset="utf-8" />
-    <base href="/" />
+    <base href="/research/" />
     <meta name="theme-color" content="#171717" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <meta name="description" content="FIA-Fyers Intelligence Assistant - Advanced AI-powered financial intelligence platform" />
     <title>FIA - FYERS Intelligent Assistant</title>
-    <link rel="icon" type="image/svg+xml" href="assets/Logo.svg" />
-    <link rel="icon" type="image/png" sizes="32x32" href="assets/favicon-32x32.png" />
-    <link rel="icon" type="image/png" sizes="16x16" href="assets/favicon-16x16.png" />
-    <link rel="apple-touch-icon" href="assets/apple-touch-icon-180x180.png" />
+    <link rel="icon" type="image/svg+xml" href="/research/assets/Logo.svg" />
+    <link rel="icon" type="image/png" sizes="32x32" href="/research/assets/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/research/assets/favicon-16x16.png" />
+    <link rel="apple-touch-icon" href="/research/assets/apple-touch-icon-180x180.png" />
     <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
     <style>
       html,
@@ -23,6 +23,18 @@
       }
     </style>
     <script>
+      (function () {
+        try {
+          var p = new URLSearchParams(window.location.search);
+          var t = (p.get('theme') || '').toLowerCase();
+          if (t === 'light' || t === 'dark') {
+            localStorage.setItem('color-theme', t);
+            var root = document.documentElement;
+            root.classList.remove('dark', 'light');
+            root.classList.add(t === 'dark' ? 'dark' : 'light');
+          }
+        } catch (e) {}
+      })();
       const theme = localStorage.getItem('color-theme');
       const loadingContainerStyle = document.createElement('style');
       let backgroundColor;
@@ -46,8 +58,29 @@
           height: 100vh;
           background-color: ${backgroundColor};
         }
+        #loading-container::after {
+          content: '';
+          width: 120px;
+          height: 120px;
+          background-image: url('/research/assets/${theme === 'dark' || (theme === 'system' && window.matchMedia('(prefers-color-scheme: dark)').matches) ? 'loader_dark' : 'loader_light'}.gif');
+          background-size: contain;
+          background-repeat: no-repeat;
+          background-position: center;
+        }
       `;
       document.head.appendChild(loadingContainerStyle);
+
+      // Sync saas-api cookies to localStorage (set by /auth/embed flow)
+      (function() {
+        function getCookie(name) {
+          var m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
+          return m ? decodeURIComponent(m[1]) : null;
+        }
+        var at = getCookie('saas_access_token');
+        var rt = getCookie('saas_refresh_token');
+        if (at) localStorage.setItem('access_token', at);
+        if (rt) localStorage.setItem('refresh_token', rt);
+      })();
     </script>
     <script>
       // Embedded auth: if ?token= is in the URL, call token-exchange to get

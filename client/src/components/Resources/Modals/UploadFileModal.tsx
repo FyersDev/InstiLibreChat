@@ -292,7 +292,7 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
       <DialogContent className="max-w-md p-6 bg-[#F7F7F7] dark:bg-[#222222]">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold flex items-center gap-2">
-            <img src="/assets/export.svg" alt="Upload" className="h-5 w-5 dark:invert" />
+            <img src="/research/assets/export.svg" alt="Upload" className="h-5 w-5 dark:invert" />
             Upload Document
           </DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
@@ -334,7 +334,7 @@ export default function UploadFileModal({ folderId, orgId, folders = [], isSuper
                   </>
                 ) : (
                   <>
-                    <img src="/assets/export.svg" alt="Upload" className="h-10 w-10 opacity-40 dark:invert" />
+                    <img src="/research/assets/export.svg" alt="Upload" className="h-10 w-10 opacity-40 dark:invert" />
                     <span className="text-sm text-gray-600 dark:text-gray-400">
                       Click to select a file
                     </span>

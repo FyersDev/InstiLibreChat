@@ -4,6 +4,7 @@ import { useAuthContext } from '~/hooks/AuthContext';
 import { PermissionManager, type Permission } from '~/utils/permissions';
 import { saasApi } from '~/services/saasApi';
 import Settings from './Settings';
+import { asset } from '~/utils/assetPath';
 
 // interface NiftyData {
 //   symbol: string;
@@ -415,7 +416,7 @@ export default function TopNavBar() {
           {/* FYERS Logo */}
           <div className="flex items-center">
             <img
-              src="/assets/Logo.svg"
+              src={asset('Logo.svg')}
               alt="FYERS"
               className="h-8 w-auto object-contain"
               style={{ borderRadius: '2px' }}
@@ -545,7 +546,7 @@ export default function TopNavBar() {
             <div className="fixed inset-0 bg-black/70 flex items-center justify-center z-[100]" onClick={cancelLogout}>
               <div className="bg-[#1a1a1a] rounded-xl shadow-2xl p-5 max-w-sm w-full mx-4 border border-gray-800" onClick={(e) => e.stopPropagation()}>
                 <div className="flex flex-col items-center text-center">
-                  <img src="/assets/warning.svg" alt="Warning" className="w-10 h-10 mb-4" style={{ fill: '#BB5850' }} />
+                  <img src={asset('warning.svg')} alt="Warning" className="w-10 h-10 mb-4" style={{ fill: '#BB5850' }} />
                   <h3 className="text-lg font-bold text-white mb-2">Logout</h3>
                   <p className="text-sm text-gray-300 mb-4">Are you sure you want to logout?</p>
                   <div className="flex gap-3 w-full">

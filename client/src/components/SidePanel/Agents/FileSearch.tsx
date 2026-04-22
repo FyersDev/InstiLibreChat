@@ -104,7 +104,7 @@ export default function FileSearch({
     {
       label: localize('com_files_upload_local_machine'),
       onClick: handleLocalFileClick,
-      icon: <img src="/assets/Folder.svg" alt="Folder" className="icon-sm dark:invert" />,
+      icon: <img src="/research/assets/Folder.svg" alt="Folder" className="icon-sm dark:invert" />,
     },
     {
       label: localize('com_files_upload_sharepoint'),

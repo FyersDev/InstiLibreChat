@@ -168,7 +168,7 @@ export default function SharedLinkButton({
                   variant="destructive"
                   aria-label={localize('com_ui_delete')}
                 >
-                  <img src="/assets/delete.svg" alt="Delete" className="size-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" />
+                  <img src="/research/assets/delete.svg" alt="Delete" className="size-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" />
                 </Button>
               )}
             />

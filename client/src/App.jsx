@@ -10,6 +10,7 @@ import { ScreenshotProvider, useApiErrorBoundary } from './hooks';
 import WakeLockManager from '~/components/System/WakeLockManager';
 import ConditionalDevtools from '~/components/System/ConditionalDevtools';
 import { getThemeFromEnv } from './utils/getThemeFromEnv';
+import { getInitialThemeFromWindowSearch } from './utils/themeFromQuery';
 import { initializeFontSize } from '~/store/fontSize';
 import { LiveAnnouncer } from '~/a11y';
 import { router } from './routes';
@@ -33,16 +34,21 @@ const App = () => {
 
   // Load theme from environment variables if available
   const envTheme = getThemeFromEnv();
+  const urlTheme = getInitialThemeFromWindowSearch();
+
+  const themeProviderProps = {};
+  if (envTheme) {
+    themeProviderProps.themeRGB = envTheme;
+    themeProviderProps.initialTheme = urlTheme ?? 'system';
+  } else if (urlTheme) {
+    themeProviderProps.initialTheme = urlTheme;
+  }
 
   return (
     <QueryClientProvider client={queryClient}>
       <RecoilRoot>
         <LiveAnnouncer>
-          <ThemeProvider
-            // Only pass initialTheme and themeRGB if environment theme exists
-            // This allows localStorage values to persist when no env theme is set
-            {...(envTheme && { initialTheme: 'system', themeRGB: envTheme })}
-          >
+          <ThemeProvider {...themeProviderProps}>
             {/* The ThemeProvider will automatically:
                 1. Apply dark/light mode classes
                 2. Apply custom theme colors if envTheme is provided

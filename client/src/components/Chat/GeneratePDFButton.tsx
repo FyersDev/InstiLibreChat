@@ -291,7 +291,7 @@ export default function GeneratePDFButton() {
         ) : (
           <>
             <img 
-              src="/assets/documents.svg" 
+              src="/research/assets/documents.svg" 
               alt="Generate PDF" 
               className="h-3.5 w-3.5 opacity-70 dark:invert dark:opacity-70" 
             />

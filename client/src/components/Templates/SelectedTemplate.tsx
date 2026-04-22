@@ -130,7 +130,7 @@ export default function SelectedTemplate() {
     >
       <Check className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
       <img 
-        src="/assets/documents.svg" 
+        src="/research/assets/documents.svg" 
         alt="Template" 
         className="h-3.5 w-3.5 text-text-secondary flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
       />

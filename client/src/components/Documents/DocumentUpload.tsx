@@ -1,6 +1,6 @@
 import React, { useState, useCallback } from 'react';
 import { AlertCircle } from 'lucide-react';
-import { useToastContext } from '@librechat/client';
+import { useToastContext, Spinner } from '@librechat/client';
 import { useLocalize } from '~/hooks';
 import { uploadDocument } from '~/data-provider/document-service';
 import { cn } from '~/utils';
@@ -186,7 +186,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
         <div className="flex flex-col items-center justify-center space-y-3">
           {isUploading ? (
             <>
-              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+              <Spinner size={32} />
               <p className="text-sm text-gray-600 dark:text-gray-400">
                 Uploading document...
               </p>
@@ -194,7 +194,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
           ) : (
             <>
               <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <img src="/assets/export.svg" alt="Upload" className="w-6 h-6 dark:invert" />
+                <img src="/research/assets/export.svg" alt="Upload" className="w-6 h-6 dark:invert" />
               </div>
               <div>
                 <p className="text-sm font-medium text-gray-900 dark:text-gray-100">

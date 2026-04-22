@@ -13,7 +13,7 @@ const backendPort = process.env.BACKEND_PORT && Number(process.env.BACKEND_PORT)
 const backendURL = process.env.HOST ? `http://${process.env.HOST}:${backendPort}` : `http://localhost:${backendPort}`;
 
 export default defineConfig(({ command }) => ({
-  base: '',
+  base: '/research/',
   server: {
     allowedHosts: process.env.VITE_ALLOWED_HOSTS && process.env.VITE_ALLOWED_HOSTS.split(',') || [],
     host: process.env.HOST || 'localhost',

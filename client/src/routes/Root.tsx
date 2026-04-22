@@ -1,26 +1,25 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Outlet, useLocation } from 'react-router-dom';
 import type { ContextType } from '~/common';
+import { Banner } from '~/components/Banners';
+import { MobileNav, Nav, SidebarEdgeTabs } from '~/components/Nav';
+import TopNavBar from '~/components/Nav/TopNavBar';
+import { TermsAndConditionsModal } from '~/components/ui';
+import { useGetStartupConfig, useHealthCheck, useUserTermsQuery } from '~/data-provider';
 import {
-  useSearchEnabled,
+  useAgentsMap,
   useAssistantsMap,
   useAuthContext,
-  useAgentsMap,
   useFileMap,
+  useSearchEnabled,
 } from '~/hooks';
 import {
-  PromptGroupsProvider,
-  AssistantsMapContext,
   AgentsMapContext,
-  SetConvoProvider,
+  AssistantsMapContext,
   FileMapContext,
+  PromptGroupsProvider,
+  SetConvoProvider,
 } from '~/Providers';
-import { useUserTermsQuery, useGetStartupConfig } from '~/data-provider';
-import { TermsAndConditionsModal } from '~/components/ui';
-import { Nav, MobileNav } from '~/components/Nav';
-import TopNavBar from '~/components/Nav/TopNavBar';
-import { useHealthCheck } from '~/data-provider';
-import { Banner } from '~/components/Banners';
 
 export default function Root() {
   const location = useLocation();
@@ -28,16 +27,21 @@ export default function Root() {
   const [bannerHeight, setBannerHeight] = useState(0);
   const [navVisible, setNavVisible] = useState(() => {
     const savedNavVisible = localStorage.getItem('navVisible');
-    return savedNavVisible !== null ? JSON.parse(savedNavVisible) : true;
+    return savedNavVisible !== null ? JSON.parse(savedNavVisible) : false;
   });
 
   const { isAuthenticated, logout } = useAuthContext();
 
+  const showTopNavBar = useMemo(() => {
+    return new URLSearchParams(location.search).get('showtopnav') === '1';
+  }, [location.search]);
+
   // Only show chat history sidebar on chat routes (FIA research), not on admin/templates/screener/resources
-  const shouldShowNav = !location.pathname.startsWith('/admin') && 
-                        !location.pathname.startsWith('/templates') && 
-                        !location.pathname.startsWith('/screener') &&
-                        !location.pathname.startsWith('/resources');
+  const shouldShowNav =
+    !location.pathname.startsWith('/admin') &&
+    !location.pathname.startsWith('/templates') &&
+    !location.pathname.startsWith('/screener') &&
+    !location.pathname.startsWith('/resources');
 
   // Global health check - runs once per authenticated session
   useHealthCheck(isAuthenticated);
@@ -79,14 +83,22 @@ export default function Root() {
           <AgentsMapContext.Provider value={agentsMap}>
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
-              <div className="flex flex-col bg-[#F6F8FF] dark:!bg-[#2A2A2A]" style={{ height: `calc(100dvh - ${bannerHeight}px)` }}>
-                <TopNavBar />
-                {/* Container with 12px horizontal padding and 16px gap (FYERS Design) */}
-                <div className="flex flex-1 px-3 py-2 overflow-hidden">
-                  <div className="relative z-0 flex h-full w-full gap-2 overflow-hidden">
+              <div
+                className="flex flex-col bg-[#f6f8ff] dark:bg-[#2a2a2a]"
+                style={{ height: `calc(100dvh - ${bannerHeight}px)` }}
+              >
+                {showTopNavBar && <TopNavBar />}
+                {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap 4px (FYERS Design) */}
+                <div className="flex flex-1 overflow-hidden p-[0px_4px_4px_4px]">
+                  <div className="relative z-0 flex h-full w-full gap-[4px] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
                     <div className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden">
-                      {shouldShowNav && <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />}
+                      {shouldShowNav && (
+                        <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
+                      )}
+                      {shouldShowNav && (
+                        <MobileNav navVisible={navVisible} setNavVisible={setNavVisible} />
+                      )}
                       <Outlet context={{ navVisible, setNavVisible } satisfies ContextType} />
                     </div>
                   </div>

@@ -257,7 +257,7 @@ function OTP() {
         <div className="flex items-center gap-2 sm:gap-3">
           <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-lg flex items-center justify-center p-1">
             <img
-              src="/assets/Logo.svg"
+              src="/research/assets/Logo.svg"
               alt="FIA Logo"
               className="w-full h-full object-contain"
             />
@@ -274,7 +274,7 @@ function OTP() {
           </h1>
 
           <img
-            src="/assets/Fia Login.png"
+            src="/research/assets/Fia Login.png"
             alt="FYERS platform preview"
             className="w-full max-w-[900px] h-[260px] sm:h-[320px] lg:h-[420px] object-contain"
           />

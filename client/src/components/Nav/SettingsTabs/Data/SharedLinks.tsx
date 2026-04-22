@@ -264,7 +264,7 @@ export default function SharedLinks() {
               }}
               aria-label={`${localize('com_ui_delete')} - ${row.original.title || localize('com_ui_untitled')}`}
             >
-              <img src="/assets/delete.svg" alt="Delete" className="size-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" aria-hidden="true" />
+              <img src="/research/assets/delete.svg" alt="Delete" className="size-4 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" aria-hidden="true" />
             </Button>
           </div>
         ),

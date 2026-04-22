@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { Search, Heart, Info, History, Trash2, ArrowLeft } from 'lucide-react';
-import { HoverCard, HoverCardTrigger, HoverCardContent, HoverCardPortal, useToastContext } from '@librechat/client';
+import { HoverCard, HoverCardTrigger, HoverCardContent, HoverCardPortal, useToastContext, Spinner } from '@librechat/client';
 
 interface HeaderColumn {
   name: string;
@@ -842,7 +842,7 @@ export default function ScreenerRoute() {
             {/* Loading State - Show above table when loading new results */}
             {loading && results.length > 0 && (
               <div className="mt-6 mb-4 text-center py-8">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <Spinner size={32} className="inline-block" />
                 <p className="mt-4 text-gray-600 dark:text-gray-400">Loading screening results...</p>
               </div>
             )}
@@ -975,7 +975,7 @@ export default function ScreenerRoute() {
             {/* Loading State - Show when no results yet */}
             {loading && results.length === 0 && (
               <div className="mt-6 text-center py-12">
-                <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                <Spinner size={32} className="inline-block" />
                 <p className="mt-4 text-gray-600 dark:text-gray-400">Loading screening results...</p>
               </div>
             )}
@@ -1099,7 +1099,7 @@ export default function ScreenerRoute() {
                   {/* Loading State */}
                   {loading && (
                     <div className="text-center py-12">
-                      <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+                      <Spinner size={32} className="inline-block" />
                       <p className="mt-4 text-gray-600 dark:text-gray-400">Loading screening results...</p>
                     </div>
                   )}

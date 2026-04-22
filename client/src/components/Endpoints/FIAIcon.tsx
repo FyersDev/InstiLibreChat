@@ -1,6 +1,7 @@
 import React from 'react';
 import type { IconMapProps } from '~/common';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
 
 export const FIAIcon: React.FC<IconMapProps> = ({ 
   size = 32, 
@@ -16,7 +17,7 @@ export const FIAIcon: React.FC<IconMapProps> = ({
   console.log('FIAIcon size:', size, 'context:', context);
   return (
     <img
-      src="/assets/FIA.svg"
+      src={asset('FIA.svg')}
       alt="FIA"
       width={size}
       height={size}

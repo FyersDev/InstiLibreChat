@@ -45,7 +45,7 @@ const DownloadArtifact = ({ artifact }: { artifact: Artifact }) => {
         <CircleCheckBig size={16} />
       ) : (
         <img 
-          src="/assets/download.svg" 
+          src="/research/assets/download.svg" 
           alt="Download" 
           className="opacity-70 dark:invert dark:opacity-70" 
           style={{ width: '16px', height: '16px' }}

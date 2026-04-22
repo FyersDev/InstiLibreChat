@@ -59,7 +59,7 @@ const MessageIcon = memo(
       return (
         <div className="flex h-full w-full items-center justify-center">
           <img
-            src="/assets/loader.gif"
+            src="/research/assets/loader.gif"
             alt="Loading..."
             className="object-contain"
             style={{ width: '32px', height: '32px' }}
