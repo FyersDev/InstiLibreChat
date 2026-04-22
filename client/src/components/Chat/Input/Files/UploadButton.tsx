@@ -40,7 +40,7 @@ const UploadButton = () => {
           >
             <div className="flex w-full items-center justify-center">
               <img
-                src="/assets/export.svg"
+                src="/research/assets/export.svg"
                 alt="Upload Document"
                 className="icon-md h-5 w-5 dark:invert"
               />

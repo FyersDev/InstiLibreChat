@@ -293,7 +293,7 @@ export default function TemplateSelector() {
         className="flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-soft bg-transparent px-1.5 text-sm font-normal leading-5 text-fig-Text-body opacity-50"
         title="No templates available"
       >
-        <img src="/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
+        <img src="/research/assets/documents.svg" alt="Template" className="h-3.5 w-3.5 dark:invert" />
         <span>{buttonText}</span>
       </button>
     );
