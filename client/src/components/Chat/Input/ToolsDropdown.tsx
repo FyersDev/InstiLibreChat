@@ -277,10 +277,11 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
                 onClick={handleClick}
                 id="tools-dropdown-button"
                 aria-label="Select Documents"
-                style={{ height: '34px' }}
                 className={cn(
-                  'flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover',
-                  isDisabled && 'opacity-50 cursor-not-allowed',
+                  'flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-standard',
+                  'bg-transparent px-[9px] text-sm font-normal leading-5 text-fig-Subject-standard',
+                  'transition-colors hover:bg-fig-Surface-one-standard',
+                  isDisabled && 'cursor-not-allowed opacity-50',
                 )}
               >
                 {buttonText}
@@ -299,10 +300,11 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
             onMouseLeave={handleMouseLeave}
             id="tools-dropdown-button"
             aria-label="Select Documents"
-            style={{ height: '34px' }}
             className={cn(
-              'flex items-center gap-1.5 rounded-lg border border-border-light bg-transparent px-3 text-sm font-medium text-text-primary transition-all hover:bg-surface-hover',
-              isDisabled && 'opacity-50 cursor-not-allowed',
+              'flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-standard',
+              'bg-transparent px-[9px] text-sm font-normal leading-5 text-fig-Subject-standard',
+              'transition-colors hover:bg-fig-Surface-one-standard',
+              isDisabled && 'cursor-not-allowed opacity-50',
             )}
           >
             {buttonText}
@@ -311,7 +313,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
                 e.stopPropagation();
                 handleClearDocuments();
               }}
-              className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-surface-hover"
+              className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-fig-Surface-one-standard"
               aria-label="Clear all documents"
             >
               <span className="text-xs">✕</span>
@@ -347,7 +349,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <img 
-                    src="/research/assets/documents.svg" 
+                    src="/assets/documents.svg" 
                     alt="Document" 
                     className="h-3 w-3 flex-shrink-0 opacity-70 dark:invert" 
                   />

@@ -1,0 +1,4 @@
+/* Figma tokens: import order matters (primitives → theme → platform) */
+@import './figma-primitives.css';
+@import './figma-theme-semantic.css';
+@import './figma-platform-laptop.css';

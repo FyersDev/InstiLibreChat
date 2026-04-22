@@ -1,11 +1,9 @@
-import { useMemo, useCallback, useState, useEffect, useRef } from 'react';
 import { EModelEndpoint } from 'librechat-data-provider';
-import { BirthdayIcon, TooltipAnchor } from '@librechat/client';
-import { useChatContext, useAgentsMapContext, useAssistantsMapContext } from '~/Providers';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useAgentsMapContext, useAssistantsMapContext, useChatContext } from '~/Providers';
 import { useGetEndpointsQuery, useGetStartupConfig } from '~/data-provider';
-import ConvoIcon from '~/components/Endpoints/ConvoIcon';
-import { useLocalize, useAuthContext } from '~/hooks';
-import { getIconEndpoint, getEntity } from '~/utils';
+import { useAuthContext, useLocalize } from '~/hooks';
+import { getEntity, getIconEndpoint } from '~/utils';
 
 const containerClassName =
   'relative flex h-full items-center justify-center rounded-full bg-white dark:bg-presentation dark:text-white text-black dark:after:shadow-none ';
@@ -144,21 +142,14 @@ export default function Landing({ centerFormOnLanding }: { centerFormOnLanding: 
 
   return (
     <div
-      className={`flex h-full transform-gpu flex-col items-center justify-center pb-16 transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'}`}
+      className={`flex h-full transform-gpu flex-col items-center justify-center pb-[var(--Gap-one-group)] transition-all duration-200 ${centerFormOnLanding ? 'max-h-full sm:max-h-0' : 'max-h-full'}`}
     >
-      <div className="flex flex-col items-center gap-3 p-2 mb-6">
+      <div className="mb-6 flex flex-col items-center gap-3 p-2">
         {/* Main Heading */}
-        <h1 
-          className="text-[32px] font-semibold leading-[40px] text-[#2A2A2A] dark:text-white text-center"
-        >
+        <h1 className="fy-typography-title-large text-fig-Text-heading text-center">
           {/* Analyse the markets with FIA */}
-          What can I help you with ?
+          Upload documents to extract key insights
         </h1>
-        
-        {/* Subtitle */}
-        <div className="text-[16px] font-normal leading-[24px] text-[#666666] dark:text-gray-400 text-center max-w-2xl">
-          {/* Get institutional-grade insights, analyse documents, and explore <br/>market data with the power of AI. */}
-        </div>
       </div>
     </div>
   );

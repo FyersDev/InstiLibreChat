@@ -12,7 +12,9 @@ export default function StopButton({ stop, setShowStopButton }) {
         <button
           type="button"
           className={cn(
-            'rounded-full bg-blue-600 p-1.5 text-white outline-offset-4 transition-all duration-200 hover:bg-blue-700 disabled:cursor-not-allowed disabled:bg-blue-400 disabled:opacity-50',
+            'border-fig-Stroke-primary flex h-8 w-8 items-center justify-center rounded-[2px] border',
+            'bg-fig-Surface-two-primary text-fig-Subject-inverse p-0 outline-offset-4',
+            'transition-all duration-200 hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-50',
           )}
           aria-label={localize('com_nav_stop_generating')}
           onClick={(e) => {
@@ -21,17 +23,18 @@ export default function StopButton({ stop, setShowStopButton }) {
           }}
         >
           <svg
-            width="24"
-            height="24"
+            width="16"
+            height="16"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="icon-lg text-white"
+            className="text-fig-Subject-two-primary h-4 w-4"
+            aria-hidden
           >
-            <rect x="7" y="7" width="10" height="10" rx="1.25" fill="currentColor"></rect>
+            <rect x="7" y="7" width="10" height="10" rx="1.25" fill="currentColor" />
           </svg>
         </button>
       }
-    ></TooltipAnchor>
+    />
   );
 }

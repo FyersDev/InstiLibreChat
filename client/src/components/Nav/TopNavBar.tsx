@@ -5,6 +5,7 @@ import { PermissionManager, type Permission } from '~/utils/permissions';
 import { saasApi } from '~/services/saasApi';
 import Settings from './Settings';
 import { asset } from '~/utils/assetPath';
+import { absoluteUrl } from '~/utils/remoteApiOrigin';
 
 // interface NiftyData {
 //   symbol: string;
@@ -253,7 +254,7 @@ export default function TopNavBar() {
       if (token && refreshToken) {
         // Call logout endpoint if available
         try {
-          await fetch('/api/v1/auth/logout', {
+          await fetch(absoluteUrl('/api/v1/auth/logout'), {
             method: 'POST',
             headers: {
               'Authorization': `Bearer ${token}`,
@@ -409,7 +410,7 @@ export default function TopNavBar() {
   // };
 
   return (
-    <nav className="bg-white dark:!bg-[#111111] border-b border-[#EDEDED] dark:border-gray-700 px-3 sm:px-4 md:px-6 py-1 flex-shrink-0 z-50 min-h-[48px]">
+    <nav className="bg-fig-Surface-standard border-fig-Stroke-soft flex-shrink-0 border-b px-3 py-1 sm:px-4 md:px-6 z-50 min-h-[48px]">
       <div className="flex items-center justify-between relative">
         {/* Left: FYERS Logo & Financial Data */}
         <div className="flex items-center gap-4 flex-shrink-0">
@@ -456,8 +457,8 @@ export default function TopNavBar() {
               onClick={() => handleMenuChange(menu)}
               className={`px-3 py-1 sm:px-4 sm:py-1 md:px-5 md:py-1 rounded-lg text-sm sm:text-base transition whitespace-nowrap ${
                 activeMenu === menu
-                  ? 'bg-[#F2F4FF] text-[#2434E7] dark:bg-[#2A2A2A] dark:text-[#A0A8FF]'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-fig-Surface-one-primary text-fig-Subject-primary'
+                  : 'text-fig-Text-body hover:bg-fig-Surface-one-standard'
               }`}
             >
               {menu}

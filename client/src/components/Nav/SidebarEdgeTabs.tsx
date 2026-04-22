@@ -36,19 +36,19 @@ export default function SidebarEdgeTabs({
         'group absolute z-50 box-border flex h-6 w-2 shrink-0 -translate-y-1/2 cursor-pointer items-center justify-center p-0 transition-[width,height] duration-200 ease-out hover:h-8 hover:w-3 !border-0',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         navVisible
-          ? 'left-0 top-1/2 !rounded-br-[8px] !rounded-tr-[8px] hover:!rounded-br-[8px] hover:!rounded-tr-[8px] bg-[#111111] text-white hover:bg-[#1a1a1a] dark:bg-[#ffffff] dark:text-black dark:hover:bg-neutral-100'
-          : 'left-0 top-[calc(50%+4px)] !rounded-bl-[8px] !rounded-tl-[8px] hover:!rounded-bl-[8px] hover:!rounded-tl-[8px] bg-[#2434E7] text-white hover:bg-[#1c2ac9]',
+          ? 'left-0 top-1/2 !rounded-br-[8px] !rounded-tr-[8px] hover:!rounded-br-[8px] hover:!rounded-tr-[8px] bg-fig-Surface-inverse text-fig-Subject-inverse hover:bg-fig-Subject-standard dark:!bg-fig-Surface-inverse dark:text-[var(--Colour-Secondary-100)] dark:hover:bg-fig-Surface-one-neutral'
+          : 'left-0 top-[calc(50%+4px)] !rounded-bl-[8px] !rounded-tl-[8px] hover:!rounded-bl-[8px] hover:!rounded-tl-[8px] bg-[var(--Colour-Primary-40)] text-fig-Subject-inverse hover:bg-[var(--Colour-Primary-50)]',
       )}
     >
       {navVisible ? (
         <ChevronLeft
-          className="h-3 w-2 shrink-0 text-white transition-[width,height] duration-200 ease-out group-hover:h-4 group-hover:w-3 dark:text-black"
+          className="h-3 w-2 shrink-0 text-inherit transition-[width,height] duration-200 ease-out group-hover:h-4 group-hover:w-3"
           strokeWidth={2.5}
           aria-hidden
         />
       ) : (
         <ChevronRight
-          className="h-3 w-2 shrink-0 transition-[width,height] duration-200 ease-out group-hover:h-4 group-hover:w-3"
+          className="h-3 w-2 shrink-0 text-fig-Subject-inverse transition-[width,height] duration-200 ease-out group-hover:h-4 group-hover:w-3"
           strokeWidth={2.5}
           aria-hidden
         />

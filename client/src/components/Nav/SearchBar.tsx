@@ -1,13 +1,13 @@
-import React, { forwardRef, useState, useCallback, useMemo, useEffect, useRef } from 'react';
-import debounce from 'lodash/debounce';
-import { useRecoilState } from 'recoil';
-import { Search, X } from 'lucide-react';
-import { QueryKeys } from 'librechat-data-provider';
 import { useQueryClient } from '@tanstack/react-query';
+import { QueryKeys } from 'librechat-data-provider';
+import debounce from 'lodash/debounce';
+import { Search, X } from 'lucide-react';
+import React, { forwardRef, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { useRecoilState } from 'recoil';
 import { useLocalize, useNewConvo } from '~/hooks';
-import { cn } from '~/utils';
 import store from '~/store';
+import { cn } from '~/utils';
 
 type SearchBarProps = {
   isSmallScreen?: boolean;
@@ -110,41 +110,54 @@ const SearchBar = forwardRef((props: SearchBarProps, ref: React.Ref<HTMLDivEleme
     <div
       ref={ref}
       className={cn(
-        'group relative mt-1 flex h-10 cursor-pointer items-center rounded-lg border-border-medium px-1 py-2 text-text-primary transition-colors duration-200 focus-within:bg-surface-hover hover:bg-surface-hover',
-        isSmallScreen === true ? 'mb-2 h-14 rounded-xl' : '',
+        'border-fig-Stroke-soft bg-fig-Surface-standard text-fig-Text-body group relative mt-1 flex h-8 cursor-text items-stretch overflow-hidden rounded-[2px] border transition-[border-color,box-shadow] duration-200',
+        isSmallScreen === true ? 'mb-2 h-14' : '',
       )}
     >
-      <Search className="absolute left-2 h-4 w-4 text-text-secondary group-focus-within:text-text-primary group-hover:text-text-primary" />
-      <input
-        type="text"
-        ref={inputRef}
-        className="m-0 mr-0 w-full border-none bg-transparent p-0 pl-7 text-sm leading-tight placeholder-text-secondary placeholder-opacity-100 focus-visible:outline-none group-focus-within:placeholder-text-primary group-hover:placeholder-text-primary"
-        value={text}
-        onChange={onChange}
-        onKeyDown={(e) => {
-          e.code === 'Space' ? e.stopPropagation() : null;
-        }}
-        aria-label={localize('com_nav_search_placeholder')}
-        placeholder={localize('com_nav_search_placeholder')}
-        onKeyUp={handleKeyUp}
-        onFocus={() => setSearchState((prev) => ({ ...prev, isSearching: true }))}
-        onBlur={() => setSearchState((prev) => ({ ...prev, isSearching: false }))}
-        autoComplete="off"
-        dir="auto"
-      />
+      <div
+        className={cn(
+          'flex min-h-0 min-w-0 flex-1 items-center gap-1 pl-1.5 pr-8',
+          isSmallScreen === true && 'gap-1.5 px-2 pr-10',
+        )}
+      >
+        <Search
+          className="text-fig-Subject-standard pointer-events-none h-4 w-4 shrink-0"
+          aria-hidden
+        />
+        <input
+          type="text"
+          ref={inputRef}
+          className={cn(
+            'text-fig-Text-body caret-fig-Text-body placeholder:text-fig-Subject-soft m-0 min-w-0 flex-1 border-0 bg-transparent p-0 text-xs font-normal leading-4 placeholder:font-normal focus-visible:outline-none',
+            isSmallScreen === true && 'text-sm leading-5',
+          )}
+          value={text}
+          onChange={onChange}
+          onKeyDown={(e) => {
+            e.code === 'Space' ? e.stopPropagation() : null;
+          }}
+          aria-label={localize('com_nav_search_placeholder')}
+          placeholder={localize('com_nav_search_placeholder')}
+          onKeyUp={handleKeyUp}
+          onFocus={() => setSearchState((prev) => ({ ...prev, isSearching: true }))}
+          onBlur={() => setSearchState((prev) => ({ ...prev, isSearching: false }))}
+          autoComplete="off"
+          dir="auto"
+        />
+      </div>
       <button
         type="button"
         aria-label={`${localize('com_ui_clear')} ${localize('com_ui_search')}`}
         className={cn(
-          'absolute right-[7px] flex h-5 w-5 items-center justify-center rounded-full border-none bg-transparent p-0 transition-opacity duration-200',
-          showClearIcon ? 'opacity-100' : 'opacity-0',
-          isSmallScreen === true ? 'right-[16px]' : '',
+          'text-fig-Subject-standard hover:text-fig-Text-body focus-visible:ring-fig-Stroke-soft absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center rounded-sm border-0 bg-transparent p-0 transition-opacity duration-200 focus-visible:outline-none focus-visible:ring-2',
+          showClearIcon ? 'pointer-events-auto opacity-100' : 'pointer-events-none opacity-0',
+          isSmallScreen === true ? 'right-2' : '',
         )}
         onClick={() => clearText(location.pathname)}
         tabIndex={showClearIcon ? 0 : -1}
         disabled={!showClearIcon}
       >
-        <X className="h-5 w-5 cursor-pointer" />
+        <X className="h-4 w-4 shrink-0 cursor-pointer" />
       </button>
     </div>
   );

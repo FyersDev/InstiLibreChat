@@ -83,7 +83,7 @@ export default function Footer({ className }: { className?: string }) {
       <div
         className={
           className ??
-          'absolute bottom-0 left-0 right-0 hidden flex-col items-center justify-center gap-2 px-2 py-2 text-center text-xs text-text-primary sm:flex md:px-[60px]'
+          'absolute bottom-0 left-0 right-0 hidden flex-col items-center justify-center gap-2 px-2 py-2 text-center sm:flex md:px-[60px] fy-typography-body-tiny text-fig-Subject-soft'
         }
         role="contentinfo"
       >

@@ -172,3 +172,6 @@ claude-flow
 hive-mind-prompt-*.txt
 .ssmenv
 .env.example
+
+# Figma full CSS export (optional local file for rebuilds; generated figma-*.css stay in repo)
+client/src/styles/tokens/figma-source-raw.css

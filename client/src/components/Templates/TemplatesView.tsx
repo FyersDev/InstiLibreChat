@@ -15,7 +15,43 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
 import { saasApi } from '~/services/saasApi';
+import { cn } from '~/utils';
 import { asset } from '~/utils/assetPath';
+
+/** One-line summary for the templates table (role/task/format or flattened text). */
+function getTemplateShortDescriptionLine(template: {
+  detailedPrompt?: string;
+  description?: string;
+  framework?: string;
+}): string {
+  const templateContent = template.detailedPrompt || template.description || '';
+  if (!templateContent) {
+    return template.framework || 'No template content';
+  }
+  const lines = templateContent.split('\n').filter((line) => line.trim());
+  if (lines.length === 0) {
+    return templateContent.replace(/\s+/g, ' ').trim();
+  }
+  let role = '';
+  let task = '';
+  let format = '';
+  for (const line of lines) {
+    const lowerLine = line.toLowerCase();
+    if (lowerLine.includes('role') || lowerLine.includes('act as')) {
+      role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
+    } else if (lowerLine.includes('task') || lowerLine.includes('create')) {
+      task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
+    } else if (lowerLine.includes('format') || lowerLine.includes('show as')) {
+      format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
+    }
+  }
+  if (role || task || format) {
+    return [role && `Role: ${role}`, task && `Task: ${task}`, format && `Format: ${format}`]
+      .filter(Boolean)
+      .join(' · ');
+  }
+  return templateContent.replace(/\n/g, ' ').replace(/\s+/g, ' ').trim();
+}
 
 export default function TemplatesView() {
   const { showToast } = useToastContext();
@@ -390,38 +426,40 @@ export default function TemplatesView() {
   const isLoading = activeTab === 'templates' ? templatesLoading : personasLoading;
 
   return (
-    <div className="flex h-screen flex-col bg-[#ffffff] px-2 pb-2 pt-0 dark:bg-[#111111]">
+    <div className="bg-fig-Surface-standard flex h-screen flex-col px-2 pb-2 pt-0">
       {/* Tabs */}
       <div className="pt-2">
         <div className="flex items-center justify-between gap-3">
-          <div className="flex items-center gap-4 sm:gap-4">
+          <div className="flex items-center gap-[var(--Gap-group)] sm:gap-[var(--Gap-group)]">
             <button
+              type="button"
               onClick={() => {
                 setActiveTab('personas');
                 setSelectedItem(null);
                 setDropdownPosition(null);
               }}
-              className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
+              className={cn(
+                'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                 activeTab === 'personas'
-                  ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
-                  : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              style={{ fontFamily: 'Inter, sans-serif' }}
+                  ? 'text-fig-Subject-standard border-fig-Stroke-primary pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
+                  : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+              )}
             >
               Agents
             </button>
             <button
+              type="button"
               onClick={() => {
                 setActiveTab('templates');
                 setSelectedItem(null);
                 setDropdownPosition(null);
               }}
-              className={`inline-flex h-7 items-center border-b-2 px-0 text-[14px] font-normal leading-none transition-colors ${
+              className={cn(
+                'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                 activeTab === 'templates'
-                  ? 'border-[#2434E7] text-[#2A2A2A] dark:text-gray-100'
-                  : 'border-transparent text-[#6D6D6D] hover:text-[#2A2A2A] dark:text-gray-400 dark:hover:text-gray-200'
-              }`}
-              style={{ fontFamily: 'Inter, sans-serif' }}
+                  ? 'text-fig-Subject-standard border-fig-Stroke-primary pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
+                  : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+              )}
             >
               Templates
             </button>
@@ -434,7 +472,11 @@ export default function TemplatesView() {
                 setShowCreatePersonaModal(true);
               }
             }}
-            className="h-8 rounded-lg bg-[#2434E7] px-4 py-2 font-medium text-white hover:bg-[#2434E7]/90"
+            className={cn(
+              'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-button)] rounded-[2px] border',
+              'font-inter text-fig-Subject-two-primary px-4 text-sm font-medium',
+              'transition-opacity hover:opacity-90',
+            )}
           >
             + Create {activeTab === 'templates' ? 'template' : 'agent'}
           </Button>
@@ -445,11 +487,11 @@ export default function TemplatesView() {
       <div className="flex-1 overflow-auto py-4">
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <p className="text-gray-500 dark:text-gray-400">Loading...</p>
+            <p className="text-fig-Subject-neutral font-inter text-sm">Loading...</p>
           </div>
         ) : currentItems.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center">
-            <p className="mb-4 text-gray-500 dark:text-gray-400">
+            <p className="text-fig-Subject-neutral font-inter mb-4 text-sm">
               No {activeTab === 'templates' ? 'templates' : 'agents'} created yet.
             </p>
             <Button
@@ -460,115 +502,133 @@ export default function TemplatesView() {
                   setShowCreatePersonaModal(true);
                 }
               }}
-              className="h-8 rounded-lg bg-[#2434E7] px-4 py-2 font-medium text-white hover:bg-[#2434E7]/90"
+              className={cn(
+                'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-button)] rounded-[2px] border',
+                'font-inter text-fig-Subject-two-primary px-4 text-sm font-medium',
+                'transition-opacity hover:opacity-90',
+              )}
             >
               + Create {activeTab === 'templates' ? 'template' : 'agent'}
             </Button>
           </div>
         ) : (
-          <div className="overflow-x-auto rounded-lg border border-gray-200 dark:border-gray-700">
-            <table className="min-w-full border-separate border-spacing-0">
-              <thead className="border-b border-[#ededed] bg-[#EDEDED] dark:border-[#3e3e3e] dark:bg-[#2a2a2a]">
-                <tr className="border-b border-gray-200 dark:border-gray-700">
-                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+          <div className="border-fig-Stroke-soft overflow-x-auto rounded-[2px] border">
+            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+              <thead className="bg-fig-Surface-one-neutral">
+                <tr>
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                      'w-[var(--Grids-three)] min-w-0',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Name
                   </th>
-                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Short description
                   </th>
-                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
+                      'w-[var(--Grids-two)] min-w-0 whitespace-nowrap',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Date created
                   </th>
-                  <th className="whitespace-nowrap px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
+                      'w-[var(--Grids-one)] min-w-0',
+                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                    )}
+                  >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-fig-Stroke-soft divide-y">
                 {activeTab === 'templates'
                   ? templates.map((template, rowIndex) => {
                       const isSelected =
                         selectedItem?.type === 'template' && selectedItem.id === template.id;
+                      const shortDescriptionLine = getTemplateShortDescriptionLine(template);
                       return (
                         <tr
                           key={template.id}
-                          className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                          className={cn(
+                            'group cursor-pointer',
+                            'hover:bg-fig-Surface-neutral',
                             rowIndex % 2 === 0
-                              ? 'bg-[#ffffff] dark:bg-[#111111]'
-                              : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
-                          }`}
+                              ? 'bg-fig-Surface-standard'
+                              : 'bg-fig-Surface-zero-neutral',
+                          )}
                         >
-                          <td className="whitespace-nowrap px-3 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]">
+                          <td
+                            className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                              'overflow-hidden',
+                            )}
+                          >
+                            <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                              <div
+                                className={cn(
+                                  'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                                  rowIndex % 2 === 0
+                                    ? 'bg-fig-Surface-neutral'
+                                    : 'bg-fig-Surface-one-neutral',
+                                )}
+                              >
                                 <img
                                   src={asset('documents.svg')}
                                   alt="Template"
-                                  className="block h-full w-full max-h-[20px] max-w-[20px] flex-shrink-0 object-contain opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                  className="block h-5 w-5 flex-shrink-0 object-contain opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
                                 />
                               </div>
-                              <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
+                              <div className="fy-typography-title-small text-fig-Subject-standard truncate">
                                 {template.name}
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <div className="max-w-md whitespace-pre-wrap text-sm text-gray-500 dark:text-gray-400">
-                              {(() => {
-                                const templateContent =
-                                  template.detailedPrompt || template.description || '';
-                                if (!templateContent)
-                                  return template.framework || 'No template content';
-
-                                // Format template content to show structure (Role, Task, Format)
-                                const lines = templateContent
-                                  .split('\n')
-                                  .filter((line) => line.trim());
-                                if (lines.length === 0) return templateContent;
-
-                                // Extract ROLE, TASK, FORMAT from the structure
-                                let role = '';
-                                let task = '';
-                                let format = '';
-
-                                lines.forEach((line) => {
-                                  const lowerLine = line.toLowerCase();
-                                  if (lowerLine.includes('role') || lowerLine.includes('act as')) {
-                                    role = line.replace(/.*(?:role|act as)[:\s]*/i, '').trim();
-                                  } else if (
-                                    lowerLine.includes('task') ||
-                                    lowerLine.includes('create')
-                                  ) {
-                                    task = line.replace(/.*(?:task|create)[:\s]*/i, '').trim();
-                                  } else if (
-                                    lowerLine.includes('format') ||
-                                    lowerLine.includes('show as')
-                                  ) {
-                                    format = line.replace(/.*(?:format|show as)[:\s]*/i, '').trim();
-                                  }
-                                });
-
-                                // Build formatted display showing the structure
-                                if (role || task || format) {
-                                  const parts: string[] = [];
-                                  if (role) parts.push(`Role: ${role}`);
-                                  if (task) parts.push(`Task: ${task}`);
-                                  if (format) parts.push(`Format: ${format}`);
-                                  return parts.join('\n');
-                                }
-
-                                // Fallback: show the full content (truncated if too long)
-                                return templateContent.length > 200
-                                  ? `${templateContent.substring(0, 200)}...`
-                                  : templateContent;
-                              })()}
+                          <td
+                            className={cn(
+                              'p-[var(--Padding-spacer)] align-middle',
+                              'w-0 min-w-0 max-w-[11rem] sm:max-w-[14rem]',
+                            )}
+                          >
+                            <div
+                              className="font-inter text-fig-Subject-standard text-sm font-normal leading-5"
+                              title={shortDescriptionLine}
+                            >
+                              {shortDescriptionLine}
                             </div>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          <td
+                            className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]',
+                              'min-w-0 whitespace-nowrap text-right',
+                              'font-inter text-fig-Subject-standard text-sm font-normal leading-5',
+                            )}
+                          >
                             {formatDate(template.created_at)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-sm">
-                            <div className="relative inline-block text-left">
+                          <td
+                            className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] text-right align-middle',
+                              'font-inter text-sm font-medium leading-5',
+                            )}
+                          >
+                            <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
                               <button
                                 ref={(el) => {
                                   if (el) {
@@ -601,16 +661,16 @@ export default function TemplatesView() {
                                     setSelectedItem({ type: 'template', id: template.id });
                                   }
                                 }}
-                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
                                 title="More options"
                               >
-                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                <MoreVertical className="h-3 w-3" aria-hidden />
                               </button>
                               {isSelected &&
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -625,7 +685,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleEditTemplate(template);
                                         }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                        className="text-fig-Subject-standard hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5"
                                       >
                                         <Edit className="h-4 w-4" />
                                         Edit
@@ -637,7 +697,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleDeleteTemplate(template);
                                         }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                        className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
                                       >
                                         <img
                                           src={asset('delete.svg')}
@@ -661,36 +721,69 @@ export default function TemplatesView() {
                       return (
                         <tr
                           key={persona.id}
-                          className={`group cursor-pointer hover:bg-[#f7f7f7] dark:hover:bg-[#222222] ${
+                          className={cn(
+                            'group cursor-pointer',
+                            'hover:bg-fig-Surface-neutral',
                             rowIndex % 2 === 0
-                              ? 'bg-[#ffffff] dark:bg-[#111111]'
-                              : 'bg-[#fafafa] dark:bg-[#1a1a1a]'
-                          }`}
+                              ? 'bg-fig-Surface-standard'
+                              : 'bg-fig-Surface-zero-neutral',
+                          )}
                         >
-                          <td className="whitespace-nowrap px-3 py-3">
-                            <div className="flex items-center gap-3">
-                              <div className="box-border flex h-[28px] min-h-[28px] w-[28px] min-w-[28px] shrink-0 items-center justify-center !rounded-[2px] border-0 bg-[#f7f7f7] p-1 dark:bg-[#222222]">
+                          <td
+                            className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                              'overflow-hidden',
+                            )}
+                          >
+                            <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                              <div
+                                className={cn(
+                                  'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                                  rowIndex % 2 === 0
+                                    ? 'bg-fig-Surface-neutral'
+                                    : 'bg-fig-Surface-one-neutral',
+                                )}
+                              >
                                 <img
                                   src={asset('Leads.svg')}
                                   alt="Persona"
-                                  className="block h-full w-full max-h-[20px] max-w-[20px] flex-shrink-0 object-contain opacity-80 dark:invert"
+                                  className="block h-5 w-5 flex-shrink-0 object-contain opacity-80 dark:invert"
                                 />
                               </div>
-                              <div className="text-sm font-normal text-gray-700 dark:text-gray-300">
+                              <div className="font-inter text-fig-Subject-standard min-w-0 truncate text-sm font-medium leading-4">
                                 {persona.name}
                               </div>
                             </div>
                           </td>
-                          <td className="px-3 py-3">
-                            <div className="text-sm text-gray-500 dark:text-gray-400">
+                          <td
+                            className={cn(
+                              'p-[var(--Padding-spacer)] align-middle',
+                              'w-0 min-w-0 max-w-[11rem] sm:max-w-[14rem]',
+                            )}
+                          >
+                            <p
+                              className="text-fig-Subject-neutral font-inter m-0 min-w-0 truncate text-sm font-normal leading-5"
+                              title={persona.description || 'No description'}
+                            >
                               {persona.description || 'No description'}
-                            </div>
+                            </p>
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-sm text-gray-500 dark:text-gray-400">
+                          <td
+                            className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]',
+                              'min-w-0 whitespace-nowrap text-right',
+                              'font-inter text-fig-Subject-standard text-sm font-normal leading-5',
+                            )}
+                          >
                             {formatDate(persona.created_at)}
                           </td>
-                          <td className="whitespace-nowrap px-3 py-3 text-sm">
-                            <div className="relative inline-block text-left">
+                          <td
+                            className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] text-right align-middle',
+                              'font-inter text-sm font-medium leading-5',
+                            )}
+                          >
+                            <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
                               <button
                                 ref={(el) => {
                                   if (el) {
@@ -721,16 +814,16 @@ export default function TemplatesView() {
                                     setSelectedItem({ type: 'persona', id: persona.id });
                                   }
                                 }}
-                                className="dropdown-trigger rounded p-1 hover:bg-gray-100 dark:hover:bg-gray-700"
+                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
                                 title="More options"
                               >
-                                <MoreVertical className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+                                <MoreVertical className="h-3 w-3" aria-hidden />
                               </button>
                               {isSelected &&
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="fixed z-[9999] w-48 rounded-md border border-gray-200 bg-white shadow-lg dark:border-gray-700 dark:bg-gray-800"
+                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -745,7 +838,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleEditPersona(persona);
                                         }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-700"
+                                        className="text-fig-Subject-standard hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5"
                                       >
                                         <Edit className="h-4 w-4" />
                                         Edit
@@ -757,7 +850,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleDeletePersona(persona);
                                         }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-gray-100 dark:text-red-400 dark:hover:bg-gray-700"
+                                        className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
                                       >
                                         <img
                                           src={asset('delete.svg')}
@@ -1061,7 +1154,7 @@ function CreateTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
+      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Create Template</DialogTitle>
         </DialogHeader>
@@ -1072,7 +1165,7 @@ function CreateTemplateModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Template Name *
             </label>
             <Input
@@ -1080,12 +1173,12 @@ function CreateTemplateModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Select Framework
             </label>
             <div className="relative">
@@ -1099,7 +1192,7 @@ function CreateTemplateModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
+                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
                   >
                     <span>
                       {formData.customTemplate
@@ -1108,7 +1201,7 @@ function CreateTemplateModal({
                           ? (frameworks as any)[formData.framework].name
                           : '-- Select Framework --'}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1134,21 +1227,21 @@ function CreateTemplateModal({
                     },
                   },
                 ]}
-                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
-                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
-            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
+              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
                 {(frameworks as any)[formData.framework].name}
               </h3>
               {Object.entries((frameworks as any)[formData.framework].fields).map(
                 ([key, label]) => (
                   <div key={key}>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
                       {String(label)}
                     </label>
                     <TextareaAutosize
@@ -1164,7 +1257,7 @@ function CreateTemplateModal({
                       minRows={3}
                       maxRows={8}
                       aria-label={String(label)}
-                      className="w-full resize-none rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+                      className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
                     />
                   </div>
                 ),
@@ -1173,12 +1266,12 @@ function CreateTemplateModal({
           )}
 
           {formData.customTemplate && (
-            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
+              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
                 Custom Template
               </h3>
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
                   Template Content *
                 </label>
                 <TextareaAutosize
@@ -1189,25 +1282,25 @@ function CreateTemplateModal({
                   placeholder="Enter your custom template here..."
                   required
                   aria-label="Custom template content"
-                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+                  className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
                 />
               </div>
             </div>
           )}
 
-          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="flex-1 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Subject-standard bg-fig-Surface-standard flex-1 border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border hover:opacity-90 disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Save Template'}
             </Button>
@@ -1356,7 +1449,7 @@ function EditTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
+      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit Template</DialogTitle>
         </DialogHeader>
@@ -1367,7 +1460,7 @@ function EditTemplateModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Template Name *
             </label>
             <Input
@@ -1375,12 +1468,12 @@ function EditTemplateModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Select Framework
             </label>
             <div className="relative">
@@ -1394,7 +1487,7 @@ function EditTemplateModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
+                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
                   >
                     <span>
                       {formData.customTemplate
@@ -1403,7 +1496,7 @@ function EditTemplateModal({
                           ? (frameworks as any)[formData.framework].name
                           : '-- Select Framework --'}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1429,21 +1522,21 @@ function EditTemplateModal({
                     },
                   },
                 ]}
-                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
-                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
-            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
+              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
                 {(frameworks as any)[formData.framework].name}
               </h3>
               {Object.entries((frameworks as any)[formData.framework].fields).map(
                 ([key, label]) => (
                   <div key={key}>
-                    <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                    <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
                       {String(label)}
                     </label>
                     <TextareaAutosize
@@ -1459,7 +1552,7 @@ function EditTemplateModal({
                       minRows={3}
                       maxRows={8}
                       aria-label={String(label)}
-                      className="w-full resize-none rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+                      className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
                     />
                   </div>
                 ),
@@ -1468,12 +1561,12 @@ function EditTemplateModal({
           )}
 
           {formData.customTemplate && (
-            <div className="mt-5 space-y-4 border-t border-gray-200 pt-5 dark:border-gray-700">
-              <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">
+            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
+              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
                 Custom Template
               </h3>
               <div>
-                <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+                <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
                   Template Content *
                 </label>
                 <TextareaAutosize
@@ -1484,25 +1577,25 @@ function EditTemplateModal({
                   placeholder="Enter your custom template here..."
                   required
                   aria-label="Custom template content"
-                  className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+                  className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
                 />
               </div>
             </div>
           )}
 
-          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="flex-1 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Subject-standard bg-fig-Surface-standard flex-1 border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border hover:opacity-90 disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Update Template'}
             </Button>
@@ -1727,7 +1820,7 @@ function CreatePersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
+      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Create Agents</DialogTitle>
         </DialogHeader>
@@ -1738,7 +1831,7 @@ function CreatePersonaModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Name *
             </label>
             <Input
@@ -1746,13 +1839,13 @@ function CreatePersonaModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* Predefined Personas - Above description */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Select Predefined Agent (optional)
             </label>
             <div className="relative">
@@ -1766,14 +1859,14 @@ function CreatePersonaModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
+                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
                   >
                     <span>
                       {formData.selectedPredefinedId
                         ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
                         : '-- Select Predefined Agent (Optional) --'}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1792,12 +1885,12 @@ function CreatePersonaModal({
                     },
                   })),
                 ]}
-                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
-                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
             {formData.selectedPredefinedId && (
-              <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+              <p className="text-fig-Subject-primary mt-1 text-xs">
                 Agent template will be auto-filled below. Just edit the variables like{' '}
                 {`{{variable_name}}`} with your values.
               </p>
@@ -1805,7 +1898,7 @@ function CreatePersonaModal({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Description {formData.selectedPredefinedId ? '' : '*'}
             </label>
             <TextareaAutosize
@@ -1815,7 +1908,7 @@ function CreatePersonaModal({
               maxRows={10}
               required={!formData.selectedPredefinedId}
               aria-label="Persona description"
-              className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
               placeholder={
                 formData.selectedPredefinedId
                   ? 'Edit variables like {{focus_area}} with your values'
@@ -1823,7 +1916,7 @@ function CreatePersonaModal({
               }
             />
             {formData.selectedPredefinedId && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-fig-Subject-neutral mt-1 text-xs">
                 Variables to edit:{' '}
                 {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
                   .map((v) => `{{${v}}}`)
@@ -1832,19 +1925,19 @@ function CreatePersonaModal({
             )}
           </div>
 
-          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="flex-1 bg-white text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-800 dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Subject-standard flex-1 border text-sm"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-sm text-white hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-blue-400"
+              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border text-sm hover:opacity-90 disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Save Agents'}
             </Button>
@@ -1928,7 +2021,7 @@ function EditPersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto bg-[#F7F7F7] p-6 dark:bg-[#222222]">
+      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit Agents</DialogTitle>
         </DialogHeader>
@@ -1939,7 +2032,7 @@ function EditPersonaModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Name *
             </label>
             <Input
@@ -1947,13 +2040,13 @@ function EditPersonaModal({
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="w-full rounded-lg border border-gray-300 bg-[#FFFFFF] px-4 py-2.5 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-[#111111] dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* Predefined Personas - Above description */}
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Select Predefined Persona (optional)
             </label>
             <div className="relative">
@@ -1967,14 +2060,14 @@ function EditPersonaModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="flex w-full items-center justify-between gap-1.5 rounded-lg border border-gray-300 bg-white px-4 text-sm font-normal text-gray-900 transition-all hover:border-gray-400 dark:border-gray-600 dark:bg-gray-800 dark:text-gray-100 dark:hover:border-gray-500"
+                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
                   >
                     <span>
                       {formData.selectedPredefinedId
                         ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
                         : '-- Select Predefined Persona (Optional) --'}
                     </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
+                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1993,12 +2086,12 @@ function EditPersonaModal({
                     },
                   })),
                 ]}
-                className="w-full divide-y divide-gray-200 rounded-lg border border-gray-200 bg-white shadow-lg dark:divide-gray-700 dark:border-gray-700 dark:bg-gray-800"
-                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
+                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
             {formData.selectedPredefinedId && (
-              <p className="mt-1 text-xs text-blue-600 dark:text-blue-400">
+              <p className="text-fig-Subject-primary mt-1 text-xs">
                 Persona template will be auto-filled below. Just edit the variables like{' '}
                 {`{{variable_name}}`} with your values.
               </p>
@@ -2006,7 +2099,7 @@ function EditPersonaModal({
           </div>
 
           <div>
-            <label className="mb-2 block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
               Description {formData.selectedPredefinedId ? '' : '*'}
             </label>
             <TextareaAutosize
@@ -2016,7 +2109,7 @@ function EditPersonaModal({
               maxRows={10}
               required={!formData.selectedPredefinedId}
               aria-label="Persona description"
-              className="w-full resize-none rounded-lg border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-gray-400 dark:bg-gray-800 dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
               placeholder={
                 formData.selectedPredefinedId
                   ? 'Edit variables like {{focus_area}} with your values'
@@ -2024,7 +2117,7 @@ function EditPersonaModal({
               }
             />
             {formData.selectedPredefinedId && (
-              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+              <p className="text-fig-Subject-neutral mt-1 text-xs">
                 Variables to edit:{' '}
                 {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
                   .map((v) => `{{${v}}}`)
@@ -2033,19 +2126,19 @@ function EditPersonaModal({
             )}
           </div>
 
-          <div className="mt-6 flex gap-3 border-t border-gray-200 pt-4 dark:border-gray-700">
+          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="flex-1 bg-white text-gray-900 dark:bg-gray-800 dark:text-gray-100"
+              className="border-fig-Stroke-standard text-fig-Subject-standard bg-fig-Surface-standard flex-1 border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="flex-1 bg-blue-600 text-white hover:bg-blue-700 disabled:bg-blue-400"
+              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border hover:opacity-90 disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Update Agent'}
             </Button>

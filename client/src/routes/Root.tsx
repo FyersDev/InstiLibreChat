@@ -84,13 +84,13 @@ export default function Root() {
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
               <div
-                className="flex flex-col bg-[#f6f8ff] dark:bg-[#2a2a2a]"
+                className="bg-fig-Surface-primary flex flex-col"
                 style={{ height: `calc(100dvh - ${bannerHeight}px)` }}
               >
                 {showTopNavBar && <TopNavBar />}
-                {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap 4px (FYERS Design) */}
-                <div className="flex flex-1 overflow-hidden p-[0px_4px_4px_4px]">
-                  <div className="relative z-0 flex h-full w-full gap-[4px] overflow-hidden">
+                {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap (platform tokens) */}
+                <div className="flex flex-1 overflow-hidden p-[0_var(--Padding-neighbor)_var(--Padding-neighbor)_var(--Padding-neighbor)]">
+                  <div className="relative z-0 flex h-full w-full gap-[var(--Gap-zero-neighbor)] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
                     <div className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden">
                       {shouldShowNav && (

@@ -84,7 +84,7 @@ export default function Presentation({ children }: { children: React.ReactNode }
           artifacts={artifactsElement}
         >
           <main
-            className="flex h-full flex-col overflow-y-auto rounded-[2px] border border-[#EDEDED] bg-[#ffffff] dark:border-gray-700 dark:!bg-[#111111]"
+            className="bg-fig-Surface-standard flex h-full flex-col overflow-y-auto rounded-[2px]"
             role="main"
           >
             {children}

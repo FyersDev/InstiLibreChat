@@ -1,0 +1,166 @@
+/**
+ * FyTypography parity (Flutter fy_ui) — web presets on top of Figma tokens.
+ * Classes: fy-typography-display-large, fy-typography-body, …
+ * Load after figma-tokens (Inter default matches Tailwind sans).
+ * font-size / line-height use Figma size tokens; primitives use px in figma-primitives.
+ */
+.fy-typography-display-large,
+.fy-typography-display,
+.fy-typography-display-small,
+.fy-typography-headline-small,
+.fy-typography-headline,
+.fy-typography-headline-large,
+.fy-typography-title-large,
+.fy-typography-title,
+.fy-typography-title-small,
+.fy-typography-title-tiny,
+.fy-typography-label-large,
+.fy-typography-label,
+.fy-typography-label-small,
+.fy-typography-label-tiny,
+.fy-typography-label-micro,
+.fy-typography-body-large,
+.fy-typography-body,
+.fy-typography-body-small,
+.fy-typography-body-tiny {
+  font-family: 'Inter', system-ui, sans-serif;
+  font-style: normal;
+}
+
+/* display */
+.fy-typography-display-large {
+  font-size: var(--Font-Displayheading-large);
+  line-height: var(--Font-Displayheading-Lineheight-large);
+  font-weight: var(--Font-Weight-extraBold);
+  color: var(--Text-heading);
+}
+
+.fy-typography-display {
+  font-size: var(--Font-Displayheading-standard);
+  line-height: var(--Font-Displayheading-Lineheight-standard);
+  font-weight: var(--Font-Weight-light);
+  color: var(--Text-heading);
+}
+
+.fy-typography-display-small {
+  font-size: var(--Font-Displayheading-small);
+  line-height: var(--Font-Displayheading-Lineheight-small);
+  font-weight: var(--Font-Weight-semiBold);
+  color: var(--Text-heading);
+}
+
+/* headline */
+.fy-typography-headline-small {
+  font-size: var(--Font-Headline-small);
+  line-height: var(--Font-Headline-Lineheight-small);
+  font-weight: var(--Font-Weight-bold);
+  color: var(--Text-heading);
+}
+
+.fy-typography-headline {
+  font-size: var(--Font-Headline-standard);
+  line-height: var(--Font-Headline-Lineheight-standard);
+  font-weight: var(--Font-Weight-bold);
+  color: var(--Text-heading);
+}
+
+.fy-typography-headline-large {
+  font-size: var(--Font-Headline-large);
+  line-height: var(--Font-Headline-Lineheight-large);
+  font-weight: var(--Font-Weight-bold);
+  color: var(--Text-heading);
+}
+
+/* title */
+.fy-typography-title-large {
+  font-size: var(--Font-Title-large);
+  line-height: var(--Font-Title-Lineheight-large);
+  font-weight: var(--Font-Weight-semiBold);
+  color: var(--Text-title);
+}
+
+.fy-typography-title {
+  font-size: var(--Font-Title-standard);
+  line-height: var(--Font-Title-Lineheight-standard);
+  font-weight: var(--Font-Weight-semiBold);
+  color: var(--Text-title);
+}
+
+.fy-typography-title-small {
+  font-size: var(--Font-Title-small);
+  line-height: var(--Font-Title-Lineheight-small);
+  font-weight: var(--Font-Weight-semiBold);
+  color: var(--Text-title);
+}
+
+.fy-typography-title-tiny {
+  font-size: var(--Font-Title-tiny);
+  line-height: var(--Font-Title-Lineheight-tiny);
+  font-weight: var(--Font-Weight-medium);
+  color: var(--Text-title);
+}
+
+/* label */
+.fy-typography-label-large {
+  font-size: var(--Font-Label-large);
+  line-height: var(--Font-Label-Lineheight-large);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-label);
+}
+
+.fy-typography-label {
+  font-size: var(--Font-Label-standard);
+  line-height: var(--Font-Label-Lineheight-standard);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-label);
+}
+
+.fy-typography-label-small {
+  font-size: var(--Font-Label-small);
+  line-height: var(--Font-Label-Lineheight-small);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-label);
+}
+
+.fy-typography-label-tiny {
+  font-size: var(--Font-Label-tiny);
+  line-height: var(--Font-Label-Lineheight-tiny);
+  font-weight: var(--Font-Weight-medium);
+  color: var(--Text-label);
+}
+
+.fy-typography-label-micro {
+  font-size: var(--Font-Label-micro);
+  line-height: var(--Font-Label-Lineheight-micro);
+  font-weight: var(--Font-Weight-semiBold);
+  color: var(--Text-label);
+}
+
+/* body */
+.fy-typography-body-large {
+  font-size: var(--Font-Body-large);
+  line-height: var(--Font-Body-Lineheight-large);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-body);
+}
+
+.fy-typography-body {
+  font-size: var(--Font-Body-standard);
+  line-height: var(--Font-Body-Lineheight-standard);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-body);
+}
+
+.fy-typography-body-small {
+  font-size: var(--Font-Body-small);
+  line-height: var(--Font-Body-Lineheight-small);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-body);
+}
+
+.fy-typography-body-tiny {
+  font-size: var(--Font-Body-tiny);
+  line-height: var(--Font-Body-Lineheight-tiny);
+  font-weight: var(--Font-Weight-regular);
+  color: var(--Text-body);
+}
