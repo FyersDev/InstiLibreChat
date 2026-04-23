@@ -1,0 +1,12 @@
+client/src/components/Templates/TemplatesView.tsx
+  41bb3b5 429,444-445,460-461,491,517,526,535,545,555,623,676,779,830
+  b38061d 582,738
+client/src/routes/ResourcesRoute.tsx
+  41bb3b5 596,719,748,780,1007,1194
+  b38061d 911,1097
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "1f9862f3133fcefc10ecc58162631185c3ff2ee4",
+  "prompts": {}
+}
