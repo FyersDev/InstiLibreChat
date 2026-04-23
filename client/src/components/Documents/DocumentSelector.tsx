@@ -1,6 +1,14 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { RefreshCw, X, Calendar, Check, ChevronRight, Home } from 'lucide-react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, Button, useToastContext, Spinner } from '@librechat/client';
+import { X, Calendar, Check, ArrowLeft } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Button,
+  useToastContext,
+  Spinner,
+} from '@librechat/client';
 import { useLocalize, useMCPServerManager } from '~/hooks';
 import { type DocumentListItem } from '~/data-provider/document-service';
 import { Constants } from 'librechat-data-provider';
@@ -51,7 +59,9 @@ export default function DocumentSelector({
   const mcpServerManager = useMCPServerManager({ conversationId: conversationId || null });
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
-  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([{ id: null, name: 'Home' }]);
+  const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([
+    { id: null, name: 'Home' },
+  ]);
   const [selectedDocuments, setSelectedDocuments] = useState<Set<string>>(new Set());
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -109,8 +119,8 @@ export default function DocumentSelector({
     // Helper function to recursively filter out Reports folder
     const filterReportsFolder = (folders: FolderNode[]): FolderNode[] => {
       return folders
-        .filter(f => f.id !== reportsFolderId)
-        .map(folder => ({
+        .filter((f) => f.id !== reportsFolderId)
+        .map((folder) => ({
           ...folder,
           children: folder.children ? filterReportsFolder(folder.children) : undefined,
         }));
@@ -122,7 +132,9 @@ export default function DocumentSelector({
     // Show current folder contents only
     if (!currentFolderId) {
       // Root level - return all root folders except Reports
-      const filteredRootFolders = allFolders.filter(f => !f.parent_id && f.id !== reportsFolderId);
+      const filteredRootFolders = allFolders.filter(
+        (f) => !f.parent_id && f.id !== reportsFolderId,
+      );
       folders = filterReportsFolder(filteredRootFolders);
       files = [] as FileNode[];
     } else {
@@ -145,7 +157,10 @@ export default function DocumentSelector({
       }
 
       // Check if user is superadmin (handle both boolean true and string "true")
-      const isSuperAdmin = userInfo?.is_super_admin === true || userInfo?.is_super_admin === 'true' || userInfo?.is_super_admin === 1;
+      const isSuperAdmin =
+        userInfo?.is_super_admin === true ||
+        userInfo?.is_super_admin === 'true' ||
+        userInfo?.is_super_admin === 1;
       const userOrgId = userInfo?.org_id || null;
 
       // For non-superadmins, org_id is required
@@ -169,7 +184,9 @@ export default function DocumentSelector({
           // Try to get organizations and use the first one
           try {
             const orgs = await saasApi.getOrganizations(true);
-            const orgsArray = Array.isArray(orgs) ? orgs : (orgs as any)?.organizations || (orgs as any)?.data || [];
+            const orgsArray = Array.isArray(orgs)
+              ? orgs
+              : (orgs as any)?.organizations || (orgs as any)?.data || [];
             if (orgsArray.length > 0) {
               orgIdToUse = orgsArray[0].id;
             }
@@ -199,7 +216,10 @@ export default function DocumentSelector({
       console.error('Error loading folders:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load folders';
       // Check if error is about organization ID
-      if (errorMessage.toLowerCase().includes('organization') || errorMessage.toLowerCase().includes('org')) {
+      if (
+        errorMessage.toLowerCase().includes('organization') ||
+        errorMessage.toLowerCase().includes('org')
+      ) {
         setError(errorMessage);
       } else {
         setError('Failed to load folders. Please try again.');
@@ -220,12 +240,12 @@ export default function DocumentSelector({
     if (isOpen && !loading) {
       const convoId = conversationId || Constants.NEW_CONVO;
       let documentDataStr = localStorage.getItem(`persona_documents_${convoId}`);
-      
+
       // Fallback to NEW_CONVO if current convo doesn't have data (handles migration timing)
       if (!documentDataStr && convoId !== Constants.NEW_CONVO) {
         documentDataStr = localStorage.getItem(`persona_documents_${Constants.NEW_CONVO}`);
       }
-      
+
       if (documentDataStr) {
         try {
           const documentData = JSON.parse(documentDataStr);
@@ -254,44 +274,63 @@ export default function DocumentSelector({
     if (folderId === null) {
       setBreadcrumbs([{ id: null, name: 'Home' }]);
     } else {
-      const buildBreadcrumbs = (folders: FolderNode[], targetId: string, path: Array<{ id: string; name: string }> = []): Array<{ id: string; name: string }> | null => {
+      const buildBreadcrumbs = (
+        folders: FolderNode[],
+        targetId: string,
+        path: Array<{ id: string; name: string }> = [],
+      ): Array<{ id: string; name: string }> | null => {
         for (const folder of folders) {
           if (folder.id === targetId) {
             return [...path, { id: folder.id, name: folder.name }];
           }
           if (folder.children) {
-            const result = buildBreadcrumbs(folder.children, targetId, [...path, { id: folder.id, name: folder.name }]);
+            const result = buildBreadcrumbs(folder.children, targetId, [
+              ...path,
+              { id: folder.id, name: folder.name },
+            ]);
             if (result) return result;
           }
         }
         return null;
       };
       const crumbs = buildBreadcrumbs(allFolders, folderId);
-      setBreadcrumbs([{ id: null, name: 'Home' }, ...(crumbs || [{ id: folderId, name: folderName }])]);
+      setBreadcrumbs([
+        { id: null, name: 'Home' },
+        ...(crumbs || [{ id: folderId, name: folderName }]),
+      ]);
     }
   };
 
-  const handleToggleSelection = useCallback((documentId: number) => {
-    setSelectedDocuments((prev) => {
-      const newSet = new Set(prev);
-      const idStr = documentId.toString();
-      if (newSet.has(idStr)) {
-        // Deselecting - always allowed
-        newSet.delete(idStr);
-      } else {
-        // Selecting - check if limit reached
-        if (newSet.size >= MAX_DOCUMENTS) {
-          showToast({
-            message: `You can select a maximum of ${MAX_DOCUMENTS} documents. Please deselect a document before selecting another.`,
-            status: 'error',
-          });
-          return prev; // Don't update the state
+  const handleNavigateBack = () => {
+    if (breadcrumbs.length < 2) return;
+    const parent = breadcrumbs[breadcrumbs.length - 2]!;
+    navigateToFolder(parent.id, parent.name);
+  };
+
+  const handleToggleSelection = useCallback(
+    (documentId: number) => {
+      setSelectedDocuments((prev) => {
+        const newSet = new Set(prev);
+        const idStr = documentId.toString();
+        if (newSet.has(idStr)) {
+          // Deselecting - always allowed
+          newSet.delete(idStr);
+        } else {
+          // Selecting - check if limit reached
+          if (newSet.size >= MAX_DOCUMENTS) {
+            showToast({
+              message: `You can select a maximum of ${MAX_DOCUMENTS} documents. Please deselect a document before selecting another.`,
+              status: 'error',
+            });
+            return prev; // Don't update the state
+          }
+          newSet.add(idStr);
         }
-        newSet.add(idStr);
-      }
-      return newSet;
-    });
-  }, [showToast]);
+        return newSet;
+      });
+    },
+    [showToast],
+  );
 
   // Convert FileNode to DocumentListItem for selected documents
   const convertFileToDocument = useCallback((file: FileNode): DocumentListItem | null => {
@@ -307,24 +346,27 @@ export default function DocumentSelector({
   }, []);
 
   // Collect all documents from folder tree
-  const getAllDocuments = useCallback((folders: FolderNode[]): DocumentListItem[] => {
-    const documents: DocumentListItem[] = [];
-    const collectDocuments = (folder: FolderNode) => {
-      if (folder.files) {
-        folder.files.forEach(file => {
-          const doc = convertFileToDocument(file);
-          if (doc) {
-            documents.push(doc);
-          }
-        });
-      }
-      if (folder.children) {
-        folder.children.forEach(child => collectDocuments(child));
-      }
-    };
-    folders.forEach(folder => collectDocuments(folder));
-    return documents;
-  }, [convertFileToDocument]);
+  const getAllDocuments = useCallback(
+    (folders: FolderNode[]): DocumentListItem[] => {
+      const documents: DocumentListItem[] = [];
+      const collectDocuments = (folder: FolderNode) => {
+        if (folder.files) {
+          folder.files.forEach((file) => {
+            const doc = convertFileToDocument(file);
+            if (doc) {
+              documents.push(doc);
+            }
+          });
+        }
+        if (folder.children) {
+          folder.children.forEach((child) => collectDocuments(child));
+        }
+      };
+      folders.forEach((folder) => collectDocuments(folder));
+      return documents;
+    },
+    [convertFileToDocument],
+  );
 
   const handleConfirm = useCallback(() => {
     const allDocs = getAllDocuments(allFolders);
@@ -332,7 +374,7 @@ export default function DocumentSelector({
 
     // Store selected documents in localStorage for document_search MCP
     if (conversationId) {
-      const documentsToStore = selected.map(doc => ({
+      const documentsToStore = selected.map((doc) => ({
         filename: doc.name,
         document_id: doc.document_id,
         file_path: doc.file_path,
@@ -342,9 +384,9 @@ export default function DocumentSelector({
         conversationId,
         key: `persona_documents_${conversationId}`,
         documents: documentsToStore,
-        document_ids: documentsToStore.map(d => d.document_id),
+        document_ids: documentsToStore.map((d) => d.document_id),
       });
-      
+
       // If no documents selected, clear both current and NEW_CONVO storage
       if (selected.length === 0) {
         localStorage.removeItem(`persona_documents_${conversationId}`);
@@ -361,7 +403,7 @@ export default function DocumentSelector({
           }),
         );
       }
-      
+
       // Dispatch custom event to notify other components (like SelectedDocuments)
       window.dispatchEvent(new Event('documentsUpdated'));
 
@@ -375,13 +417,23 @@ export default function DocumentSelector({
         // Deselect document-search MCP if no documents are selected
         const currentMCPValues = mcpServerManager.mcpValues || [];
         if (currentMCPValues.includes('document_search')) {
-          mcpServerManager.batchToggleServers(currentMCPValues.filter(s => s !== 'document_search'));
+          mcpServerManager.batchToggleServers(
+            currentMCPValues.filter((s) => s !== 'document_search'),
+          );
         }
       }
     }
     onConfirm(selected);
     onOpenChange(false);
-  }, [allFolders, selectedDocuments, conversationId, onConfirm, onOpenChange, mcpServerManager, getAllDocuments]);
+  }, [
+    allFolders,
+    selectedDocuments,
+    conversationId,
+    onConfirm,
+    onOpenChange,
+    mcpServerManager,
+    getAllDocuments,
+  ]);
 
   const handleDismiss = useCallback(() => {
     setSelectedDocuments(new Set());
@@ -407,21 +459,31 @@ export default function DocumentSelector({
     }
   };
 
-  const getFileExtension = (filename: string) => {
-    const parts = filename.split('.');
-    return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'PDF';
-  };
+  // Used when Format + Status table columns are enabled (see commented <td> in document table)
+  // const getFileExtension = (filename: string) => {
+  //   const parts = filename.split('.');
+  //   return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'PDF';
+  // };
 
-  const getStatusColor = (status: string) => {
-    if (status === 'Completed' || status === 'completed' || status === 'indexed') {
-      return 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400';
-    } else if (status === 'Failed' || status === 'failed' || status === 'error') {
-      return 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400';
-    } else if (status === 'Pending' || status === 'pending' || status === 'Processing' || status === 'processing' || status === 'Embedding' || status === 'embedding') {
-      return 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-400';
-    }
-    return 'bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300';
-  };
+  // const getStatusStyle = (status: string) => {
+  //   if (status === 'Completed' || status === 'completed' || status === 'indexed') {
+  //     return 'bg-fig-Surface-one-success text-fig-Subject-success';
+  //   }
+  //   if (status === 'Failed' || status === 'failed' || status === 'error') {
+  //     return 'bg-fig-Surface-one-danger text-fig-Subject-danger';
+  //   }
+  //   if (
+  //     status === 'Pending' ||
+  //     status === 'pending' ||
+  //     status === 'Processing' ||
+  //     status === 'processing' ||
+  //     status === 'Embedding' ||
+  //     status === 'embedding'
+  //   ) {
+  //     return 'bg-fig-Surface-one-warning text-fig-Subject-warning';
+  //   }
+  //   return 'bg-fig-Surface-neutral text-fig-Subject-standard';
+  // };
 
   // Get all files from current folder view
   const currentFiles = currentFolder.files || [];
@@ -432,292 +494,480 @@ export default function DocumentSelector({
     return allDocs.filter((doc) => selectedDocuments.has(doc.document_id.toString()));
   }, [selectedDocuments, allFolders, getAllDocuments]);
 
+  const isFolderViewEmpty = currentFolder.folders.length === 0 && currentFiles.length === 0;
+
   return (
     <Dialog open={isOpen} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-4xl max-h-[90vh] flex flex-col p-0 overflow-hidden" showCloseButton={false}>
-        <DialogHeader className="px-6 py-5 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 bg-white dark:bg-gray-800">
-          <div className="flex items-center justify-between">
-            <div className="flex flex-col gap-1">
-            <DialogTitle 
-              className="text-xl font-semibold text-gray-900 dark:text-gray-100"
-              title={selectedDocumentsList.length > 0 ? selectedDocumentsList.map(doc => doc.name).join('\n') : ''}
-            >
-              Select documents
-            </DialogTitle>
-              <span className="text-sm text-gray-500 dark:text-gray-400">
-                {selectedDocumentsList.length} of {MAX_DOCUMENTS} selected
-              </span>
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          'flex max-h-[90vh] w-full max-w-4xl flex-col overflow-hidden p-0',
+          'gap-0',
+          'border border-fig-Stroke-standard !bg-fig-Surface-one-standard',
+          'rounded-[var(--Corner-highlyRounded)]',
+          'shadow-none',
+          'text-fig-Subject-standard',
+          'dark:!bg-fig-Surface-one-standard',
+        )}
+      >
+        <DialogHeader
+          className={cn(
+            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+            'px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]',
+          )}
+        >
+          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
+            <div className="flex min-w-0 flex-1 flex-col gap-[var(--Gap-zero-sibling)]">
+              <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
+                {localize('com_ui_select_document')}
+              </DialogTitle>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex shrink-0 items-center">
               <button
-                onClick={loadFolders}
-                disabled={loading}
-                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-                aria-label="Refresh"
-              >
-                <RefreshCw className={cn('h-5 w-5 text-gray-700 dark:text-gray-300', loading && 'animate-spin')} />
-              </button>
-              <button
+                type="button"
                 onClick={handleDismiss}
-                className="p-2 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-800 transition-colors"
-                aria-label="Close"
+                className={cn(
+                  'inline-flex h-[var(--Size-icon)] w-[var(--Size-icon)] items-center justify-center',
+                  'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                  'hover:bg-fig-Surface-neutral',
+                  'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+                )}
+                aria-label={localize('com_ui_close')}
               >
-                <X className="h-5 w-5 text-gray-700 dark:text-gray-300" />
+                <X className="h-4 w-4" aria-hidden />
               </button>
             </div>
           </div>
         </DialogHeader>
 
-        {/* Selected Documents Section */}
-        {selectedDocumentsList.length > 0 && (
-          <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-            <div className="flex flex-col gap-2">
-              <div className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                Selected Documents:
-              </div>
-              <div className="flex flex-wrap gap-2">
-                {selectedDocumentsList.map((doc) => (
-                  <div
-                    key={doc.document_id}
-                    className="flex items-center gap-2 px-3 py-1.5 bg-gray-50 dark:bg-gray-700 border border-gray-200 dark:border-gray-600 rounded-lg text-sm"
-                  >
-                    <img 
-                      src="/research/assets/documents.svg" 
-                      alt="Document" 
-                      className="h-3 w-3 flex-shrink-0 opacity-70 dark:invert" 
-                    />
-                    <span className="text-gray-700 dark:text-gray-300 truncate max-w-[200px]" title={doc.name}>
-                      {doc.name}
-                    </span>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleToggleSelection(doc.document_id);
-                      }}
-                      className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors"
-                      aria-label={`Remove ${doc.name}`}
-                    >
-                      <X className="h-3.5 w-3.5 text-gray-500 dark:text-gray-400" />
-                    </button>
+        <div className="box-border flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden px-[var(--Gap-parentChild)]">
+          <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col">
+            <div
+              className={cn(
+                'flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                'bg-fig-Surface-standard p-[var(--Padding-spacer)]',
+              )}
+            >
+              <div className="flex min-h-0 w-full min-w-0 max-w-full flex-1 flex-col gap-[var(--Gap-zero-parentChild)] overflow-y-auto">
+                <div className="flex w-full min-w-0 flex-col gap-[var(--Gap-zero-neighbor)]">
+                  {currentFolderId !== null && breadcrumbs.length >= 2 ? (
+                    <div className="flex w-full min-w-0 max-w-full items-center text-fig-Subject-standard">
+                      <button
+                        type="button"
+                        onClick={handleNavigateBack}
+                        className={cn(
+                          'inline-flex min-h-[var(--Size-zero-button)] items-center gap-[var(--Gap-zero-neighbor)] rounded-[var(--Corner-moderatelyRounded)]',
+                          'fy-typography-title-small text-fig-Subject-standard',
+                          'transition-colors hover:bg-fig-Surface-neutral',
+                          'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+                        )}
+                        aria-label={localize('com_ui_back')}
+                      >
+                        <ArrowLeft
+                          className="h-[var(--Size-icon)] w-[var(--Size-icon)] flex-shrink-0 text-fig-Subject-standard"
+                          strokeWidth={1.5}
+                          aria-hidden
+                        />
+                        {localize('com_ui_back')}
+                      </button>
+                    </div>
+                  ) : null}
+                  {selectedDocumentsList.length > 0 && (
+                    <div className="w-full min-w-0 max-w-full">
+                      <div className="flex flex-wrap gap-[var(--Gap-zero-neighbor)] pb-[var(--Gap-zero-parentChild)]">
+                        {selectedDocumentsList.map((doc) => (
+                          <div
+                            key={doc.document_id}
+                            className={cn(
+                              'flex items-center gap-[var(--Gap-zero-neighbor)]',
+                              'rounded-[var(--Corner-moderatelyRounded)]',
+                              'bg-fig-Surface-neutral px-[var(--Padding-zero-sibling)] py-[var(--Padding-buddyVertical)]',
+                            )}
+                          >
+                            <img
+                              src="/research/assets/documents.svg"
+                              alt=""
+                              className="h-3 w-3 flex-shrink-0 opacity-80 dark:invert"
+                            />
+                            <span
+                              className="fy-typography-label-small max-w-[200px] truncate text-fig-Subject-standard"
+                              title={doc.name}
+                            >
+                              {doc.name}
+                            </span>
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleToggleSelection(doc.document_id);
+                              }}
+                              className={cn(
+                                'ml-0.5 h-[var(--Size-icon)] w-[var(--Size-icon)] flex-shrink-0 rounded-[var(--Corner-moderatelyRounded)] p-0.5',
+                                'text-fig-Subject-soft transition-colors hover:bg-fig-Surface-one-standard',
+                              )}
+                              aria-label={`Remove ${doc.name}`}
+                            >
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+                {loading && (
+                  <div className="flex h-64 items-center justify-center">
+                    <Spinner size={32} />
                   </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Breadcrumbs */}
-        <div className="px-6 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 flex-shrink-0">
-          <div className="flex items-center gap-2 text-sm flex-1 min-w-0 overflow-x-auto scrollbar-thin scrollbar-thumb-gray-300 dark:scrollbar-thumb-gray-600 scrollbar-track-transparent">
-            <div className="flex items-center gap-2 whitespace-nowrap">
-              {breadcrumbs.map((crumb, index) => (
-                <div key={crumb.id || 'home'} className="flex items-center gap-2">
-                  {index > 0 && <ChevronRight className="h-4 w-4 text-gray-400 flex-shrink-0" />}
-                  <button
-                    onClick={() => navigateToFolder(crumb.id, crumb.name)}
+                )}
+                {!loading && isFolderViewEmpty && (
+                  <div className="fy-typography-body-tiny flex h-64 min-h-0 items-center justify-center text-fig-Subject-soft">
+                    {localize('com_ui_folder_empty')}
+                  </div>
+                )}
+                {!loading && !isFolderViewEmpty && (
+                  <div
                     className={cn(
-                      'px-2 py-1 rounded hover:bg-gray-100 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 whitespace-nowrap',
-                      index === breadcrumbs.length - 1 ? 'font-semibold' : ''
+                      'w-full min-w-0 max-w-full overflow-x-auto',
+                      'rounded-[var(--Corner-highlyRounded)] border-[0.5px] border-fig-Stroke-soft',
+                      'bg-fig-Surface-one-standard',
                     )}
                   >
-                    {index === 0 ? <Home className="h-4 w-4 inline mr-1" /> : null}
-                    {crumb.name}
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-
-        <div className="flex-1 overflow-hidden flex flex-col min-h-0">
-          {error && (
-            <div className="mx-6 mt-4 p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg text-red-700 dark:text-red-400 text-sm flex-shrink-0">
-              {error}
-            </div>
-          )}
-          <div className="flex-1 overflow-y-auto min-h-0">
-            {loading ? (
-              <div className="flex items-center justify-center h-64">
-                <Spinner size={32} />
-              </div>
-            ) : currentFolder.folders.length === 0 && currentFiles.length === 0 ? (
-              <div className="flex items-center justify-center h-64 text-gray-500 dark:text-gray-400">
-                This folder is empty
-              </div>
-            ) : (
-              <div className="overflow-x-auto bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 mx-6 my-4">
-                <table className="w-full table-fixed border-separate border-spacing-0">
-                  <colgroup>
-                    <col style={{ width: '40%' }} />
-                    <col style={{ width: currentFiles.length > 0 ? '15%' : '30%' }} />
-                    {currentFiles.length > 0 && <col style={{ width: '10%' }} />}
-                    <col style={{ width: currentFiles.length > 0 ? '20%' : '30%' }} />
-                    {currentFiles.length > 0 && <col style={{ width: '15%' }} />}
-                  </colgroup>
-                  <thead className="bg-gray-50 dark:bg-gray-700/50">
-                    <tr className="border-b border-gray-200 dark:border-gray-700">
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Name
-                      </th>
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Owner
-                      </th>
-                      {currentFiles.length > 0 && (
-                        <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Format
-                        </th>
-                      )}
-                      <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                        Created date
-                      </th>
-                      {currentFiles.length > 0 && (
-                        <th className="px-3 py-3 text-left text-sm font-medium text-gray-700 dark:text-gray-300">
-                          Status
-                        </th>
-                      )}
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
-                    {/* Folders - not selectable, clickable for navigation */}
-                    {currentFolder.folders.map((folder) => {
-                      const folderFileCount = folder.files?.length || 0;
-                      return (
-                        <tr
-                          key={folder.id}
-                          className="group hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors cursor-pointer"
-                          onClick={() => navigateToFolder(folder.id, folder.name)}
-                        >
-                          <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div className="w-5 h-5 flex items-center justify-center flex-shrink-0">
-                                <img src="/research/assets/Folder.svg" alt="Folder" className="h-4 w-4 dark:invert" />
-                              </div>
-                              <div className="min-w-0">
-                                <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
-                                  {folder.name}
-                                </div>
-                                {folderFileCount > 0 && (
-                                  <div className="text-xs text-gray-500 dark:text-gray-400">
-                                    {folderFileCount} doc{folderFileCount !== 1 ? 's' : ''}
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            <div className="truncate" title={folder.created_by_name || 'System'}>
-                              {folder.created_by_name || 'System'}
-                            </div>
-                          </td>
+                    <table className="w-full min-w-[480px] table-fixed border-separate border-spacing-0">
+                      <colgroup>
+                        <col style={{ width: '50%' }} />
+                        <col style={{ width: '25%' }} />
+                        <col style={{ width: '25%' }} />
+                        {/*
+                        <col style={{ width: '40%' }} />
+                        <col style={{ width: currentFiles.length > 0 ? '15%' : '30%' }} />
+                        {currentFiles.length > 0 && <col style={{ width: '10%' }} />}
+                        <col style={{ width: currentFiles.length > 0 ? '20%' : '30%' }} />
+                        {currentFiles.length > 0 && <col style={{ width: '15%' }} />}
+                        */}
+                      </colgroup>
+                      <thead className="bg-fig-Surface-one-neutral">
+                        <tr>
+                          <th
+                            className={cn(
+                              'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                              'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                            )}
+                          >
+                            {localize('com_ui_name')}
+                          </th>
+                          <th
+                            className={cn(
+                              'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                              'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                            )}
+                          >
+                            {localize('com_ui_table_owner')}
+                          </th>
+                          {/*
                           {currentFiles.length > 0 && (
-                            <td className="px-3 py-3"></td>
-                          )}
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              <span>{formatDate(folder.created_at)}</span>
-                            </div>
-                          </td>
-                          {currentFiles.length > 0 && (
-                            <td className="px-3 py-3"></td>
-                          )}
-                        </tr>
-                      );
-                    })}
-                    {/* Documents - selectable only if Completed */}
-                    {currentFiles.map((file) => {
-                      if (!file.document_id) return null;
-                      const isSelected = selectedDocuments.has(file.document_id.toString());
-                      const fileStatus = file.status || 'Completed';
-                      const isCompleted = fileStatus.toLowerCase() === 'completed' || fileStatus.toLowerCase() === 'indexed';
-                      const isDisabled = !isCompleted;
-                      
-                      return (
-                        <tr
-                          key={file.document_id}
-                          className={cn(
-                            'group transition-colors',
-                            isDisabled ? 'cursor-not-allowed opacity-50' : 'cursor-pointer hover:bg-gray-50 dark:hover:bg-gray-800/50',
-                            isSelected && 'bg-blue-50 dark:bg-blue-900/20',
-                          )}
-                          onClick={() => !isDisabled && handleToggleSelection(file.document_id!)}
-                        >
-                          <td className="px-3 py-3 whitespace-nowrap text-sm font-medium text-gray-900 dark:text-gray-100 transition-colors">
-                            <div className="flex items-center gap-3">
-                              <div
-                                className={cn(
-                                  'w-5 h-5 border-2 rounded flex items-center justify-center flex-shrink-0',
-                                  isDisabled ? 'border-gray-300 dark:border-gray-600 bg-gray-100 dark:bg-gray-700' :
-                                  isSelected
-                                    ? 'border-blue-500 bg-blue-500'
-                                    : 'border-gray-300 dark:border-gray-600',
-                                )}
-                              >
-                                {isSelected && !isDisabled && <Check className="h-3 w-3 text-white" />}
-                              </div>
-                              <div className="flex items-center gap-2 min-w-0">
-                                <img 
-                                  src="/research/assets/documents.svg" 
-                                  alt="Document" 
-                                  className="h-3.5 w-3.5 flex-shrink-0 opacity-70 dark:invert dark:opacity-70" 
-                                />
-                                <div className="min-w-0">
-                                  <div className="font-medium text-sm text-gray-900 dark:text-gray-100 truncate">
-                                    {file.name}
-                                  </div>
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            <div className="truncate" title={file.created_by_name || 'System'}>
-                              {file.created_by_name || 'System'}
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            {getFileExtension(file.name)}
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap text-sm text-gray-700 dark:text-gray-300">
-                            <div className="flex items-center gap-2">
-                              <Calendar className="h-4 w-4 text-gray-400" />
-                              <span>{formatDate(file.uploaded_at || file.created_at)}</span>
-                            </div>
-                          </td>
-                          <td className="px-3 py-3 whitespace-nowrap">
-                            <span
+                            <th
                               className={cn(
-                                'px-2 py-1 text-xs rounded-full',
-                                getStatusColor(fileStatus),
+                                'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                                'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                               )}
                             >
-                              {fileStatus.charAt(0).toUpperCase() + fileStatus.slice(1).toLowerCase()}
-                            </span>
-                          </td>
+                              {localize('com_ui_table_format')}
+                            </th>
+                          )}
+                          */}
+                          <th
+                            className={cn(
+                              'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                              'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                            )}
+                          >
+                            {localize('com_ui_table_date_created')}
+                          </th>
+                          {/*
+                          {currentFiles.length > 0 && (
+                            <th
+                              className={cn(
+                                'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                                'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                              )}
+                            >
+                              {localize('com_ui_table_status')}
+                            </th>
+                          )}
+                          */}
                         </tr>
-                      );
-                    })}
-                  </tbody>
-                </table>
+                      </thead>
+                      <tbody className="divide-y divide-fig-Stroke-soft">
+                        {/* Folders - not selectable, clickable for navigation */}
+                        {currentFolder.folders.map((folder, rowIndex) => {
+                          const folderFileCount = folder.files?.length || 0;
+                          return (
+                            <tr
+                              key={folder.id}
+                              className={cn(
+                                'group cursor-pointer transition-colors',
+                                'hover:bg-fig-Surface-neutral',
+                                rowIndex % 2 === 0
+                                  ? 'bg-fig-Surface-standard'
+                                  : 'bg-fig-Surface-zero-neutral',
+                              )}
+                              onClick={() => navigateToFolder(folder.id, folder.name)}
+                            >
+                              <td
+                                className={cn(
+                                  'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                                  'border-fig-Stroke-one-standard border-r',
+                                  'overflow-hidden',
+                                )}
+                              >
+                                <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                                  <div
+                                    className={cn(
+                                      'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                                      rowIndex % 2 === 0
+                                        ? 'bg-fig-Surface-neutral'
+                                        : 'bg-fig-Surface-one-neutral',
+                                    )}
+                                  >
+                                    <img
+                                      src="/research/assets/Folder.svg"
+                                      alt=""
+                                      className="block h-4 w-4 object-contain dark:invert"
+                                    />
+                                  </div>
+                                  <div className="min-w-0">
+                                    <div className="fy-typography-title-small truncate text-fig-Subject-standard">
+                                      {folder.name}
+                                    </div>
+                                    {folderFileCount > 0 && (
+                                      <div className="fy-typography-body-tiny text-fig-Subject-soft">
+                                        {folderFileCount === 1
+                                          ? localize('com_ui_one_doc')
+                                          : localize('com_ui_folder_doc_count', {
+                                              0: String(folderFileCount),
+                                            })}
+                                      </div>
+                                    )}
+                                  </div>
+                                </div>
+                              </td>
+                              <td
+                                className={cn(
+                                  'p-[var(--Padding-spacer)] align-middle',
+                                  'fy-typography-body text-fig-Subject-standard',
+                                )}
+                              >
+                                <div
+                                  className="truncate"
+                                  title={folder.created_by_name || 'System'}
+                                >
+                                  {folder.created_by_name || 'System'}
+                                </div>
+                              </td>
+                              {/*
+                              {currentFiles.length > 0 && (
+                                <td
+                                  className="box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]"
+                                  aria-hidden
+                                />
+                              )}
+                              */}
+                              <td
+                                className={cn(
+                                  'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                                  'fy-typography-body text-fig-Subject-standard',
+                                )}
+                              >
+                                <div className="flex min-w-0 items-center gap-[var(--Gap-zero-sibling)]">
+                                  <span>{formatDate(folder.created_at)}</span>
+                                </div>
+                              </td>
+                              {/*
+                              {currentFiles.length > 0 && (
+                                <td className="p-[var(--Padding-spacer)]" aria-hidden />
+                              )}
+                              */}
+                            </tr>
+                          );
+                        })}
+                        {/* Documents - selectable only if Completed */}
+                        {currentFiles
+                          .filter((f) => f.document_id)
+                          .map((file, j) => {
+                            const rowIndex = currentFolder.folders.length + j;
+                            const isSelected = selectedDocuments.has(file.document_id!.toString());
+                            const fileStatus = file.status || 'Completed';
+                            const isCompleted =
+                              fileStatus.toLowerCase() === 'completed' ||
+                              fileStatus.toLowerCase() === 'indexed';
+                            const isDisabled = !isCompleted;
+                            const checkboxClass = (() => {
+                              if (isDisabled) {
+                                return 'border-fig-Stroke-standard bg-fig-Surface-neutral';
+                              }
+                              if (isSelected) {
+                                return 'border-fig-Stroke-primary bg-fig-Surface-two-primary';
+                              }
+                              return 'border-fig-Stroke-standard';
+                            })();
+                            return (
+                              <tr
+                                key={file.document_id}
+                                className={cn(
+                                  'group transition-colors',
+                                  isDisabled &&
+                                    (rowIndex % 2 === 0
+                                      ? 'bg-fig-Surface-standard'
+                                      : 'bg-fig-Surface-zero-neutral'),
+                                  isDisabled && 'cursor-not-allowed opacity-50',
+                                  !isDisabled &&
+                                    cn(
+                                      'cursor-pointer hover:bg-fig-Surface-neutral',
+                                      rowIndex % 2 === 0
+                                        ? 'bg-fig-Surface-standard'
+                                        : 'bg-fig-Surface-zero-neutral',
+                                    ),
+                                )}
+                                onClick={() =>
+                                  !isDisabled && handleToggleSelection(file.document_id!)
+                                }
+                              >
+                                <td
+                                  className={cn(
+                                    'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                                    'border-fig-Stroke-one-standard border-r',
+                                    'overflow-hidden',
+                                  )}
+                                >
+                                  <div className="flex h-full min-h-0 min-w-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                                    <div
+                                      className={cn(
+                                        'flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] flex-shrink-0 items-center justify-center rounded-[var(--Corner-moderatelyRounded)] border',
+                                        checkboxClass,
+                                      )}
+                                      aria-hidden
+                                    >
+                                      {isSelected && !isDisabled && (
+                                        <Check className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] text-fig-Subject-inverse" />
+                                      )}
+                                    </div>
+                                    <div
+                                      className={cn(
+                                        'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                                        rowIndex % 2 === 0
+                                          ? 'bg-fig-Surface-neutral'
+                                          : 'bg-fig-Surface-one-neutral',
+                                      )}
+                                    >
+                                      <img
+                                        src="/research/assets/documents.svg"
+                                        alt=""
+                                        className="block h-3.5 w-3.5 flex-shrink-0 object-contain opacity-80 dark:invert"
+                                      />
+                                    </div>
+                                    <div className="min-w-0">
+                                      <div className="fy-typography-title-small truncate text-fig-Subject-standard">
+                                        {file.name}
+                                      </div>
+                                    </div>
+                                  </div>
+                                </td>
+                                <td
+                                  className={cn(
+                                    'p-[var(--Padding-spacer)] align-middle',
+                                    'fy-typography-body text-fig-Subject-standard',
+                                  )}
+                                >
+                                  <div
+                                    className="truncate"
+                                    title={file.created_by_name || 'System'}
+                                  >
+                                    {file.created_by_name || 'System'}
+                                  </div>
+                                </td>
+                                {/*
+                                <td
+                                  className={cn(
+                                    'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                                    'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
+                                  )}
+                                >
+                                  {getFileExtension(file.name)}
+                                </td>
+                                */}
+                                <td
+                                  className={cn(
+                                    'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                                    'fy-typography-body text-fig-Subject-standard',
+                                  )}
+                                >
+                                  <div className="flex min-w-0 items-center gap-[var(--Gap-zero-sibling)]">
+                                    <span>{formatDate(file.uploaded_at || file.created_at)}</span>
+                                  </div>
+                                </td>
+                                {/*
+                                <td className="p-[var(--Padding-spacer)] text-left align-middle">
+                                  <span
+                                    className={cn(
+                                      'fy-typography-body-tiny inline-block rounded-full px-2 py-0.5',
+                                      getStatusStyle(fileStatus),
+                                    )}
+                                  >
+                                    {`${fileStatus.charAt(0).toUpperCase()}${fileStatus
+                                      .slice(1)
+                                      .toLowerCase()}`}
+                                  </span>
+                                </td>
+                                */}
+                              </tr>
+                            );
+                          })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
 
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-end gap-3 bg-white dark:bg-gray-800 flex-shrink-0">
+        <div
+          className={cn(
+            'flex shrink-0 items-center justify-end',
+            'gap-[var(--Gap-zero-sibling)]',
+            'px-[var(--Padding-spacer)] py-[var(--Padding-spacer)]',
+          )}
+        >
           <Button
             type="button"
             onClick={handleConfirm}
-            className="px-6 py-2.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium"
+            className={cn(
+              'flex h-[var(--Size-button)] items-center justify-center rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-primary',
+              'bg-fig-Surface-two-primary px-[var(--Padding-spacer)] outline-offset-4',
+              'fy-typography-label-small !text-fig-Subject-two-primary',
+              'hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+              'transition-all disabled:cursor-not-allowed disabled:opacity-50',
+            )}
           >
-            Confirm selection
+            {localize('com_ui_confirm')}
           </Button>
           <Button
             type="button"
             onClick={handleDismiss}
             variant="outline"
-            className="px-6 py-2.5 border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:bg-gray-50 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium"
+            className={cn(
+              'flex h-[var(--Size-button)] items-center justify-center rounded-[var(--Corner-moderatelyRounded)]',
+              'border border-fig-Stroke-standard',
+              'bg-fig-Surface-one-standard',
+              'px-[var(--Padding-spacer)] outline-offset-4',
+              'fy-typography-label-small !text-fig-Subject-standard',
+              'hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
+              'transition-all disabled:cursor-not-allowed disabled:opacity-50',
+            )}
           >
-            Dismiss
+            {localize('com_ui_dismiss')}
           </Button>
         </div>
       </DialogContent>

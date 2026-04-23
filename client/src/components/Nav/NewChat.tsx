@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { useQueryClient } from '@tanstack/react-query';
 import { QueryKeys, Constants } from 'librechat-data-provider';
 import { TooltipAnchor, NewChatIcon, MobileSidebar, Button } from '@librechat/client';
-import type { TMessage } from 'librechat-data-provider';
 import { useLocalize, useNewConvo } from '~/hooks';
 import { clearMessagesCache } from '~/utils';
 import store from '~/store';
@@ -38,12 +37,12 @@ export default function NewChat({
       localStorage.removeItem(`persona_data_${Constants.NEW_CONVO}`);
       localStorage.removeItem(`template_data_${Constants.NEW_CONVO}`);
       localStorage.removeItem(`persona_documents_${Constants.NEW_CONVO}`);
-      
+
       // Dispatch events to notify all components
       window.dispatchEvent(new Event('personaUpdated'));
       window.dispatchEvent(new Event('templateUpdated'));
       window.dispatchEvent(new Event('documentsUpdated'));
-      
+
       clearMessagesCache(queryClient, conversation?.conversationId);
       queryClient.invalidateQueries([QueryKeys.messages]);
       newConvo();
@@ -85,13 +84,13 @@ export default function NewChat({
             render={
               <Button
                 size="icon"
-                variant="outline"
+                variant="ghost"
                 data-testid="nav-new-chat-button"
                 aria-label={localize('com_ui_new_chat')}
-                className="rounded-full border-none bg-transparent p-2 hover:bg-surface-hover md:rounded-xl"
+                className="h-[35px] w-[35px] rounded-none border-none bg-transparent p-2 hover:bg-transparent"
                 onClick={clickHandler}
               >
-                <NewChatIcon className="icon-lg text-text-primary" />
+                <NewChatIcon />
               </Button>
             }
           />

@@ -577,6 +577,7 @@ export default function TemplatesView() {
                           <td
                             className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                              'border-fig-Stroke-one-standard border-r',
                               'overflow-hidden',
                             )}
                           >
@@ -732,6 +733,7 @@ export default function TemplatesView() {
                           <td
                             className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                              'border-fig-Stroke-one-standard border-r',
                               'overflow-hidden',
                             )}
                           >

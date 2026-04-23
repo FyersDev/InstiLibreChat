@@ -1,9 +1,10 @@
-import React, { useState, useCallback } from 'react';
-import { AlertCircle } from 'lucide-react';
-import { useToastContext, Spinner } from '@librechat/client';
-import { useLocalize } from '~/hooks';
+import { Spinner, useToastContext } from '@librechat/client';
+import React, { useCallback, useMemo, useState } from 'react';
 import { uploadDocument } from '~/data-provider/document-service';
+import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
+
+const MAX_SIZE_MB = 50;
 
 interface DocumentUploadProps {
   onUploadSuccess?: (filename: string) => void;
@@ -15,6 +16,8 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
   const { showToast } = useToastContext();
   const [isUploading, setIsUploading] = useState(false);
   const [dragActive, setDragActive] = useState(false);
+
+  const maxSizeBytes = useMemo(() => MAX_SIZE_MB * 1024 * 1024, []);
 
   const handleUpload = useCallback(
     async (file: File) => {
@@ -48,14 +51,25 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
       ];
 
       const allowedExtensions = [
-        '.docx', '.dotx', '.docm', '.dotm',
+        '.docx',
+        '.dotx',
+        '.docm',
+        '.dotm',
         '.pptx',
         '.pdf',
         '.md',
-        '.html', '.htm', '.xhtml',
-        '.jpg', '.jpeg', '.png', '.tiff', '.bmp', '.webp',
+        '.html',
+        '.htm',
+        '.xhtml',
+        '.jpg',
+        '.jpeg',
+        '.png',
+        '.tiff',
+        '.bmp',
+        '.webp',
         '.csv',
-        '.xlsx', '.xlsm',
+        '.xlsx',
+        '.xlsm',
         '.txt',
         '.json',
       ];
@@ -72,20 +86,17 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
         return;
       }
 
-      const maxSize = 50 * 1024 * 1024; // 50MB in bytes
-      
-      // Validate file size - reject files 50MB or larger (inclusive limit)
-      if (file.size >= maxSize) {
+      if (file.size >= maxSizeBytes) {
         const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
         console.warn('File size validation failed:', {
           fileName: file.name,
           fileSizeBytes: file.size,
           fileSizeMB: parseFloat(fileSizeMB),
-          maxSizeBytes: maxSize,
-          maxSizeMB: 50,
+          maxSizeBytes: maxSizeBytes,
+          maxSizeMB: MAX_SIZE_MB,
         });
         showToast({
-          message: `File "${file.name}" is too large (${fileSizeMB}MB). Maximum file size is 50MB.`,
+          message: `File "${file.name}" is too large (${fileSizeMB}MB). Maximum file size is ${MAX_SIZE_MB}MB.`,
           status: 'error',
           duration: 5000,
         });
@@ -94,12 +105,13 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
 
       setIsUploading(true);
       try {
-        // Double-check file size before upload (defensive programming)
-        if (file.size >= maxSize) {
+        if (file.size >= maxSizeBytes) {
           const fileSizeMB = (file.size / (1024 * 1024)).toFixed(2);
-          throw new Error(`File size validation failed: ${fileSizeMB}MB exceeds 50MB limit`);
+          throw new Error(
+            `File size validation failed: ${fileSizeMB}MB exceeds ${MAX_SIZE_MB}MB limit`,
+          );
         }
-        
+
         const response = await uploadDocument(file);
 
         if (response.code === 200 || response.code === 202 || response.s === 'ok') {
@@ -123,7 +135,7 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
         setIsUploading(false);
       }
     },
-    [showToast, onUploadSuccess],
+    [showToast, onUploadSuccess, maxSizeBytes],
   );
 
   const handleFileChange = useCallback(
@@ -165,50 +177,71 @@ export default function DocumentUpload({ onUploadSuccess, className }: DocumentU
     <div className={cn('w-full', className)}>
       <div
         className={cn(
-          'relative border-2 border-dashed rounded-lg p-6 text-center transition-colors',
-          dragActive
-            ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-            : 'border-gray-300 dark:border-gray-600 hover:border-gray-400 dark:hover:border-gray-500',
-          isUploading && 'pointer-events-none opacity-50',
+          'flex flex-col gap-[var(--Gap-parentChild)]',
+          'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+          'bg-fig-Surface-standard p-[var(--Padding-spacer)]',
         )}
-        onDragEnter={handleDragIn}
-        onDragLeave={handleDragOut}
-        onDragOver={handleDrag}
-        onDrop={handleDrop}
       >
-        <input
-          type="file"
-          className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
-          onChange={handleFileChange}
-          accept=".docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.jpg,.jpeg,.png,.tiff,.bmp,.webp,.csv,.xlsx,.xlsm,.txt,.json"
-        />
+        <div className="flex w-full min-w-0 items-center justify-between gap-[var(--Gap-parentChild)]">
+          <p className="fy-typography-title-tiny shrink-0 text-fig-Subject-standard">
+            {localize('com_ui_upload_file_label')}
+          </p>
+          <p
+            className="fy-typography-body-tiny min-w-0 truncate text-right text-fig-Subject-soft"
+            title={localize('com_ui_upload_format_hint')}
+          >
+            {localize('com_ui_upload_format_hint')}
+          </p>
+        </div>
 
-        <div className="flex flex-col items-center justify-center space-y-3">
-          {isUploading ? (
-            <>
-              <Spinner size={32} />
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                Uploading document...
-              </p>
-            </>
-          ) : (
-            <>
-              <div className="flex items-center justify-center w-12 h-12 bg-gray-100 dark:bg-gray-800 rounded-full">
-                <img src="/research/assets/export.svg" alt="Upload" className="w-6 h-6 dark:invert" />
-              </div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                  Upload Document
-                </p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                  Drag and drop a file here, or click to select
-                </p>
-              </div>
-              <div className="text-xs text-gray-400 dark:text-gray-500">
-                Supports PDF, DOCX, XLSX, TXT, CSV, Images (Max 50MB)
-              </div>
-            </>
+        <div
+          className={cn(
+            'border-[0.5px] border-fig-Stroke-soft',
+            'overflow-hidden rounded-[var(--Corner-highlyRounded)]',
+            'p-[var(--Padding-spacer)]',
+            'transition-colors',
+            dragActive ? 'bg-fig-Surface-one-neutral' : 'bg-fig-Surface-standard',
+            isUploading && 'pointer-events-none opacity-50',
           )}
+          onDragEnter={handleDragIn}
+          onDragLeave={handleDragOut}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+        >
+          <div className="relative flex min-h-[4.5rem] w-full flex-col items-center justify-center py-[var(--Padding-parentChild)] text-center">
+            <input
+              type="file"
+              className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
+              onChange={handleFileChange}
+              accept=".docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.jpg,.jpeg,.png,.tiff,.bmp,.webp,.csv,.xlsx,.xlsm,.txt,.json"
+              disabled={isUploading}
+            />
+
+            {isUploading ? (
+              <div className="flex flex-col items-center justify-center gap-[var(--Gap-parentChild)] py-[var(--Padding-spacer)]">
+                <Spinner size={32} />
+                <p className="fy-typography-body-tiny text-fig-Subject-neutral">
+                  {localize('com_ui_uploading_document')}
+                </p>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center gap-[var(--Gap-parentChild)] rounded-[var(--Corner-highlyRounded)]">
+                <div className="flex h-8 w-8 items-center justify-center sm:h-9 sm:w-9">
+                  <img
+                    src="/research/assets/upload_file.svg"
+                    alt=""
+                    className="h-6 w-6 object-contain dark:invert"
+                  />
+                </div>
+                <p className="fy-typography-title-tiny max-w-sm text-center text-fig-Subject-standard">
+                  {localize('com_ui_upload_drag_cta')}
+                </p>
+                <p className="fy-typography-body-tiny max-w-sm text-center text-fig-Subject-soft">
+                  {localize('com_ui_max_file_size_mb', { 0: String(MAX_SIZE_MB) })}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
     </div>

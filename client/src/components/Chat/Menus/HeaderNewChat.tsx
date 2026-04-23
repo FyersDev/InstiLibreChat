@@ -36,10 +36,10 @@ export default function HeaderNewChat() {
       render={
         <Button
           size="icon"
-          variant="outline"
+          variant="ghost"
           data-testid="wide-header-new-chat-button"
           aria-label={localize('com_ui_new_chat')}
-          className="w-[35px] h-[35px] rounded-xl border border-border-light bg-surface-secondary p-2 hover:bg-surface-hover max-md:hidden"
+          className="h-[35px] w-[35px] max-md:hidden rounded-none border-none bg-transparent p-2 hover:bg-transparent"
           onClick={clickHandler}
         >
           <NewChatIcon />

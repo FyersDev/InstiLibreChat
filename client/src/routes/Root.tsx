@@ -84,15 +84,15 @@ export default function Root() {
             <PromptGroupsProvider>
               <Banner onHeightChange={setBannerHeight} />
               <div
-                className="bg-fig-Surface-primary flex flex-col"
+                className="flex flex-col bg-fig-Surface-primary"
                 style={{ height: `calc(100dvh - ${bannerHeight}px)` }}
               >
                 {showTopNavBar && <TopNavBar />}
                 {/* Shell padding L/T/R/B = 4/0/4/4 px; column gap (platform tokens) */}
-                <div className="flex flex-1 overflow-hidden p-[0_var(--Padding-neighbor)_var(--Padding-neighbor)_var(--Padding-neighbor)]">
+                <div className="flex flex-1 overflow-hidden p-[0_var(--Padding-zero-boundary)_var(--Padding-zero-boundary)_var(--Padding-zero-boundary)]">
                   <div className="relative z-0 flex h-full w-full gap-[var(--Gap-zero-neighbor)] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
-                    <div className="relative flex h-full max-w-full flex-1 flex-col overflow-hidden">
+                    <div className="relative flex h-full min-h-0 max-w-full flex-1 flex-col overflow-hidden rounded-[var(--Corner-highlyRounded)] bg-fig-Surface-standard">
                       {shouldShowNav && (
                         <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
                       )}
