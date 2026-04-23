@@ -1,0 +1,40 @@
+client/src/routes/Root.tsx
+  b38061d 87
+client/src/components/Nav/NewChat.tsx
+  b38061d 87,90,93
+client/src/components/Chat/Menus/HeaderNewChat.tsx
+  b38061d 39,42
+client/src/components/Chat/Input/ChatForm.tsx
+  b38061d 200,204,352
+client/src/locales/en/translation.json
+  b38061d 782-792,1289-1294
+client/src/components/Documents/DocumentUpload.tsx
+  b38061d 7,20,54-57,61-69,71-72,89,95-96,99,108,110-112,138,180-182,185-195,197-218,220-225,227-230,232-237,239-240,243-244
+client/src/components/Chat/Input/Files/UploadButton.tsx
+  b38061d 48-69,71-84,86-88
+client/src/components/Documents/DocumentSelector.tsx
+  b38061d 2-9,11,62,64,135,137,160-163,187-189,219-222,277-279,281,287-288,290,297-298,300,304-308,310-327,329-331,333,349-353,355-361,363-364,366-367,369,420,422,428-434,436,462-466,468-486,497,501-523,525,527,529-535,537,543-559,561,563,565-575,577,580,592-593,596,599-600,605,610,613-621,623-630,632-634,637-638,640-668,670-677,679-688,690-697,699,701-713,715-718,720-722,725-743,745-752,755-762,764-773,776-777,779,781-795,798-815,817-819,822,824,826-827,829,831,833-845,847-849,851-853,859-902,904-930,932,936-938,941-942,946,948-952,954,960-968,970,976
+client/src/components/Templates/TemplatesView.tsx
+  b38061d 580,736
+client/src/routes/ResourcesRoute.tsx
+  b38061d 907,1093
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "7429d8acf1335d13efb8e04c89966be7d1ed29d6",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 72573,
+      "total_deletions": 50024,
+      "accepted_lines": 6257,
+      "overriden_lines": 0
+    }
+  }
+}
