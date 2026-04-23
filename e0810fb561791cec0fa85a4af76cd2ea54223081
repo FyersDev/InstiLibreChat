@@ -1,0 +1,22 @@
+client/src/components/Documents/DocumentSelector.tsx
+  b38061d 2,721,811,813,840,853
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "9eec7faac959104d12bd7cbe544d676401cd1ac3",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 16,
+      "total_deletions": 16,
+      "accepted_lines": 933,
+      "overriden_lines": 0
+    }
+  }
+}
