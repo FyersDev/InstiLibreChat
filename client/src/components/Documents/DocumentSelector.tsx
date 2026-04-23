@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useMemo } from 'react';
-import { X, Calendar, Check, ArrowLeft } from 'lucide-react';
+import { X, Check, ArrowLeft } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -718,7 +718,7 @@ export default function DocumentSelector({
                               <td
                                 className={cn(
                                   'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
-                                  'border-fig-Stroke-soft border-r',
+                                  'border-r border-fig-Stroke-soft',
                                   'overflow-hidden',
                                 )}
                               >
@@ -808,9 +808,9 @@ export default function DocumentSelector({
                                 return 'border-fig-Stroke-standard bg-fig-Surface-neutral';
                               }
                               if (isSelected) {
-                                return 'border-fig-Stroke-primary bg-fig-Surface-two-primary';
+                                return 'border-fig-Surface-two-primary bg-fig-Surface-two-primary';
                               }
-                              return 'border-fig-Stroke-standard';
+                              return 'border-fig-Surface-two-primary bg-fig-Surface-primary';
                             })();
                             return (
                               <tr
@@ -837,7 +837,7 @@ export default function DocumentSelector({
                                 <td
                                   className={cn(
                                     'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
-                                    'border-fig-Stroke-soft border-r',
+                                    'border-r border-fig-Stroke-soft',
                                     'overflow-hidden',
                                   )}
                                 >
@@ -850,7 +850,7 @@ export default function DocumentSelector({
                                       aria-hidden
                                     >
                                       {isSelected && !isDisabled && (
-                                        <Check className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] text-fig-Subject-inverse" />
+                                        <Check className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] text-fig-Subject-two-primary" />
                                       )}
                                     </div>
                                     <div
