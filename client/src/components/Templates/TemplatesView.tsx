@@ -586,7 +586,7 @@ export default function TemplatesView() {
                             <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
                               <div
                                 className={cn(
-                                  'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                                  'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-none p-1',
                                   rowIndex % 2 === 0
                                     ? 'bg-fig-Surface-neutral'
                                     : 'bg-fig-Surface-one-neutral',
@@ -742,7 +742,7 @@ export default function TemplatesView() {
                             <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
                               <div
                                 className={cn(
-                                  'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                                  'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-none p-1',
                                   rowIndex % 2 === 0
                                     ? 'bg-fig-Surface-neutral'
                                     : 'bg-fig-Surface-one-neutral',
@@ -1158,7 +1158,7 @@ function CreateTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
+      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Create Template</DialogTitle>
         </DialogHeader>
@@ -1169,22 +1169,18 @@ function CreateTemplateModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-              Template Name *
-            </label>
+            <label className="dium text-fig-Subject-standard">Template Name *</label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+              className="focus:cingring-fig-Strprimeiy/20aw0 ull roundldr[2px] ournere] border-fin-tndaadd texocig-Stroke-primary border px-4 py-2.5 text-sm text-fig-Text-body focus:border-fig-Stroke-primary focus:outline-none focus:ring-2"
             />
           </div>
 
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-              Select Framework
-            </label>
+            <label className="dium text-fig-Subject-standard">Select Framework</label>
             <div className="relative">
               <DropdownPopup
                 portal={false}
@@ -1196,7 +1192,7 @@ function CreateTemplateModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
+                    className="fSurface-standard transitiborder-fig-Stroke-standard on-all hover:border-fig-Stext-fig-Text-body troke-standard bg-fig-Surface-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
                   >
                     <span>
                       {formData.customTemplate
@@ -1205,7 +1201,7 @@ function CreateTemplateModal({
                           ? (frameworks as any)[formData.framework].name
                           : '-- Select Framework --'}
                     </span>
-                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
+                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1231,23 +1227,21 @@ function CreateTemplateModal({
                     },
                   },
                 ]}
-                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                className="y divide-divide-y divide-rounded-[2px] fig-St borderroke-soft border-figshadow-lg w-full rounded-[2px] border"
                 itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
-            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
-              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
+            <div className="border-fig-Stroke-soft pt-5">
+              <h3 className="int-semibold text-fig-Text-heading">
                 {(frameworks as any)[formData.framework].name}
               </h3>
               {Object.entries((frameworks as any)[formData.framework].fields).map(
                 ([key, label]) => (
                   <div key={key}>
-                    <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-                      {String(label)}
-                    </label>
+                    <label className="dium text-fig-Subject-standard">{String(label)}</label>
                     <TextareaAutosize
                       value={formData.fields[key] || ''}
                       onChange={(e) => handleFieldChange(key, e.target.value)}
@@ -1261,7 +1255,7 @@ function CreateTemplateModal({
                       minRows={3}
                       maxRows={8}
                       aria-label={String(label)}
-                      className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
+                      className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzlrnsneernnnded-[2px] roundeeb-Sderke-standard stindagdface-standard tpxx4 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
                     />
                   </div>
                 ),
@@ -1270,14 +1264,10 @@ function CreateTemplateModal({
           )}
 
           {formData.customTemplate && (
-            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
-              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
-                Custom Template
-              </h3>
+            <div className="border-fig-Stroke-soft pt-5">
+              <h3 className="int-semibold text-fig-Text-heading">Custom Template</h3>
               <div>
-                <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-                  Template Content *
-                </label>
+                <label className="dium text-fig-Subject-standard">Template Content *</label>
                 <TextareaAutosize
                   value={formData.fields.custom || ''}
                   onChange={(e) => handleFieldChange('custom', e.target.value)}
@@ -1286,25 +1276,25 @@ function CreateTemplateModal({
                   placeholder="Enter your custom template here..."
                   required
                   aria-label="Custom template content"
-                  className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
+                  className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzlrnsneernnnded-[2px] roundeeb-Sderke-standard stindagdface-standard tpxx4 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
                 />
               </div>
             </div>
           )}
 
-          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
+          <div className="t border-fig-St border-troke-sr-fig-Stookefsoft pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="border-fig-Stroke-standard text-fig-Subject-standard bg-fig-Surface-standard flex-1 border"
+              className="border-fig-Stbg-standarfac -fig-Surfatext-standabjettxt-fig-da flex-1 border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border hover:opacity-90 disabled:opacity-50"
+              className="forderex-1 btrok er-fig-Strgrimaryurface- wgig-Surface-two-primary text-fig-Subje flex-1 border hover:opacity-90 disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Save Template'}
             </Button>
@@ -1453,7 +1443,7 @@ function EditTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
+      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit Template</DialogTitle>
         </DialogHeader>
@@ -1464,22 +1454,18 @@ function EditTemplateModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-              Template Name *
-            </label>
+            <label className="dium text-fig-Subject-standard">Template Name *</label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+              className="focus::ingring-fig-Strprimriy/20aw0 ull roundedf[2pl] ournere] border-fistrddtadd orr-fig-Stroke text-sm-texp-fig-Trimabody focur:border-fig-Stroke-priyary border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-              Select Framework
-            </label>
+            <label className="dium text-fig-Subject-standard">Select Framework</label>
             <div className="relative">
               <DropdownPopup
                 portal={false}
@@ -1491,7 +1477,7 @@ function EditTemplateModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
+                    className="-Surface-standard bordertrorder-fig-Strake-standans bg-fig-Surfaci-standatdion-all hover:border-fig- text-fig-Text-bodyStroke-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
                   >
                     <span>
                       {formData.customTemplate
@@ -1500,7 +1486,7 @@ function EditTemplateModal({
                           ? (frameworks as any)[formData.framework].name
                           : '-- Select Framework --'}
                     </span>
-                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
+                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1526,23 +1512,21 @@ function EditTemplateModal({
                     },
                   },
                 ]}
-                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                className="divide border-da w-full divide-y rounded-[2px] border border-fig-Stroke-soft shadow-lg"
                 itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
           </div>
 
           {formData.framework && !formData.customTemplate && (
-            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
-              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
+            <div className="border-fig-St border-troke-sr-fig-Stookefsoft pt-5">
+              <h3 className="ont-semibold text-fig-Text-headind text-fig-Text-heaging">
                 {(frameworks as any)[formData.framework].name}
               </h3>
               {Object.entries((frameworks as any)[formData.framework].fields).map(
                 ([key, label]) => (
                   <div key={key}>
-                    <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-                      {String(label)}
-                    </label>
+                    <label className="dium text-fig-Subject-standard">{String(label)}</label>
                     <TextareaAutosize
                       value={formData.fields[key] || ''}
                       onChange={(e) => handleFieldChange(key, e.target.value)}
@@ -1556,7 +1540,7 @@ function EditTemplateModal({
                       minRows={3}
                       maxRows={8}
                       aria-label={String(label)}
-                      className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
+                      className="focus::ingring-fig-Strprimriy/20aw0 ull reswzefnone roundld-[2pl] esriererounded-[2px] bordstordigdface-standard px-4tpyx3 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
                     />
                   </div>
                 ),
@@ -1565,14 +1549,12 @@ function EditTemplateModal({
           )}
 
           {formData.customTemplate && (
-            <div className="border-fig-Stroke-soft mt-5 space-y-4 border-t pt-5">
-              <h3 className="text-fig-Text-heading font-inter text-base font-semibold">
+            <div className="border-fig-St border-troke-sr-fig-Stookefsoft pt-5">
+              <h3 className="ont-semibold text-fig-Text-headind text-fig-Text-heaging">
                 Custom Template
               </h3>
               <div>
-                <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-                  Template Content *
-                </label>
+                <label className="dium text-fig-Subject-standard">Template Content *</label>
                 <TextareaAutosize
                   value={formData.fields.custom || ''}
                   onChange={(e) => handleFieldChange('custom', e.target.value)}
@@ -1581,25 +1563,25 @@ function EditTemplateModal({
                   placeholder="Enter your custom template here..."
                   required
                   aria-label="Custom template content"
-                  className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
+                  className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzlrnsneernnnded-[2px] roundeeb-Sderke-standard stindagdface-standard tpxx4 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
                 />
               </div>
             </div>
           )}
 
-          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
+          <div className="t border-fig-St border-troke-sr-fig-Stookefsoft pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="border-fig-Stroke-standard text-fig-Subject-standard bg-fig-Surface-standard flex-1 border"
+              className="border-fig-Stbg-standarfac -fig-Surfatext-standabjettxt-fig-da flex-1 border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border hover:opacity-90 disabled:opacity-50"
+              className="forderex-1 btrok br-fig-Strgrimaryubfacfitwo-g-Surface-two-primary text-fig-Subjechover:opacity-90 flex-1 border disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Update Template'}
             </Button>
@@ -1824,7 +1806,7 @@ function CreatePersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
+      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Create Agents</DialogTitle>
         </DialogHeader>
@@ -1835,21 +1817,19 @@ function CreatePersonaModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-              Name *
-            </label>
+            <label className="dium text-fig-Subject-standard">Name *</label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+              className="focus:cingring-fig-Strprimriy/20aw0 ull roundedf[2pl] ournere] border-fistrddtadd orr-fig-Stroke text-sm-texp-fig-Trimabody focur:border-fig-Stroke-priyary border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* Predefined Personas - Above description */}
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
+            <label className="dium text-fig-Subject-standard">
               Select Predefined Agent (optional)
             </label>
             <div className="relative">
@@ -1863,14 +1843,14 @@ function CreatePersonaModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
+                    className="-Surface-standard transitiborder-fig-Stroke-standard on-all hover:border-fig-Stext-fig-Text-body troke-standard bg-fig-Surface-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
                   >
                     <span>
                       {formData.selectedPredefinedId
                         ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
                         : '-- Select Predefined Agent (Optional) --'}
                     </span>
-                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
+                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -1889,12 +1869,12 @@ function CreatePersonaModal({
                     },
                   })),
                 ]}
-                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                className="divide border-figshadow-lg w-full divide-y rounded-[2px] border border-fig-Stroke-soft"
                 itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
             {formData.selectedPredefinedId && (
-              <p className="text-fig-Subject-primary mt-1 text-xs">
+              <p className="mm-1 tt-1 xs text-text-xs text-fig-Su">
                 Agent template will be auto-filled below. Just edit the variables like{' '}
                 {`{{variable_name}}`} with your values.
               </p>
@@ -1902,7 +1882,7 @@ function CreatePersonaModal({
           </div>
 
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
+            <label className="dium text-fig-Subject-standard">
               Description {formData.selectedPredefinedId ? '' : '*'}
             </label>
             <TextareaAutosize
@@ -1912,7 +1892,7 @@ function CreatePersonaModal({
               maxRows={10}
               required={!formData.selectedPredefinedId}
               aria-label="Persona description"
-              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
+              className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzefnone roundld-[2pl] esriererounded-[2px] bordstordigdface-standard px-4tpyx3 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
               placeholder={
                 formData.selectedPredefinedId
                   ? 'Edit variables like {{focus_area}} with your values'
@@ -1920,7 +1900,7 @@ function CreatePersonaModal({
               }
             />
             {formData.selectedPredefinedId && (
-              <p className="text-fig-Subject-neutral mt-1 text-xs">
+              <p className="texm-xs tt-1 text-fig-Su mt-1 text-xs">
                 Variables to edit:{' '}
                 {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
                   .map((v) => `{{${v}}}`)
@@ -1929,19 +1909,19 @@ function CreatePersonaModal({
             )}
           </div>
 
-          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
+          <div className="t border-fig-Stroke-soft pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="border-fig-Stroke-standard text-fig-Subject-standard flex-1 border text-sm"
+              className="border-fig-Stroke-sm text-standard tex flex-1 border text-sm"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border text-sm hover:opacity-90 disabled:opacity-50"
+              className="forder borderex-1 btrok br-fig-Strgrimaryubfacfitwo-g-Surface-twosm text--primary text-fihover:opacity-90 flex-1 text-sm disabled:opacity-50"
             >
               {loading ? 'Creating...' : 'Save Agents'}
             </Button>
@@ -2025,7 +2005,7 @@ function EditPersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="bg-fig-Surface-neutral max-h-[90vh] max-w-2xl overflow-y-auto p-6">
+      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Edit Agents</DialogTitle>
         </DialogHeader>
@@ -2036,21 +2016,19 @@ function EditPersonaModal({
         )}
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
-              Name *
-            </label>
+            <label className="dium text-fig-Subject-standard">Name *</label>
             <Input
               type="text"
               value={formData.name}
               onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               required
-              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full rounded-[2px] border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
+              className="focus:cingring-fig-Strprimeiy/20aw0 ull roundedf[2pl] ournere] border-fistrddtadd orr-fig-Stroke text-sm-texp-fig-Trimabody focur:border-fig-Stroke-priyary border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
             />
           </div>
 
           {/* Predefined Personas - Above description */}
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
+            <label className="dium text-fig-Subject-standard">
               Select Predefined Persona (optional)
             </label>
             <div className="relative">
@@ -2064,14 +2042,14 @@ function EditPersonaModal({
                 trigger={
                   <Ariakit.MenuButton
                     style={{ height: '40px' }}
-                    className="border-fig-Stroke-standard text-fig-Text-body bg-fig-Surface-standard hover:border-fig-Stroke-standard flex w-full items-center justify-between gap-1.5 rounded-[2px] border px-4 text-sm font-normal transition-all"
+                    className="-Surface-standard bordertrorder-fig-Strake-standans bg-fig-Surfaci-standatdion-all hover:border-fig-Stext-fig-Text-body troke-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
                   >
                     <span>
                       {formData.selectedPredefinedId
                         ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
                         : '-- Select Predefined Persona (Optional) --'}
                     </span>
-                    <ChevronDown className="text-fig-Subject-standard h-4 w-4" />
+                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
                   </Ariakit.MenuButton>
                 }
                 items={[
@@ -2090,12 +2068,12 @@ function EditPersonaModal({
                     },
                   })),
                 ]}
-                className="divide-fig-Stroke-soft border-fig-Stroke-soft bg-fig-Surface-standard w-full divide-y rounded-[2px] border shadow-lg"
+                className="y divide-divide-y divide-rounded-[2px] fig-St borderroke-soft border-figshadow-lg w-full rounded-[2px] border"
                 itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
               />
             </div>
             {formData.selectedPredefinedId && (
-              <p className="text-fig-Subject-primary mt-1 text-xs">
+              <p className="mm-1 tt-1 xs text-text-xs text-fig-Su">
                 Persona template will be auto-filled below. Just edit the variables like{' '}
                 {`{{variable_name}}`} with your values.
               </p>
@@ -2103,7 +2081,7 @@ function EditPersonaModal({
           </div>
 
           <div>
-            <label className="text-fig-Subject-standard mb-2 block text-sm font-medium">
+            <label className="dium text-fig-Subject-standard">
               Description {formData.selectedPredefinedId ? '' : '*'}
             </label>
             <TextareaAutosize
@@ -2113,7 +2091,7 @@ function EditPersonaModal({
               maxRows={10}
               required={!formData.selectedPredefinedId}
               aria-label="Persona description"
-              className="border-fig-Stroke-standard text-fig-Text-body focus:border-fig-Stroke-primary focus:ring-fig-Stroke-primary/20 bg-fig-Surface-standard w-full resize-none rounded-[2px] border px-4 py-3 text-sm focus:outline-none focus:ring-2"
+              className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzefnonl roundedr[2px] esriererounded-[2px] bordstordigdface-standard px-4tpyx3 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
               placeholder={
                 formData.selectedPredefinedId
                   ? 'Edit variables like {{focus_area}} with your values'
@@ -2121,7 +2099,7 @@ function EditPersonaModal({
               }
             />
             {formData.selectedPredefinedId && (
-              <p className="text-fig-Subject-neutral mt-1 text-xs">
+              <p className="text-fig-Su mt-1 text-xs">
                 Variables to edit:{' '}
                 {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
                   .map((v) => `{{${v}}}`)
@@ -2130,19 +2108,19 @@ function EditPersonaModal({
             )}
           </div>
 
-          <div className="border-fig-Stroke-soft mt-6 flex gap-3 border-t pt-4">
+          <div className="t border-fig-St border-troke-sr-fig-Stookefsoft pt-4">
             <Button
               type="button"
               onClick={onClose}
               variant="outline"
-              className="border-fig-Stroke-standard text-fig-Subject-standard bg-fig-Surface-standard flex-1 border"
+              className="border-fig-Stbg-standarfac -fig-Surfatext-standabjettxt-fig-da flex-1 border"
             >
               Cancel
             </Button>
             <Button
               type="submit"
               disabled={loading}
-              className="bg-fig-Surface-two-primary border-fig-Stroke-primary text-fig-Subject-two-primary flex-1 border hover:opacity-90 disabled:opacity-50"
+              className="forderex-1 btrok er-fig-Strgrimaryurface- wgig-Surface-two-primary text-fig-Subje flex-1 border hover:opacity-90 disabled:opacity-50"
             >
               {loading ? 'Updating...' : 'Update Agent'}
             </Button>

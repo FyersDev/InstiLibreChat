@@ -915,7 +915,7 @@ export default function ResourcesRoute() {
                         <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
                           <div
                             className={cn(
-                              'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                              'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-none p-1',
                               folderIndex % 2 === 0
                                 ? 'bg-fig-Surface-neutral'
                                 : 'bg-fig-Surface-one-neutral',
