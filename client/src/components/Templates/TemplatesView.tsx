@@ -473,9 +473,10 @@ export default function TemplatesView() {
               }
             }}
             className={cn(
-              'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-button)] rounded-[2px] border',
-              'font-inter text-fig-Subject-two-primary px-4 text-sm font-medium',
+              'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-zero-button)] rounded-[2px] border',
+              'fy-typography-label-small px-4 !text-fig-Subject-two-primary',
               'transition-opacity hover:opacity-90',
+              'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
             )}
           >
             + Create {activeTab === 'templates' ? 'template' : 'agent'}
@@ -503,9 +504,10 @@ export default function TemplatesView() {
                 }
               }}
               className={cn(
-                'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-button)] rounded-[2px] border',
-                'font-inter text-fig-Subject-two-primary px-4 text-sm font-medium',
+                'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-zero-button)] rounded-[2px] border',
+                'fy-typography-label-small px-4 !text-fig-Subject-two-primary',
                 'transition-opacity hover:opacity-90',
+                'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
               )}
             >
               + Create {activeTab === 'templates' ? 'template' : 'agent'}

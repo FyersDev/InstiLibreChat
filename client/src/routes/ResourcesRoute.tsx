@@ -673,7 +673,9 @@ export default function ResourcesRoute() {
                       'border-fig-Stroke-primary flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border',
                       'bg-fig-Surface-two-primary px-[var(--Dimensions-Size-xs3)] py-px',
                       'font-inter text-fig-Subject-two-primary text-xs font-normal leading-4',
-                      'transition-opacity hover:opacity-90 sm:flex-none',
+                      'transition-opacity hover:opacity-90',
+                      'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                      'sm:flex-none',
                     )}
                   >
                     <Plus className="h-3 w-3 shrink-0" aria-hidden />
@@ -689,7 +691,9 @@ export default function ResourcesRoute() {
                       'border-fig-Stroke-standard flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border',
                       'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
                       'font-inter text-fig-Subject-standard text-xs font-normal leading-4',
-                      'hover:bg-fig-Surface-one-standard transition-colors sm:flex-none',
+                      'transition-colors',
+                      'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
+                      'sm:flex-none',
                     )}
                   >
                     <img
