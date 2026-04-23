@@ -1,0 +1,26 @@
+client/src/components/Documents/DocumentSelector.tsx
+  b38061d 504,721,840
+client/src/components/Templates/TemplatesView.tsx
+  b38061d 580,736
+client/src/routes/ResourcesRoute.tsx
+  b38061d 907,1093
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "dba6731c1abaebf3fdc7e1957cb0382000bbf570",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 1,
+      "total_deletions": 1,
+      "accepted_lines": 362,
+      "overriden_lines": 0
+    }
+  }
+}
