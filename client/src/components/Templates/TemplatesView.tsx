@@ -426,9 +426,9 @@ export default function TemplatesView() {
   const isLoading = activeTab === 'templates' ? templatesLoading : personasLoading;
 
   return (
-    <div className="bg-fig-Surface-standard flex h-screen flex-col px-2 pb-2 pt-0">
+    <div className="flex h-screen flex-col bg-fig-Surface-standard px-2 pb-2 pt-0">
       {/* Tabs */}
-      <div className="pt-2">
+      <div>
         <div className="flex items-center justify-between gap-3">
           <div className="flex items-center gap-[var(--Gap-group)] sm:gap-[var(--Gap-group)]">
             <button
@@ -441,8 +441,8 @@ export default function TemplatesView() {
               className={cn(
                 'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                 activeTab === 'personas'
-                  ? 'text-fig-Subject-standard border-fig-Stroke-primary pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
-                  : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+                  ? 'border-fig-Stroke-primary py-[var(--Padding-spacer)] text-fig-Subject-standard'
+                  : 'border-transparent py-[var(--Padding-spacer)] text-fig-Subject-neutral',
               )}
             >
               Agents
@@ -457,8 +457,8 @@ export default function TemplatesView() {
               className={cn(
                 'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                 activeTab === 'templates'
-                  ? 'text-fig-Subject-standard border-fig-Stroke-primary pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
-                  : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+                  ? 'border-fig-Stroke-primary py-[var(--Padding-spacer)] text-fig-Subject-standard'
+                  : 'border-transparent py-[var(--Padding-spacer)] text-fig-Subject-neutral',
               )}
             >
               Templates
@@ -473,7 +473,7 @@ export default function TemplatesView() {
               }
             }}
             className={cn(
-              'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-zero-button)] rounded-[2px] border',
+              'h-[var(--Size-zero-button)] rounded-[2px] border border-fig-Stroke-primary bg-fig-Surface-two-primary',
               'fy-typography-label-small px-4 !text-fig-Subject-two-primary',
               'transition-opacity hover:opacity-90',
               'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
@@ -485,14 +485,14 @@ export default function TemplatesView() {
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto py-4">
+      <div className="flex-1 overflow-auto py-[var(--Gap-parentChild)]">
         {isLoading ? (
           <div className="flex h-64 items-center justify-center">
-            <p className="text-fig-Subject-neutral font-inter text-sm">Loading...</p>
+            <p className="font-inter text-sm text-fig-Subject-neutral">Loading...</p>
           </div>
         ) : currentItems.length === 0 ? (
           <div className="flex h-64 flex-col items-center justify-center">
-            <p className="text-fig-Subject-neutral font-inter mb-4 text-sm">
+            <p className="font-inter mb-4 text-sm text-fig-Subject-neutral">
               No {activeTab === 'templates' ? 'templates' : 'agents'} created yet.
             </p>
             <Button
@@ -504,7 +504,7 @@ export default function TemplatesView() {
                 }
               }}
               className={cn(
-                'border-fig-Stroke-primary bg-fig-Surface-two-primary h-[var(--Size-zero-button)] rounded-[2px] border',
+                'h-[var(--Size-zero-button)] rounded-[2px] border border-fig-Stroke-primary bg-fig-Surface-two-primary',
                 'fy-typography-label-small px-4 !text-fig-Subject-two-primary',
                 'transition-opacity hover:opacity-90',
                 'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
@@ -514,7 +514,7 @@ export default function TemplatesView() {
             </Button>
           </div>
         ) : (
-          <div className="border-fig-Stroke-soft overflow-x-auto rounded-[2px] border">
+          <div className="overflow-x-auto rounded-[2px] border border-fig-Stroke-soft">
             <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
               <thead className="bg-fig-Surface-one-neutral">
                 <tr>
@@ -523,7 +523,7 @@ export default function TemplatesView() {
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
                       'w-[var(--Grids-three)] min-w-0',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Name
@@ -532,7 +532,7 @@ export default function TemplatesView() {
                     scope="col"
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Short description
@@ -542,7 +542,7 @@ export default function TemplatesView() {
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
                       'w-[var(--Grids-two)] min-w-0 whitespace-nowrap',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Date created
@@ -552,14 +552,14 @@ export default function TemplatesView() {
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
                       'w-[var(--Grids-one)] min-w-0',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Actions
                   </th>
                 </tr>
               </thead>
-              <tbody className="divide-fig-Stroke-soft divide-y">
+              <tbody className="divide-y divide-fig-Stroke-soft">
                 {activeTab === 'templates'
                   ? templates.map((template, rowIndex) => {
                       const isSelected =
@@ -579,7 +579,7 @@ export default function TemplatesView() {
                           <td
                             className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
-                              'border-fig-Stroke-soft border-r',
+                              'border-r border-fig-Stroke-soft',
                               'overflow-hidden',
                             )}
                           >
@@ -598,7 +598,7 @@ export default function TemplatesView() {
                                   className="block h-5 w-5 flex-shrink-0 object-contain opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
                                 />
                               </div>
-                              <div className="fy-typography-title-small text-fig-Subject-standard truncate">
+                              <div className="fy-typography-title-small truncate text-fig-Subject-standard">
                                 {template.name}
                               </div>
                             </div>
@@ -610,7 +610,7 @@ export default function TemplatesView() {
                             )}
                           >
                             <div
-                              className="font-inter text-fig-Subject-standard text-sm font-normal leading-5"
+                              className="font-inter text-sm font-normal leading-5 text-fig-Subject-standard"
                               title={shortDescriptionLine}
                             >
                               {shortDescriptionLine}
@@ -620,7 +620,7 @@ export default function TemplatesView() {
                             className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]',
                               'min-w-0 whitespace-nowrap text-right',
-                              'font-inter text-fig-Subject-standard text-sm font-normal leading-5',
+                              'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
                             )}
                           >
                             {formatDate(template.created_at)}
@@ -664,7 +664,7 @@ export default function TemplatesView() {
                                     setSelectedItem({ type: 'template', id: template.id });
                                   }
                                 }}
-                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
+                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
                                 title="More options"
                               >
                                 <MoreVertical className="h-3 w-3" aria-hidden />
@@ -673,7 +673,7 @@ export default function TemplatesView() {
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
+                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -688,7 +688,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleEditTemplate(template);
                                         }}
-                                        className="text-fig-Subject-standard hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5"
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
                                       >
                                         <Edit className="h-4 w-4" />
                                         Edit
@@ -700,7 +700,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleDeleteTemplate(template);
                                         }}
-                                        className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
                                       >
                                         <img
                                           src={asset('delete.svg')}
@@ -735,7 +735,7 @@ export default function TemplatesView() {
                           <td
                             className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
-                              'border-fig-Stroke-soft border-r',
+                              'border-r border-fig-Stroke-soft',
                               'overflow-hidden',
                             )}
                           >
@@ -754,7 +754,7 @@ export default function TemplatesView() {
                                   className="block h-5 w-5 flex-shrink-0 object-contain opacity-80 dark:invert"
                                 />
                               </div>
-                              <div className="font-inter text-fig-Subject-standard min-w-0 truncate text-sm font-medium leading-4">
+                              <div className="font-inter min-w-0 truncate text-sm font-medium leading-4 text-fig-Subject-standard">
                                 {persona.name}
                               </div>
                             </div>
@@ -766,7 +766,7 @@ export default function TemplatesView() {
                             )}
                           >
                             <p
-                              className="text-fig-Subject-neutral font-inter m-0 min-w-0 truncate text-sm font-normal leading-5"
+                              className="font-inter m-0 min-w-0 truncate text-sm font-normal leading-5 text-fig-Subject-neutral"
                               title={persona.description || 'No description'}
                             >
                               {persona.description || 'No description'}
@@ -776,7 +776,7 @@ export default function TemplatesView() {
                             className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]',
                               'min-w-0 whitespace-nowrap text-right',
-                              'font-inter text-fig-Subject-standard text-sm font-normal leading-5',
+                              'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
                             )}
                           >
                             {formatDate(persona.created_at)}
@@ -818,7 +818,7 @@ export default function TemplatesView() {
                                     setSelectedItem({ type: 'persona', id: persona.id });
                                   }
                                 }}
-                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
+                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
                                 title="More options"
                               >
                                 <MoreVertical className="h-3 w-3" aria-hidden />
@@ -827,7 +827,7 @@ export default function TemplatesView() {
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
+                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -842,7 +842,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleEditPersona(persona);
                                         }}
-                                        className="text-fig-Subject-standard hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5"
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
                                       >
                                         <Edit className="h-4 w-4" />
                                         Edit
@@ -854,7 +854,7 @@ export default function TemplatesView() {
                                           e.preventDefault();
                                           handleDeletePersona(persona);
                                         }}
-                                        className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
                                       >
                                         <img
                                           src={asset('delete.svg')}
