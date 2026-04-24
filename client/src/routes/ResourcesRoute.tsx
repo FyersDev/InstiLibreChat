@@ -591,9 +591,9 @@ export default function ResourcesRoute() {
   }
 
   return (
-    <div className="flex h-screen flex-col bg-[#ffffff] px-2 pb-2 pt-0 dark:bg-[#111111]">
+    <div className="flex h-screen flex-col bg-fig-Surface-standard px-2 pb-2 pt-0">
       {/* Header - Responsive */}
-      <div className="pt-2">
+      <div>
         <div className="flex flex-col gap-3">
           {/* First Row: Org selector (if super admin) */}
           {isSuperAdmin && organizations.length > 0 && (
@@ -636,8 +636,8 @@ export default function ResourcesRoute() {
                 className={cn(
                   'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                   activeTab === 'documents'
-                    ? 'border-fig-Stroke-primary text-fig-Subject-standard pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
-                    : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+                    ? 'border-fig-Stroke-primary py-[var(--Padding-spacer)] text-fig-Subject-standard'
+                    : 'border-transparent py-[var(--Padding-spacer)] text-fig-Subject-neutral',
                 )}
               >
                 Documents
@@ -652,8 +652,8 @@ export default function ResourcesRoute() {
                 className={cn(
                   'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
                   activeTab === 'reports'
-                    ? 'border-fig-Stroke-primary text-fig-Subject-standard pb-[var(--Padding-boundary)] pt-[var(--Padding-spacer)]'
-                    : 'text-fig-Subject-neutral hover:text-fig-Subject-standard border-transparent py-[var(--Padding-spacer)]',
+                    ? 'border-fig-Stroke-primary py-[var(--Padding-spacer)] text-fig-Subject-standard'
+                    : 'border-transparent py-[var(--Padding-spacer)] text-fig-Subject-neutral',
                 )}
               >
                 Reports
@@ -670,10 +670,12 @@ export default function ResourcesRoute() {
                       setShowCreateFolderModal(true);
                     }}
                     className={cn(
-                      'border-fig-Stroke-primary flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border',
+                      'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border border-fig-Stroke-primary',
                       'bg-fig-Surface-two-primary px-[var(--Dimensions-Size-xs3)] py-px',
-                      'font-inter text-fig-Subject-two-primary text-xs font-normal leading-4',
-                      'transition-opacity hover:opacity-90 sm:flex-none',
+                      'font-inter text-xs font-normal leading-4 text-fig-Subject-two-primary',
+                      'transition-opacity hover:opacity-90',
+                      'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                      'sm:flex-none',
                     )}
                   >
                     <Plus className="h-3 w-3 shrink-0" aria-hidden />
@@ -686,10 +688,12 @@ export default function ResourcesRoute() {
                       setShowUploadFileModal(true);
                     }}
                     className={cn(
-                      'border-fig-Stroke-standard flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border',
+                      'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border border-fig-Stroke-standard',
                       'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
-                      'font-inter text-fig-Subject-standard text-xs font-normal leading-4',
-                      'hover:bg-fig-Surface-one-standard transition-colors sm:flex-none',
+                      'font-inter text-xs font-normal leading-4 text-fig-Subject-standard',
+                      'transition-colors',
+                      'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
+                      'sm:flex-none',
                     )}
                   >
                     <img
@@ -705,14 +709,14 @@ export default function ResourcesRoute() {
                   <div className="relative min-w-0 sm:min-w-[16rem]">
                     <div
                       className={cn(
-                        'border-fig-Stroke-soft bg-fig-Surface-standard flex h-[var(--Size-zero-button)] w-full min-w-0 max-w-md items-stretch',
+                        'flex h-[var(--Size-zero-button)] w-full min-w-0 max-w-md items-stretch border-fig-Stroke-soft bg-fig-Surface-standard',
                         'overflow-hidden rounded-[2px] border transition-[border-color,box-shadow] duration-200',
-                        'focus-within:border-fig-Stroke-primary focus-within:ring-fig-Stroke-primary/20 focus-within:ring-2',
+                        'focus-within:ring-fig-Stroke-primary/20 focus-within:border-fig-Stroke-primary focus-within:ring-2',
                       )}
                     >
                       <div className="flex min-w-0 flex-1 items-center gap-1 pl-1.5 pr-1">
                         <Search
-                          className="text-fig-Subject-standard h-3.5 w-3.5 shrink-0"
+                          className="h-3.5 w-3.5 shrink-0 text-fig-Subject-standard"
                           aria-hidden
                         />
                         <input
@@ -741,7 +745,7 @@ export default function ResourcesRoute() {
                             setShowSearch(false);
                             setSearchQuery('');
                           }}
-                          className="text-fig-Subject-standard hover:text-fig-Text-body focus-visible:ring-fig-Stroke-soft flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border-0 bg-transparent p-0 transition-opacity focus-visible:outline-none focus-visible:ring-2"
+                          className="flex h-5 w-5 shrink-0 items-center justify-center rounded-sm border-0 bg-transparent p-0 text-fig-Subject-standard transition-opacity hover:text-fig-Text-body focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-fig-Stroke-soft"
                           title="Close search"
                         >
                           <X className="h-3.5 w-3.5" />
@@ -756,7 +760,7 @@ export default function ResourcesRoute() {
                       setShowSearch(true);
                     }}
                     className={cn(
-                      'text-fig-Subject-standard flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center',
+                      'flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center text-fig-Subject-standard',
                       'rounded-[2px] p-0 transition-colors',
                       'hover:bg-fig-Surface-one-standard hover:text-fig-Text-body',
                     )}
@@ -773,8 +777,8 @@ export default function ResourcesRoute() {
       </div>
 
       {/* Breadcrumbs — mt-2 = 8px gap under header; inner pt-0 replaces former py-* top padding */}
-      <div className="mt-2">
-        <div className="pb-2 pt-1">
+      <div>
+        <div className="pb-[var(--Gap-parentChild)] pt-[var(--Gap-parentChild)]">
           {/* Breadcrumbs - only show for Documents tab */}
           {activeTab === 'documents' ? (
             <div className="flex items-center gap-2 text-sm">
@@ -824,7 +828,7 @@ export default function ResourcesRoute() {
                     scope="col"
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Name
@@ -834,7 +838,7 @@ export default function ResourcesRoute() {
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
                       'hidden md:table-cell',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Owner
@@ -844,7 +848,7 @@ export default function ResourcesRoute() {
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
                       'hidden sm:table-cell',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Date created
@@ -853,7 +857,7 @@ export default function ResourcesRoute() {
                     scope="col"
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
-                      'font-inter text-fig-Subject-standard text-xs font-medium leading-[14px]',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
                     Actions
@@ -904,13 +908,14 @@ export default function ResourcesRoute() {
                       <td
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                          'border-r border-fig-Stroke-soft',
                           'overflow-hidden',
                         )}
                       >
                         <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
                           <div
                             className={cn(
-                              'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
+                              'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-none p-1',
                               folderIndex % 2 === 0
                                 ? 'bg-fig-Surface-neutral'
                                 : 'bg-fig-Surface-one-neutral',
@@ -923,7 +928,7 @@ export default function ResourcesRoute() {
                             />
                           </div>
                           <div className="flex min-w-0 flex-col gap-0">
-                            <div className="fy-typography-title-small text-fig-Subject-standard truncate">
+                            <div className="fy-typography-title-small truncate text-fig-Subject-standard">
                               {folder.name}
                             </div>
                             <div className="fy-typography-body-tiny text-fig-Subject-neutral">
@@ -936,7 +941,7 @@ export default function ResourcesRoute() {
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
                           'font-inter',
-                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 md:table-cell',
+                          'hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 text-fig-Subject-standard md:table-cell',
                         )}
                       >
                         {folder.created_by_name || 'Unknown'}
@@ -945,7 +950,7 @@ export default function ResourcesRoute() {
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
                           'font-inter',
-                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-right align-middle text-sm font-normal leading-5 sm:table-cell',
+                          'hidden p-[var(--Padding-spacer)] text-right align-middle text-sm font-normal leading-5 text-fig-Subject-standard sm:table-cell',
                         )}
                       >
                         {formatDate(folder.created_at)}
@@ -989,7 +994,7 @@ export default function ResourcesRoute() {
                                     setSelectedItem({ type: 'folder', id: folder.id });
                                   }
                                 }}
-                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
+                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
                                 title="More options"
                               >
                                 <MoreVertical className="h-3 w-3" aria-hidden />
@@ -999,7 +1004,7 @@ export default function ResourcesRoute() {
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
+                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -1019,7 +1024,7 @@ export default function ResourcesRoute() {
                                             setSelectedItem(null);
                                             setDropdownPosition(null);
                                           }}
-                                          className="text-fig-Subject-standard hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5"
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
                                         >
                                           <img
                                             src="/research/assets/edit.svg"
@@ -1038,7 +1043,7 @@ export default function ResourcesRoute() {
                                           setSelectedItem(null);
                                           setDropdownPosition(null);
                                         }}
-                                        className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
+                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
                                       >
                                         <img
                                           src="/research/assets/delete.svg"
@@ -1089,6 +1094,7 @@ export default function ResourcesRoute() {
                       <td
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                          'border-r border-fig-Stroke-soft',
                           'overflow-hidden',
                         )}
                       >
@@ -1104,7 +1110,7 @@ export default function ResourcesRoute() {
                           >
                             <FileIcon className="block h-5 w-5 flex-shrink-0 object-contain" />
                           </div>
-                          <div className="font-inter text-fig-Subject-standard min-w-0 truncate text-sm font-medium leading-4">
+                          <div className="font-inter min-w-0 truncate text-sm font-medium leading-4 text-fig-Subject-standard">
                             {file.name}
                           </div>
                         </div>
@@ -1113,7 +1119,7 @@ export default function ResourcesRoute() {
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
                           'font-inter',
-                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 md:table-cell',
+                          'hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 text-fig-Subject-standard md:table-cell',
                         )}
                       >
                         {file.created_by_name || 'Unknown'}
@@ -1122,7 +1128,7 @@ export default function ResourcesRoute() {
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
                           'font-inter',
-                          'text-fig-Subject-standard hidden p-[var(--Padding-spacer)] text-right align-middle text-sm font-normal leading-5 sm:table-cell',
+                          'hidden p-[var(--Padding-spacer)] text-right align-middle text-sm font-normal leading-5 text-fig-Subject-standard sm:table-cell',
                         )}
                       >
                         {formatDate(file.created_at)}
@@ -1175,7 +1181,7 @@ export default function ResourcesRoute() {
                                     setSelectedItem({ type: 'file', id: file.id });
                                   }
                                 }}
-                                className="dropdown-trigger text-fig-Subject-standard hover:bg-fig-Surface-one-standard rounded-[2px] p-1 transition-colors"
+                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
                                 title="More options"
                               >
                                 <MoreVertical className="h-3 w-3" aria-hidden />
@@ -1185,7 +1191,7 @@ export default function ResourcesRoute() {
                                 dropdownPosition &&
                                 createPortal(
                                   <div
-                                    className="border-fig-Stroke-soft bg-fig-Surface-standard fixed z-[9999] w-48 rounded-[2px] border shadow-lg"
+                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
                                     style={{
                                       top: `${dropdownPosition.top}px`,
                                       right: `${dropdownPosition.right}px`,
@@ -1204,7 +1210,7 @@ export default function ResourcesRoute() {
                                             setSelectedItem(null);
                                             setDropdownPosition(null);
                                           }}
-                                          className="hover:bg-fig-Surface-one-standard flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive"
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
                                         >
                                           <img
                                             src="/research/assets/delete.svg"

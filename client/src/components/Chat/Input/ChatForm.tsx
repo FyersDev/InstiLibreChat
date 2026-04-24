@@ -197,13 +197,11 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
     () =>
       cn(
         'm-0 w-full resize-none font-inter font-normal',
-        'bg-transparent text-fig-Text-body',
+        'bg-transparent text-fig-Subject-one-standard',
         'text-xs leading-4',
         'placeholder:text-fig-Subject-soft',
         isCollapsed ? 'max-h-[52px]' : 'max-h-[45vh] md:max-h-[55vh]',
-        isMoreThanThreeRows
-          ? 'p-[var(--Padding-boundary)] pl-5'
-          : 'p-[var(--Padding-boundary)]',
+        isMoreThanThreeRows ? 'p-[var(--Padding-boundary)] pl-5' : 'p-[var(--Padding-boundary)]',
       ),
     [isCollapsed, isMoreThanThreeRows],
   );
@@ -247,7 +245,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
           <div
             onClick={handleContainerClick}
             className={cn(
-              'relative flex w-full min-h-[93px] flex-grow flex-col overflow-hidden rounded-[2px] border',
+              'relative flex min-h-[93px] w-full flex-grow flex-col overflow-hidden rounded-[2px] border',
               'border-fig-Stroke-primary bg-fig-Surface-standard shadow-none transition-[border-color] duration-200',
             )}
           >
@@ -312,7 +310,7 @@ const ChatForm = memo(({ index = 0 }: { index?: number }) => {
             <div
               className={cn(
                 '@container items-between flex gap-2',
-                'pt-[var(--Padding-boundary)] pb-[var(--Padding-spacer)] px-[var(--Padding-spacer)]',
+                'px-[var(--Padding-spacer)] pb-[var(--Padding-spacer)] pt-[var(--Padding-boundary)]',
                 isRTL ? 'flex-row-reverse' : 'flex-row',
               )}
             >
