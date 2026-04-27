@@ -1,8 +1,16 @@
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  useToastContext,
+} from '@librechat/client';
+import { X } from 'lucide-react';
 import { useState } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, useToastContext } from '@librechat/client';
-import { Input } from '@librechat/client';
-import { Button } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
+import { cn } from '~/utils';
 
 interface CreateFolderModalProps {
   parentId?: string;
@@ -16,7 +24,7 @@ interface CreateFolderModalProps {
 // Helper function to check if a folder is FYERS Resources or inside it
 const isFolderId_InFyersResources = (folderId: string | undefined, folders: any[]): boolean => {
   if (!folderId || !folders.length) return false;
-  
+
   // Recursive function to find folder and check its path
   const findFolder = (id: string, folderList: any[]): any => {
     for (const folder of folderList) {
@@ -28,18 +36,25 @@ const isFolderId_InFyersResources = (folderId: string | undefined, folders: any[
     }
     return null;
   };
-  
+
   const folder = findFolder(folderId, folders);
   if (!folder) return false;
-  
+
   // Check if folder name is "FYERS Resources" or path contains it
   const nameLower = folder.name?.toLowerCase() || '';
   const pathLower = folder.path?.toLowerCase() || '';
-  
+
   return nameLower === 'fyers resources' || pathLower.includes('fyers resources');
 };
 
-export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = false, folders = [], onClose, onSuccess }: CreateFolderModalProps) {
+export default function CreateFolderModal({
+  parentId,
+  orgId,
+  isSuperAdmin = false,
+  folders = [],
+  onClose,
+  onSuccess,
+}: CreateFolderModalProps) {
   const { showToast } = useToastContext();
   const [formData, setFormData] = useState({
     name: '',
@@ -49,7 +64,7 @@ export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = fals
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     // Check if trying to create a folder named "Reports" (case-insensitive)
     const folderNameLower = formData.name.trim().toLowerCase();
     if (folderNameLower === 'reports' || folderNameLower === 'report') {
@@ -61,13 +76,13 @@ export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = fals
       });
       return;
     }
-    
+
     // Check if non-superadmin is trying to create folder inside FYERS Resources
     if (!isSuperAdmin && isFolderId_InFyersResources(parentId, folders)) {
       setError('Cannot create folders inside "FYERS Resources"');
       return;
     }
-    
+
     setLoading(true);
     setError(null);
 
@@ -96,48 +111,113 @@ export default function CreateFolderModal({ parentId, orgId, isSuperAdmin = fals
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6 bg-[#F7F7F7] dark:bg-[#222222]">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-            {parentId ? 'Create New Folder Inside' : 'Create New Folder'}
-          </DialogTitle>
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
+          'gap-0',
+          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
+          'rounded-[var(--Corner-highlyRounded)]',
+          'shadow-none',
+          'text-fig-Subject-standard',
+          'dark:!bg-fig-Surface-one-standard',
+        )}
+      >
+        {/* Header */}
+        <DialogHeader
+          className={cn(
+            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+            'px-[var(--Gap-parentChild)] py-0',
+          )}
+        >
+          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)] pt-[var(--Padding-spacer)]">
+            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
+              {parentId ? 'Create New Folder Inside' : 'Create New Folder'}
+            </DialogTitle>
+            <button
+              type="button"
+              onClick={onClose}
+              className={cn(
+                'inline-flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] items-center justify-center',
+                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                'hover:bg-fig-Surface-neutral',
+                'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+              )}
+              aria-label="Close"
+            >
+              <X className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)]" aria-hidden />
+            </button>
+          </div>
           {parentId && (
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="fy-typography-body-small mt-[var(--Gap-zero-sibling)] text-fig-Subject-neutral">
               This folder will be created inside the selected folder
             </p>
           )}
         </DialogHeader>
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-              Folder Name *
-            </label>
-            <Input
-              type="text"
-              required
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              placeholder="Enter folder name"
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
-            />
-          </div>
 
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
-              {loading ? 'Creating...' : 'New folder'}
-            </Button>
-          </div>
-        </form>
+        {/* Body */}
+        <div className="flex flex-col gap-[var(--Gap-zero-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Padding-spacer)]">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+            <div
+              className={cn(
+                'flex flex-col gap-[var(--Gap-zero-sibling)]',
+                'rounded-[var(--Corner-highlyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                'px-[var(--Padding-spacer)] py-[var(--Padding-spacer)]',
+              )}
+            >
+              <label className="fy-typography-label-small text-fig-Subject-standard">
+                Folder Name
+              </label>
+              <Input
+                type="text"
+                required
+                value={formData.name}
+                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                placeholder="Example: Company financials"
+                className={cn(
+                  'fy-typography-body-small h-[var(--Size-input)] w-full',
+                  'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                  'bg-fig-Surface-standard px-[var(--Padding-zero-neighbor)] text-fig-Subject-standard',
+                  'placeholder:text-fig-Subject-soft',
+                  'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                  'transition-colors duration-200',
+                )}
+              />
+            </div>
+
+            {/* Footer buttons */}
+            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)] pt-[var(--Padding-spacer)]">
+              <div className="flex gap-[var(--Gap-zero-neighbor)]">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className={cn(
+                    'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                    'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                    'transition-opacity hover:opacity-90',
+                    'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                    'disabled:opacity-50',
+                  )}
+                >
+                  {loading ? 'Creating...' : 'Create'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={onClose}
+                  className={cn(
+                    'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                    'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
+                    'transition-colors hover:bg-fig-Surface-neutral',
+                    'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
+                  )}
+                >
+                  Dismiss
+                </Button>
+              </div>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
-

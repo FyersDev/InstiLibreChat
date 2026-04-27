@@ -1,7 +1,6 @@
-import { Dialog, DialogContent, DialogHeader, DialogTitle, TooltipAnchor } from '@librechat/client';
-import { X } from 'lucide-react';
+import { TooltipAnchor } from '@librechat/client';
 import React, { useCallback, useState } from 'react';
-import DocumentUpload from '~/components/Documents/DocumentUpload';
+import UploadFileModal from '~/components/Resources/Modals/UploadFileModal';
 import { useLocalize } from '~/hooks';
 import { cn } from '~/utils';
 
@@ -13,8 +12,11 @@ const UploadButton = () => {
     setShowUploadDialog(true);
   }, []);
 
-  const handleUploadSuccess = useCallback((filename: string) => {
-    console.log(`Document uploaded: ${filename}`);
+  const handleClose = useCallback(() => {
+    setShowUploadDialog(false);
+  }, []);
+
+  const handleSuccess = useCallback(() => {
     setShowUploadDialog(false);
   }, []);
 
@@ -44,50 +46,7 @@ const UploadButton = () => {
         }
       />
 
-      <Dialog open={showUploadDialog} onOpenChange={setShowUploadDialog}>
-        <DialogContent
-          showCloseButton={false}
-          className={cn(
-            'max-w-[var(--Size-overlay)] gap-0 overflow-hidden p-0',
-            'border border-fig-Stroke-standard bg-fig-Surface-one-standard',
-            'rounded-[var(--Corner-highlyRounded)]',
-            'shadow-none',
-            'data-[state=open]:sm:zoom-in-95',
-            'max-md:!rounded-[var(--Corner-highlyRounded)] max-md:!bg-fig-Surface-one-standard',
-            'text-fig-Subject-standard',
-            'dark:bg-fig-Surface-one-standard',
-          )}
-        >
-          <DialogHeader
-            className={cn(
-              'mb-0 flex flex-row items-center justify-between space-y-0 border-0',
-              'gap-[var(--Gap-parentChild)]',
-              'px-[var(--Gap-parentChild)] pt-[var(--Padding-zero-parentChild)]',
-            )}
-          >
-            <DialogTitle className="fy-typography-title m-0 min-w-0 flex-1 text-fig-Subject-standard">
-              {localize('com_ui_upload_document')}
-            </DialogTitle>
-            <button
-              type="button"
-              onClick={() => setShowUploadDialog(false)}
-              className={cn(
-                'inline-flex h-[var(--Size-icon)] w-[var(--Size-icon)] shrink-0 items-center justify-center',
-                'rounded-[var(--Corner-moderatelyRounded)]',
-                'text-fig-Subject-standard transition-colors',
-                'hover:bg-fig-Surface-neutral',
-                'focus:outline-none focus-visible:ring-2 focus-visible:ring-fig-Stroke-primary',
-              )}
-              aria-label={localize('com_ui_close')}
-            >
-              <X className="h-4 w-4" aria-hidden />
-            </button>
-          </DialogHeader>
-          <div className="mt-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] pb-[var(--Padding-spacer)]">
-            <DocumentUpload onUploadSuccess={handleUploadSuccess} />
-          </div>
-        </DialogContent>
-      </Dialog>
+      {showUploadDialog && <UploadFileModal onClose={handleClose} onSuccess={handleSuccess} />}
     </>
   );
 };
