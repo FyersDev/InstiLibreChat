@@ -1,0 +1,26 @@
+client/src/components/Templates/CreatePersonaModal.tsx
+  b38061d 14,231-239,242,244-265,269-270,272-281,287-288,290-299,306-314,318-321,332-337,339,342,345-346,352,366-374,377-378,383-385,387-389,394-395,398-405,408-409,413-414,420-421,423-431,433,436-445,448-449
+client/src/components/Templates/TemplatesView.tsx
+  b38061d 13,1809-1818,1820-1824,1826-1835,1837-1842,1844,1846,1848,1850-1879,1881-1895,1897-1919,1921-1944,1946-1978,1980-2009
+client/src/components/Resources/Modals/CreateFolderModal.tsx
+  b38061d 180-181
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "e351ad8fa9d667284283419fa56e0de06bc1c715",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 2628,
+      "total_deletions": 1268,
+      "accepted_lines": 2420,
+      "overriden_lines": 0
+    }
+  }
+}
