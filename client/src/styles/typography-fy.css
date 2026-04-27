@@ -89,7 +89,7 @@
 .fy-typography-title-small {
   font-size: var(--Font-Title-small);
   line-height: var(--Font-Title-Lineheight-small);
-  font-weight: var(--Font-Weight-semiBold);
+  font-weight: var(--Font-Weight-medium);
   color: var(--Text-title);
 }
 
