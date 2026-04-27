@@ -1,0 +1,26 @@
+client/src/components/Resources/Modals/CreateFolderModal.tsx
+  b38061d 10,13,115-124,126,128-129,131-132,134,137-140,142-147,149-150,152,158,160,162-163,166-168,177,180-184,186,188,194-200,205-207,210-212,217-219
+client/src/components/Resources/Modals/UploadFileModal.tsx
+  b38061d 8-9,33-40,42,56,82-83,85-86,88-90,93-95,214,216,218-219,262-265,268,274,304-313,315-319,321-330,332-337,339,341,343-362,364-399,401-424,426-429,431-479,482-496,498-500,502-511
+client/src/components/Chat/Input/Files/UploadButton.tsx
+  b38061d 1,3,15-17,19,49
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "452e874eaf8c9ccf7ccc2a81427003da79ed7342",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 2236,
+      "total_deletions": 1107,
+      "accepted_lines": 573,
+      "overriden_lines": 0
+    }
+  }
+}
