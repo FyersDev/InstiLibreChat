@@ -93,7 +93,7 @@ export default function Root() {
                   <div className="relative z-0 flex h-full w-full gap-[var(--Gap-zero-neighbor)] overflow-hidden">
                     {shouldShowNav && <Nav navVisible={navVisible} setNavVisible={setNavVisible} />}
                     <div className="relative flex h-full min-h-0 max-w-full flex-1 flex-col overflow-hidden rounded-[var(--Corner-highlyRounded)] bg-fig-Surface-standard">
-                      {shouldShowNav && (
+                      {shouldShowNav && !navVisible && (
                         <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
                       )}
                       {shouldShowNav && (

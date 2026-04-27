@@ -4,16 +4,12 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useMediaQuery } from '@librechat/client';
 import type { ConversationListResponse } from 'librechat-data-provider';
 import type { InfiniteQueryObserverResult } from '@tanstack/react-query';
-import {
-  useLocalize,
-  useAuthContext,
-  useLocalStorage,
-  useNavScrolling,
-} from '~/hooks';
+import { useLocalize, useAuthContext, useLocalStorage, useNavScrolling } from '~/hooks';
 import { useConversationsInfiniteQuery } from '~/data-provider';
 import { Conversations } from '~/components/Conversations';
 import SearchBar from './SearchBar';
 import NewChat from './NewChat';
+import SidebarEdgeTabs from './SidebarEdgeTabs';
 import { cn } from '~/utils';
 import store from '~/store';
 
@@ -130,7 +126,6 @@ const Nav = memo(
       }
     }, [isSmallScreen, toggleNavVisible]);
 
-
     const loadMoreConversations = useCallback(() => {
       if (isFetchingNextPage || !computedHasNextPage) {
         return;
@@ -176,7 +171,7 @@ const Nav = memo(
             <motion.div
               data-testid="nav"
               className={cn(
-                'nav active max-w-[320px] flex-shrink-0 overflow-x-hidden',
+                'nav active relative max-w-[320px] flex-shrink-0 overflow-x-hidden',
                 'md:max-w-[300px]',
               )}
               initial={{ width: 0 }}
@@ -185,6 +180,7 @@ const Nav = memo(
               transition={{ duration: 0.2 }}
               key="nav"
             >
+              <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
               <div className="bg-fig-Surface-standard h-full w-[320px] rounded-[2px] md:w-[300px]">
                 <div className="flex h-full flex-col">
                   <nav

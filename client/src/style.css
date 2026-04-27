@@ -363,19 +363,19 @@ button[data-sidebar-edge-tab][data-testid='close-sidebar-button'],
 button[data-sidebar-edge-tab][data-testid='close-sidebar-button']:hover,
 button[data-sidebar-edge-tab][data-testid='close-sidebar-button']:focus,
 button[data-sidebar-edge-tab][data-testid='close-sidebar-button']:focus-visible {
-  border-top-left-radius: 0 !important;
-  border-bottom-left-radius: 0 !important;
-  border-top-right-radius: 8px !important;
-  border-bottom-right-radius: 8px !important;
+  border-top-left-radius: 4px !important;
+  border-bottom-left-radius: 4px !important;
+  border-top-right-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
 }
 button[data-sidebar-edge-tab][data-testid='open-sidebar-button'],
 button[data-sidebar-edge-tab][data-testid='open-sidebar-button']:hover,
 button[data-sidebar-edge-tab][data-testid='open-sidebar-button']:focus,
 button[data-sidebar-edge-tab][data-testid='open-sidebar-button']:focus-visible {
-  border-top-right-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  border-top-left-radius: 8px !important;
-  border-bottom-left-radius: 8px !important;
+  border-top-right-radius: 4px !important;
+  border-bottom-right-radius: 4px !important;
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
 }
 
 
