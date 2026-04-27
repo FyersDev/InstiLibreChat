@@ -177,8 +177,8 @@ export default function CreateFolderModal({
                 className={cn(
                   'fy-typography-body-small h-[var(--Size-input)] w-full',
                   'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                  'bg-fig-Surface-standard px-[var(--Padding-zero-neighbor)] text-fig-Subject-standard',
-                  'placeholder:text-fig-Subject-soft',
+                  '!bg-fig-Surface-standard px-[var(--Padding-zero-neighbor)] !text-fig-Subject-standard',
+                  'placeholder:!text-fig-Subject-soft',
                   'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
                   'transition-colors duration-200',
                 )}

@@ -10,7 +10,7 @@ import {
   TextareaAutosize,
   useToastContext,
 } from '@librechat/client';
-import { ChevronDown, Edit, MoreVertical } from 'lucide-react';
+import { ChevronDown, Edit, MoreVertical, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
@@ -1806,127 +1806,207 @@ function CreatePersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Create Agents</DialogTitle>
-        </DialogHeader>
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {error}
-          </div>
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
+          'gap-0',
+          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
+          'rounded-[var(--Corner-highlyRounded)]',
+          'shadow-none',
+          'text-fig-Subject-standard',
+          'dark:!bg-fig-Surface-one-standard',
         )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="dium text-fig-Subject-standard">Name *</label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="focus:cingring-fig-Strprimriy/20aw0 ull roundedf[2pl] ournere] border-fistrddtadd orr-fig-Stroke text-sm-texp-fig-Trimabody focur:border-fig-Stroke-priyary border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
-            />
-          </div>
-
-          {/* Predefined Personas - Above description */}
-          <div>
-            <label className="dium text-fig-Subject-standard">
-              Select Predefined Agent (optional)
-            </label>
-            <div className="relative">
-              <DropdownPopup
-                portal={false}
-                sameWidth={true}
-                anchor={{ x: 'start', y: 'bottom' }}
-                menuId="predefined-agent-selector-create"
-                isOpen={isPredefinedMenuOpen}
-                setIsOpen={setIsPredefinedMenuOpen}
-                trigger={
-                  <Ariakit.MenuButton
-                    style={{ height: '40px' }}
-                    className="-Surface-standard transitiborder-fig-Stroke-standard on-all hover:border-fig-Stext-fig-Text-body troke-standard bg-fig-Surface-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
-                  >
-                    <span>
-                      {formData.selectedPredefinedId
-                        ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
-                        : '-- Select Predefined Agent (Optional) --'}
-                    </span>
-                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
-                  </Ariakit.MenuButton>
-                }
-                items={[
-                  {
-                    label: '-- Select Predefined Agent (Optional) --',
-                    onClick: () => {
-                      handlePredefinedSelect('');
-                      setIsPredefinedMenuOpen(false);
-                    },
-                  },
-                  ...PREDEFINED_PERSONAS.map((persona, idx) => ({
-                    label: persona.name,
-                    onClick: () => {
-                      handlePredefinedSelect(idx.toString());
-                      setIsPredefinedMenuOpen(false);
-                    },
-                  })),
-                ]}
-                className="divide border-figshadow-lg w-full divide-y rounded-[2px] border border-fig-Stroke-soft"
-                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
-              />
-            </div>
-            {formData.selectedPredefinedId && (
-              <p className="mm-1 tt-1 xs text-text-xs text-fig-Su">
-                Agent template will be auto-filled below. Just edit the variables like{' '}
-                {`{{variable_name}}`} with your values.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="dium text-fig-Subject-standard">
-              Description {formData.selectedPredefinedId ? '' : '*'}
-            </label>
-            <TextareaAutosize
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              minRows={5}
-              maxRows={10}
-              required={!formData.selectedPredefinedId}
-              aria-label="Persona description"
-              className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzefnone roundld-[2pl] esriererounded-[2px] bordstordigdface-standard px-4tpyx3 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
-              placeholder={
-                formData.selectedPredefinedId
-                  ? 'Edit variables like {{focus_area}} with your values'
-                  : 'Enter persona description...'
-              }
-            />
-            {formData.selectedPredefinedId && (
-              <p className="texm-xs tt-1 text-fig-Su mt-1 text-xs">
-                Variables to edit:{' '}
-                {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
-                  .map((v) => `{{${v}}}`)
-                  .join(', ')}
-              </p>
-            )}
-          </div>
-
-          <div className="t border-fig-Stroke-soft pt-4">
-            <Button
+      >
+        {/* Header */}
+        <DialogHeader
+          className={cn(
+            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+            'px-[var(--Gap-parentChild)] pt-[var(--Padding-zero-parentChild)]',
+          )}
+        >
+          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
+            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
+              Create agent
+            </DialogTitle>
+            <button
               type="button"
               onClick={onClose}
-              variant="outline"
-              className="border-fig-Stroke-sm text-standard tex flex-1 border text-sm"
+              className={cn(
+                'inline-flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] items-center justify-center',
+                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                'hover:bg-fig-Surface-neutral',
+                'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+              )}
+              aria-label="Close"
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="forder borderex-1 btrok br-fig-Strgrimaryubfacfitwo-g-Surface-twosm text--primary text-fihover:opacity-90 flex-1 text-sm disabled:opacity-50"
-            >
-              {loading ? 'Creating...' : 'Save Agents'}
-            </Button>
+              <X className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)]" aria-hidden />
+            </button>
           </div>
-        </form>
+        </DialogHeader>
+
+        {/* Body */}
+        <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
+            {/* Inner card */}
+            <div
+              className={cn(
+                'flex flex-col gap-[var(--Gap-zero-spacer)]',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                'p-[var(--Padding-spacer)]',
+              )}
+            >
+              {/* Name field */}
+              <div className="flex flex-col gap-[var(--Gap-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  Name of the agent
+                </label>
+                <Input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  placeholder="Example: Research assistant"
+                  className={cn(
+                    'fy-typography-body-small h-[var(--Size-zero-button)] w-full',
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
+                    'placeholder:!text-fig-Subject-soft',
+                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                    'transition-colors duration-200',
+                  )}
+                />
+              </div>
+
+              {/* Predefined agent dropdown */}
+              <div className="flex flex-col gap-[var(--Gap-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  Select pre-defined agent (Optional)
+                </label>
+                <DropdownPopup
+                  portal={false}
+                  sameWidth={true}
+                  anchor={{ x: 'start', y: 'bottom' }}
+                  menuId="predefined-agent-selector-create"
+                  isOpen={isPredefinedMenuOpen}
+                  setIsOpen={setIsPredefinedMenuOpen}
+                  trigger={
+                    <Ariakit.MenuButton
+                      className={cn(
+                        'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
+                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                        'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
+                        'transition-colors hover:border-fig-Stroke-standard',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
+                        {formData.selectedPredefinedId
+                          ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
+                          : 'None'}
+                      </span>
+                      <ChevronDown
+                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
+                        aria-hidden
+                      />
+                    </Ariakit.MenuButton>
+                  }
+                  items={[
+                    {
+                      label: 'None',
+                      onClick: () => {
+                        handlePredefinedSelect('');
+                        setIsPredefinedMenuOpen(false);
+                      },
+                    },
+                    ...PREDEFINED_PERSONAS.map((persona, idx) => ({
+                      label: persona.name,
+                      onClick: () => {
+                        handlePredefinedSelect(idx.toString());
+                        setIsPredefinedMenuOpen(false);
+                      },
+                    })),
+                  ]}
+                  className={cn(
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    'bg-fig-Surface-standard shadow-sm',
+                  )}
+                  itemClassName={cn(
+                    'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                    'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
+                    'cursor-pointer transition-colors',
+                  )}
+                />
+                {formData.selectedPredefinedId && (
+                  <p className="fy-typography-label-tiny text-fig-Subject-primary">
+                    {`Agent template auto-filled. Edit variables like {{variable_name}} with your values.`}
+                  </p>
+                )}
+              </div>
+
+              {/* Description field */}
+              <div className="flex flex-col gap-[var(--Gap-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  Description
+                </label>
+                <TextareaAutosize
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  minRows={3}
+                  maxRows={8}
+                  required={!formData.selectedPredefinedId}
+                  aria-label="Persona description"
+                  className={cn(
+                    'fy-typography-body-small w-full resize-none',
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+                    'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                    'transition-colors duration-200',
+                  )}
+                  placeholder={
+                    formData.selectedPredefinedId
+                      ? `Edit variables like {{focus_area}} with your values`
+                      : `Example: Conduct a deep research on the company and provide key findings.`
+                  }
+                />
+                {formData.selectedPredefinedId && (
+                  <p className="fy-typography-label-tiny text-fig-Subject-neutral">
+                    {`Variables to edit: ${PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map((v) => `{{${v}}}`).join(', ')}`}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
+              <Button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                  'transition-opacity hover:opacity-90',
+                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                  'disabled:opacity-50',
+                )}
+              >
+                {loading ? 'Creating...' : 'Create'}
+              </Button>
+              <Button
+                type="button"
+                onClick={onClose}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
+                  'transition-colors hover:bg-fig-Surface-neutral',
+                  'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
+                )}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
