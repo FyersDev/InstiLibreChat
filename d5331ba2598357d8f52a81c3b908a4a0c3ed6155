@@ -1,0 +1,22 @@
+client/src/components/Templates/TemplatesView.tsx
+  b38061d 601,1116-1124,1126-1164,1166-1192,1194-1217,1264-1273,1275-1279,1281-1290,1292-1297,1299,1301,1303-1311,1313-1314,1318-1335,1337-1338,1340-1345,1349-1363,1365-1412,1414-1415,1418-1447
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "2b7cbc945ba5462308aae92c2fe35f329eb015b7",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 1283,
+      "total_deletions": 689,
+      "accepted_lines": 2213,
+      "overriden_lines": 0
+    }
+  }
+}
