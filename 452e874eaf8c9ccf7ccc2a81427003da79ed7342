@@ -1,0 +1,26 @@
+client/src/components/Nav/Nav.tsx
+  b38061d 12,174,183
+client/src/routes/Root.tsx
+  b38061d 96
+client/src/components/Nav/SidebarEdgeTabs.tsx
+  b38061d 36,39-40,51
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "e14b411009849e9a4599b40671b91ff75d426818",
+  "prompts": {
+    "b38061d": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "3daed850-e215-4eff-a784-56a053a349d6",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 192,
+      "total_deletions": 177,
+      "accepted_lines": 170,
+      "overriden_lines": 0
+    }
+  }
+}
