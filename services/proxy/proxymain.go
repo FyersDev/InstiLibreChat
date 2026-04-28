@@ -42,6 +42,9 @@ var useHTTPS bool    // Whether cookies should have Secure flag
 var serverHTTPS bool // Whether server itself runs HTTPS (needs certificates)
 var basePath string  // Configurable base path prefix (e.g., "/research")
 
+// mongoLogLabel is logged instead of the real MONGO_URI value.
+const mongoLogLabel = "<MONGO>"
+
 // APIUser is the subset of Nucleus user fields we persist into LibreChat Mongo.
 type APIUser struct {
 	Email         string  `json:"email"`
@@ -151,7 +154,16 @@ func init() {
 	}
 
 	log.Printf("proxy: backend=%s frontend=%s mainAPI=%s mongoDB=%s basePath=%s",
-		libreBackend, libreFrontend, mainAPIURL, mongoURI, basePath)
+		libreBackend, libreFrontend, mainAPIURL, mongoLogLabel, basePath)
+	fylogger.InfoLog(context.Background(), "proxy_config_loaded", map[string]interface{}{
+		"service":    "insti-proxy",
+		"backend":    libreBackend,
+		"frontend":   libreFrontend,
+		"main_api":   mainAPIURL,
+		"mongo":      mongoLogLabel,
+		"base_path":  basePath,
+		"env_loaded": true,
+	})
 }
 
 // getNext6AMIST returns the next 6 AM IST time (which is 12:30 AM UTC)
@@ -198,33 +210,39 @@ func setCORSHeaders(w http.ResponseWriter, r *http.Request) {
 }
 
 // createOrUpdateLibreChatUser creates or updates a user in LibreChat's MongoDB
-func createOrUpdateLibreChatUser(user *APIUser, refreshToken string) (string, error) {
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func createOrUpdateLibreChatUser(reqCtx context.Context, user *APIUser, refreshToken string) (string, error) {
+	ctx, cancel := context.WithTimeout(reqCtx, 10*time.Second)
 	defer cancel()
-
-	log.Printf("Attempting to connect to MongoDB: %s", mongoURI)
 
 	// Connect to MongoDB
 	clientOptions := options.Client().ApplyURI(mongoURI)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Printf("MongoDB connection error: %v", err)
+		fylogger.ErrorLog(reqCtx, "mongo_user_connect_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "connect",
+		})
 		return "", fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 
 	defer func() {
 		if err := client.Disconnect(ctx); err != nil {
-			log.Printf("Error disconnecting from MongoDB: %v", err)
+			fylogger.ErrorLog(reqCtx, "mongo_user_disconnect_failed", err, map[string]interface{}{
+				"service": "insti-proxy", "mongo": mongoLogLabel,
+			})
 		}
 	}()
 
 	// Ping MongoDB to verify connection
 	if err := client.Ping(ctx, nil); err != nil {
-		log.Printf("MongoDB ping failed: %v", err)
+		fylogger.ErrorLog(reqCtx, "mongo_user_ping_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "ping",
+		})
 		return "", fmt.Errorf("failed to ping MongoDB: %w", err)
 	}
 
-	log.Printf("MongoDB connection successful")
+	fylogger.InfoLog(reqCtx, "mongo_user_connected", map[string]interface{}{
+		"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "ping_ok",
+	})
 
 	// Extract database name from URI or use default
 	dbName := "LibreChat"
@@ -253,7 +271,9 @@ func createOrUpdateLibreChatUser(user *APIUser, refreshToken string) (string, er
 		}
 	}
 
-	log.Printf("Using database: %s, collection: users", dbName)
+	fylogger.InfoLog(reqCtx, "mongo_user_db", map[string]interface{}{
+		"service": "insti-proxy", "database": dbName, "collection": "users",
+	})
 
 	// Get database and collection
 	db := client.Database(dbName)
@@ -317,30 +337,42 @@ func createOrUpdateLibreChatUser(user *APIUser, refreshToken string) (string, er
 
 	if err == mongo.ErrNoDocuments {
 		// User doesn't exist, create new
-		log.Printf("User not found, creating new user: %s (%s) for chat history", name, user.Email)
+		fylogger.InfoLog(reqCtx, "mongo_user_insert_start", map[string]interface{}{
+			"service": "insti-proxy", "email": user.Email, "name": name,
+		})
 
 		result, err := collection.InsertOne(ctx, libreUserDoc)
 		if err != nil {
-			log.Printf("MongoDB insert error: %v", err)
+			fylogger.ErrorLog(reqCtx, "mongo_user_insert_failed", err, map[string]interface{}{
+				"service": "insti-proxy", "email": user.Email,
+			})
 			return "", fmt.Errorf("failed to create user in MongoDB: %w", err)
 		}
 
 		if oid, ok := result.InsertedID.(primitive.ObjectID); ok {
 			mongoUserID = oid.Hex()
 		}
-		log.Printf("Successfully created LibreChat user: %s (%s) with ID: %v (for chat history)", name, user.Email, result.InsertedID)
+		fylogger.InfoLog(reqCtx, "mongo_user_inserted", map[string]interface{}{
+			"service": "insti-proxy", "email": user.Email, "name": name, "mongo_user_id": mongoUserID,
+		})
 	} else if err != nil && !hasDecodeError {
-		log.Printf("MongoDB find error: %v", err)
+		fylogger.ErrorLog(reqCtx, "mongo_user_find_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": user.Email,
+		})
 		return "", fmt.Errorf("failed to check existing user: %w", err)
 	}
 
 	// User exists (or we're continuing despite decode error), update it
 	if userExists || hasDecodeError {
 		if hasDecodeError {
-			log.Printf("RefreshToken decoding error, but user exists. Continuing with update...")
+			fylogger.WarningLog(reqCtx, "mongo_user_refresh_token_decode_warning", map[string]interface{}{
+				"service": "insti-proxy", "email": user.Email, "note": "continuing_with_update",
+			})
 		}
 
-		log.Printf("User exists, updating: %s (%s)", name, user.Email)
+		fylogger.InfoLog(reqCtx, "mongo_user_update_start", map[string]interface{}{
+			"service": "insti-proxy", "email": user.Email, "name": name,
+		})
 
 		update := bson.M{
 			"$set": bson.M{
@@ -359,37 +391,37 @@ func createOrUpdateLibreChatUser(user *APIUser, refreshToken string) (string, er
 				existingRefreshToken := existingDoc["refreshToken"]
 				if existingRefreshToken == nil {
 					update["$set"].(bson.M)["refreshToken"] = []interface{}{refreshToken}
-					log.Printf("Setting refreshToken as new array for user: %s", user.Email)
 				} else {
 					switch v := existingRefreshToken.(type) {
 					case primitive.A, []interface{}:
 						update["$addToSet"] = bson.M{
 							"refreshToken": refreshToken,
 						}
-						log.Printf("Adding refresh token to array for user: %s", user.Email)
 					default:
 						update["$set"].(bson.M)["refreshToken"] = []interface{}{refreshToken}
-						log.Printf("Converting refreshToken from %T to array for user: %s", v, user.Email)
+						fylogger.InfoLog(reqCtx, "mongo_user_refresh_token_normalized", map[string]interface{}{
+							"service": "insti-proxy", "email": user.Email, "from_type": fmt.Sprintf("%T", v),
+						})
 					}
 				}
 			}
 		} else if refreshToken != "" {
 			update["$set"].(bson.M)["refreshToken"] = []interface{}{refreshToken}
-			log.Printf("Setting refreshToken as new array for user: %s", user.Email)
 		}
 
 		result, err := collection.UpdateOne(ctx, filter, update)
 		if err != nil {
-			log.Printf("MongoDB update error: %v", err)
+			fylogger.ErrorLog(reqCtx, "mongo_user_update_failed", err, map[string]interface{}{
+				"service": "insti-proxy", "email": user.Email,
+			})
 			return "", fmt.Errorf("failed to update user in MongoDB: %w", err)
 		}
 
-		log.Printf("Successfully updated LibreChat user: %s (%s), Matched: %d, Modified: %d",
-			name, user.Email, result.MatchedCount, result.ModifiedCount)
-
-		if refreshToken != "" {
-			log.Printf("Added refresh token to LibreChat user: %s", user.Email)
-		}
+		fylogger.InfoLog(reqCtx, "mongo_user_updated", map[string]interface{}{
+			"service": "insti-proxy", "email": user.Email, "name": name,
+			"matched": result.MatchedCount, "modified": result.ModifiedCount,
+			"refresh_added": refreshToken != "",
+		})
 
 		// Get the user ID from existing document
 		var updatedDoc bson.M
@@ -404,36 +436,46 @@ func createOrUpdateLibreChatUser(user *APIUser, refreshToken string) (string, er
 }
 
 // createLibreChatSession creates a session in MongoDB for LibreChat authentication
-func createLibreChatSession(userID string) (string, error) {
+func createLibreChatSession(reqCtx context.Context, userID string) (string, error) {
 	if userID == "" {
 		return "", fmt.Errorf("userID is required")
 	}
 
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	ctx, cancel := context.WithTimeout(reqCtx, 10*time.Second)
 	defer cancel()
 
-	log.Printf("Creating LibreChat session - connecting to MongoDB: %s", mongoURI)
+	fylogger.InfoLog(reqCtx, "mongo_session_connect", map[string]interface{}{
+		"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "start",
+	})
 
 	clientOptions := options.Client().ApplyURI(mongoURI)
 	client, err := mongo.Connect(ctx, clientOptions)
 	if err != nil {
-		log.Printf("MongoDB connection error in createLibreChatSession: %v", err)
+		fylogger.ErrorLog(reqCtx, "mongo_session_connect_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "connect",
+		})
 		return "", fmt.Errorf("failed to connect to MongoDB: %w", err)
 	}
 
 	defer func() {
 		if err := client.Disconnect(ctx); err != nil {
-			log.Printf("Error disconnecting from MongoDB: %v", err)
+			fylogger.ErrorLog(reqCtx, "mongo_session_disconnect_failed", err, map[string]interface{}{
+				"service": "insti-proxy", "mongo": mongoLogLabel,
+			})
 		}
 	}()
 
 	// Ping MongoDB to verify connection
 	if err := client.Ping(ctx, nil); err != nil {
-		log.Printf("MongoDB ping failed in createLibreChatSession: %v", err)
+		fylogger.ErrorLog(reqCtx, "mongo_session_ping_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "ping",
+		})
 		return "", fmt.Errorf("failed to ping MongoDB: %w", err)
 	}
 
-	log.Printf("MongoDB connection verified for session creation")
+	fylogger.InfoLog(reqCtx, "mongo_session_ready", map[string]interface{}{
+		"service": "insti-proxy", "mongo": mongoLogLabel, "phase": "ping_ok",
+	})
 
 	// Parse database name from URI
 	dbName := "LibreChat"
@@ -515,7 +557,9 @@ func createLibreChatSession(userID string) (string, error) {
 		return "", fmt.Errorf("failed to update session with refreshTokenHash: %w", err)
 	}
 
-	log.Printf("Created LibreChat session for user %s: %s (with refreshTokenHash stored)", userID, sessionID)
+	fylogger.InfoLog(reqCtx, "mongo_session_created", map[string]interface{}{
+		"service": "insti-proxy", "user_id": userID, "session_id": sessionID,
+	})
 
 	// Step 5: Return raw (unhashed) token for cookie
 	return refreshTokenString, nil
@@ -524,49 +568,56 @@ func createLibreChatSession(userID string) (string, error) {
 // extractUserFromFyersToken decodes a FYERS SSO JWT and fetches user details from FYERS API.
 // Returns email + display name from the API. Returns empty strings if validation fails.
 // New token format: client_id, org_id (prefixed with INSTI~)
-func extractUserFromFyersToken(tokenString string) (email string, displayName string, valid bool) {
+func extractUserFromFyersToken(ctx context.Context, tokenString string) (email string, displayName string, valid bool) {
 	parser := jwt.NewParser()
 	token, _, err := parser.ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
-		log.Printf("extractUserFromFyersToken: Failed to parse JWT: %v", err)
+		fylogger.WarningLog(ctx, "fyers_token_parse_failed", map[string]interface{}{
+			"service": "insti-proxy", "error": err.Error(),
+		})
 		return "", "", false
 	}
 
 	claims, isClaims := token.Claims.(jwt.MapClaims)
 	if !isClaims {
-		log.Printf("extractUserFromFyersToken: Claims are not MapClaims")
+		fylogger.WarningLog(ctx, "fyers_token_invalid_claims", map[string]interface{}{"service": "insti-proxy"})
 		return "", "", false
 	}
 
 	// Verify issuer
 	iss, _ := claims["iss"].(string)
 	if !strings.Contains(iss, "insti.fyers.in") {
-		log.Printf("extractUserFromFyersToken: Invalid issuer: %s (expected insti.fyers.in)", iss)
+		fylogger.WarningLog(ctx, "fyers_token_invalid_issuer", map[string]interface{}{
+			"service": "insti-proxy", "issuer": iss,
+		})
 		return "", "", false
 	}
 
 	// Extract client_id (required)
 	clientID, hasClientID := claims["client_id"].(string)
 	if !hasClientID || clientID == "" {
-		log.Printf("extractUserFromFyersToken: client_id not found in token")
+		fylogger.WarningLog(ctx, "fyers_token_missing_client_id", map[string]interface{}{"service": "insti-proxy"})
 		return "", "", false
 	}
 
-	log.Printf("extractUserFromFyersToken: Token validated (client_id: %s)", clientID)
-	
+	fylogger.InfoLog(ctx, "fyers_token_validated", map[string]interface{}{
+		"service": "insti-proxy", "client_id": clientID,
+	})
+
 	// Call FYERS API to get user details (required - no fallback)
-	email, displayName, err = fetchUserDetailsFromFyersAPI(tokenString)
+	email, displayName, err = fetchUserDetailsFromFyersAPI(ctx, tokenString)
 	if err != nil {
-		log.Printf("extractUserFromFyersToken: Failed to fetch user details from API: %v", err)
+		fylogger.ErrorLog(ctx, "fyers_user_details_fetch_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "client_id": clientID,
+		})
 		return "", "", false
 	}
-	
-	log.Printf("extractUserFromFyersToken: Successfully fetched from API - email: %s, name: %s", email, displayName)
+
 	return email, displayName, true
 }
 
 // fetchUserDetailsFromFyersAPI calls the FYERS API to get user details
-func fetchUserDetailsFromFyersAPI(tokenString string) (email string, displayName string, err error) {
+func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (email string, displayName string, err error) {
 	apiURL := "https://api-t2.fyers.in/insti/admin/user-details"
 
 	// Create request
@@ -657,8 +708,11 @@ func fetchUserDetailsFromFyersAPI(tokenString string) (email string, displayName
 		displayName = strings.Split(email, "@")[0]
 	}
 
-	log.Printf("fetchUserDetailsFromFyersAPI: Fetched user - email: %s, name: %s, fyId: %s, role: %s",
-		email, displayName, apiResponse.Data.FyID, apiResponse.Data.Role)
+	fylogger.InfoLog(ctx, "fyers_api_user_details", map[string]interface{}{
+		"service": "insti-proxy",
+		"email":   email, "name": displayName,
+		"fy_id":   apiResponse.Data.FyID, "role": apiResponse.Data.Role,
+	})
 
 	return email, displayName, nil
 }
@@ -821,9 +875,11 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode the FYERS SSO token to get user info
-	email, fullName, ok := extractUserFromFyersToken(ssoToken)
+	email, fullName, ok := extractUserFromFyersToken(r.Context(), ssoToken)
 	if !ok {
-		log.Printf("EmbedHandler: Failed to extract user from token")
+		fylogger.WarningLog(r.Context(), "embed_handler_token_extract_failed", map[string]interface{}{
+			"service": "insti-proxy",
+		})
 		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "invalid_token", "http_status": "401"}))
 		http.Error(w, "invalid token", http.StatusUnauthorized)
 		return
@@ -833,7 +889,9 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 		fullName = email
 	}
 
-	log.Printf("EmbedHandler: Processing embed login for %s (%s)", email, fullName)
+	fylogger.InfoLog(r.Context(), "embed_handler_login_start", map[string]interface{}{
+		"service": "insti-proxy", "email": email, "name": fullName,
+	})
 
 	// Create or update user in LibreChat MongoDB
 	apiUser := &APIUser{
@@ -842,33 +900,43 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 		EmailVerified: true,
 	}
 
-	mongoUserID, err := createOrUpdateLibreChatUser(apiUser, ssoToken)
+	mongoUserID, err := createOrUpdateLibreChatUser(r.Context(), apiUser, ssoToken)
 	if err != nil {
-		log.Printf("EmbedHandler: Failed to sync user to MongoDB: %v", err)
+		fylogger.ErrorLog(r.Context(), "embed_handler_mongo_user_sync_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
 		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "mongo_user_sync", "email": email, "http_status": "500"}))
 		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
 	if mongoUserID == "" {
-		log.Printf("EmbedHandler: Empty mongoUserID after sync")
+		fylogger.ErrorLog(r.Context(), "embed_handler_empty_mongo_user_id", fmt.Errorf("empty mongo user id"), map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
 		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "empty_mongo_user_id", "email": email, "http_status": "500"}))
 		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
 
-	log.Printf("EmbedHandler: User synced to MongoDB (ID: %s)", mongoUserID)
+	fylogger.InfoLog(r.Context(), "embed_handler_user_synced", map[string]interface{}{
+		"service": "insti-proxy", "email": email, "mongo_user_id": mongoUserID,
+	})
 
 	// Create LibreChat session and generate refresh token
-	refreshTokenString, err := createLibreChatSession(mongoUserID)
+	refreshTokenString, err := createLibreChatSession(r.Context(), mongoUserID)
 	if err != nil {
-		log.Printf("EmbedHandler: Failed to create session: %v", err)
+		fylogger.ErrorLog(r.Context(), "embed_handler_session_create_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email, "mongo_user_id": mongoUserID,
+		})
 		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "session_create", "email": email, "http_status": "500"}))
 		http.Error(w, "failed to create session", http.StatusInternalServerError)
 		return
 	}
 
 	if len(libreJWTSecret) == 0 {
-		log.Printf("EmbedHandler: LIBRE_JWT_SECRET not configured")
+		fylogger.ErrorLog(r.Context(), "embed_handler_misconfig_no_libre_jwt", fmt.Errorf("LIBRE_JWT_SECRET not set"), map[string]interface{}{
+			"service": "insti-proxy",
+		})
 		http.Error(w, "server misconfigured", http.StatusInternalServerError)
 		return
 	}
@@ -888,7 +956,9 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	accessTokenString, err := accessToken.SignedString(libreJWTSecret)
 	if err != nil {
-		log.Printf("EmbedHandler: Failed to sign access token: %v", err)
+		fylogger.ErrorLog(r.Context(), "embed_handler_sign_access_token_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
 		http.Error(w, "failed to generate token", http.StatusInternalServerError)
 		return
 	}
@@ -901,7 +971,9 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	})
 	proxyTokenString, err := proxyToken.SignedString(jwtSecret)
 	if err != nil {
-		log.Printf("EmbedHandler: Failed to sign proxy token: %v", err)
+		fylogger.ErrorLog(r.Context(), "embed_handler_sign_proxy_token_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
 		http.Error(w, "failed to generate token", http.StatusInternalServerError)
 		return
 	}
@@ -967,7 +1039,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Call Go Main API internal endpoint to get saas-api tokens
-	saasAccess, saasRefresh := fetchSaasTokens(email)
+	saasAccess, saasRefresh := fetchSaasTokens(r.Context(), email)
 	if saasAccess != "" {
 		cookies = append(cookies, &http.Cookie{
 			Name:     "saas_access_token",
@@ -997,7 +1069,9 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 		http.SetCookie(w, c)
 	}
 
-	log.Printf("EmbedHandler: Set %d cookies for %s, redirecting to %s", len(cookies), email, redirectPath)
+	fylogger.InfoLog(r.Context(), "embed_handler_cookies_set", map[string]interface{}{
+		"service": "insti-proxy", "email": email, "cookie_count": len(cookies), "redirect_path": redirectPath,
+	})
 
 	saasOK := "false"
 	if saasAccess != "" {
@@ -1017,25 +1091,45 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 
 // fetchSaasTokens calls the Go Main API's internal endpoint to get saas-api tokens.
 // Returns (accessToken, refreshToken). On failure, returns empty strings.
-func fetchSaasTokens(email string) (string, string) {
+func fetchSaasTokens(ctx context.Context, email string) (string, string) {
 	reqBody := fmt.Sprintf(`{"email":"%s"}`, email)
-	url := mainAPIURL + "/api/v1/auth/internal/login-by-email"
+	loginURL := mainAPIURL + "/api/v1/auth/internal/login-by-email"
 
-	resp, err := http.Post(url, "application/json", strings.NewReader(reqBody))
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, loginURL, strings.NewReader(reqBody))
 	if err != nil {
-		log.Printf("EmbedHandler: Failed to call internal login API: %v", err)
+		fylogger.ErrorLog(ctx, "saas_internal_login_request_build_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
+		return "", ""
+	}
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	if err != nil {
+		fylogger.ErrorLog(ctx, "saas_internal_login_request_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email, "main_api": mainAPIURL,
+		})
 		return "", ""
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		log.Printf("EmbedHandler: Failed to read internal login response: %v", err)
+		fylogger.ErrorLog(ctx, "saas_internal_login_read_body_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
 		return "", ""
 	}
 
-	if resp.StatusCode != 200 {
-		log.Printf("EmbedHandler: Internal login API returned %d: %s", resp.StatusCode, string(body))
+	if resp.StatusCode != http.StatusOK {
+		bodySnippet := string(body)
+		if len(bodySnippet) > 512 {
+			bodySnippet = bodySnippet[:512] + "…"
+		}
+		fylogger.WarningLog(ctx, "saas_internal_login_non_200", map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+			"status":  resp.StatusCode, "body_snippet": bodySnippet,
+		})
 		return "", ""
 	}
 
@@ -1046,11 +1140,15 @@ func fetchSaasTokens(email string) (string, string) {
 		} `json:"data"`
 	}
 	if err := json.Unmarshal(body, &result); err != nil {
-		log.Printf("EmbedHandler: Failed to parse internal login response: %v", err)
+		fylogger.ErrorLog(ctx, "saas_internal_login_parse_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "email": email,
+		})
 		return "", ""
 	}
 
-	log.Printf("EmbedHandler: Got saas-api tokens for %s", email)
+	fylogger.InfoLog(ctx, "saas_internal_login_ok", map[string]interface{}{
+		"service": "insti-proxy", "email": email,
+	})
 	return result.Data.AccessToken, result.Data.RefreshToken
 }
 
@@ -1083,7 +1181,12 @@ func verifyToken(tokenString string) (string, error) {
 
 // proxyWebsocket proxies a websocket connection to the target websocket endpoint.
 func proxyWebsocket(w http.ResponseWriter, r *http.Request, targetUrl *url.URL, email string) {
-	dialer := websocket.DefaultDialer
+	dialer := *websocket.DefaultDialer
+	if v := strings.TrimSpace(os.Getenv("PROXY_WS_HANDSHAKE_TIMEOUT")); v != "" {
+		if d, err := time.ParseDuration(v); err == nil && d > 0 {
+			dialer.HandshakeTimeout = d
+		}
+	}
 
 	requestHeader := http.Header{}
 	for k, v := range r.Header {
@@ -1101,6 +1204,8 @@ func proxyWebsocket(w http.ResponseWriter, r *http.Request, targetUrl *url.URL, 
 			requestHeader.Add(k, vv)
 		}
 	}
+	// Must match upstream (e.g. Vite on :3090). Forwarding the browser's Host (proxy port) breaks WS handshakes.
+	requestHeader.Set("Host", targetUrl.Host)
 
 	if email != "" {
 		requestHeader.Set("X-Authenticated-User", email)
@@ -1119,9 +1224,22 @@ func proxyWebsocket(w http.ResponseWriter, r *http.Request, targetUrl *url.URL, 
 		RawQuery: r.URL.RawQuery,
 	}
 
-	backendConn, resp, err := dialer.Dial(targetWsUrl.String(), requestHeader)
+	fylogger.InfoLog(r.Context(), "websocket_proxy_start", map[string]interface{}{
+		"service": "insti-proxy",
+		"target":  targetWsUrl.Redacted(),
+		"path":    r.URL.Path,
+		"backend": targetUrl.Host,
+	})
+
+	backendConn, resp, err := dialer.DialContext(r.Context(), targetWsUrl.String(), requestHeader)
 	if err != nil {
-		log.Printf("websocket dial error: %v (resp: %+v)\n", err, resp)
+		st := 0
+		if resp != nil {
+			st = resp.StatusCode
+		}
+		fylogger.ErrorLog(r.Context(), "websocket_dial_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "path": r.URL.Path, "upstream_status": st,
+		})
 		http.Error(w, "Error connecting to backend websocket: "+err.Error(), http.StatusBadGateway)
 		return
 	}
@@ -1132,7 +1250,9 @@ func proxyWebsocket(w http.ResponseWriter, r *http.Request, targetUrl *url.URL, 
 
 	clientConn, err := upgrader.Upgrade(w, r, nil)
 	if err != nil {
-		log.Printf("websocket upgrade error: %v\n", err)
+		fylogger.ErrorLog(r.Context(), "websocket_upgrade_failed", err, map[string]interface{}{
+			"service": "insti-proxy", "path": r.URL.Path,
+		})
 		backendConn.Close()
 		return
 	}
@@ -1196,6 +1316,12 @@ func main() {
 
 	// Backend API proxy
 	backendProxy := httputil.NewSingleHostReverseProxy(backendTarget)
+	backendProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		fylogger.ErrorLog(r.Context(), "libre_backend_proxy_error", err, map[string]interface{}{
+			"service": "insti-proxy", "upstream": backendTarget.Host, "method": r.Method, "path": r.URL.Path,
+		})
+		http.Error(w, fmt.Sprintf("Bad Gateway: %v", err), http.StatusBadGateway)
+	}
 	backendProxy.Transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -1290,6 +1416,12 @@ func main() {
 
 	// Frontend proxy (for Vite dev server)
 	frontendProxy := httputil.NewSingleHostReverseProxy(frontendTarget)
+	frontendProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
+		fylogger.ErrorLog(r.Context(), "libre_frontend_proxy_error", err, map[string]interface{}{
+			"service": "insti-proxy", "upstream": frontendTarget.Host, "method": r.Method, "path": r.URL.Path,
+		})
+		http.Error(w, fmt.Sprintf("Bad Gateway: %v", err), http.StatusBadGateway)
+	}
 	frontendProxy.Transport = &http.Transport{
 		Proxy: http.ProxyFromEnvironment,
 		DialContext: (&net.Dialer{
@@ -1382,7 +1514,6 @@ func main() {
 	}
 	// Add error handler to catch and log proxy errors
 	saasAPIProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
-		log.Printf("ERROR: saasAPIProxy error for %s %s: %v", r.Method, r.URL.Path, err)
 		fylogger.ErrorLog(r.Context(), "saas_proxy_error", err, map[string]interface{}{
 			"service": "insti-proxy",
 			"method":  r.Method,
@@ -1563,6 +1694,7 @@ func main() {
 	signal.Notify(stop, os.Interrupt, syscall.SIGTERM)
 	<-stop
 
+	fylogger.InfoLog(context.Background(), "proxy_shutdown", map[string]interface{}{"service": "insti-proxy"})
 	log.Println("Shutting down...")
 	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 	defer cancel()
