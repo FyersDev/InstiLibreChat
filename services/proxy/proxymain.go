@@ -829,6 +829,23 @@ func stripRedirectQueryKey(relPath, key string) string {
 	return pathPart + "?" + v.Encode()
 }
 
+// logAPIV1Request logs proxied saas-api traffic under /api/v1/ (query string omitted — may contain tokens).
+func logAPIV1Request(r *http.Request) {
+	m := map[string]interface{}{
+		"service": "insti-proxy",
+		"method":  r.Method,
+		"path":    r.URL.Path,
+		"remote":  r.RemoteAddr,
+	}
+	if r.URL.RawQuery != "" {
+		m["has_query"] = true
+	}
+	if ua := r.Header.Get("User-Agent"); ua != "" {
+		m["user_agent"] = ua
+	}
+	fylogger.InfoLog(r.Context(), "api_v1_request", m)
+}
+
 // auditFields prepares fylogger additionalData (structured JSON) for proxy audit lines.
 func auditFields(fields map[string]string) map[string]interface{} {
 	m := make(map[string]interface{}, len(fields)+1)
@@ -1224,12 +1241,15 @@ func proxyWebsocket(w http.ResponseWriter, r *http.Request, targetUrl *url.URL, 
 		RawQuery: r.URL.RawQuery,
 	}
 
-	fylogger.InfoLog(r.Context(), "websocket_proxy_start", map[string]interface{}{
-		"service": "insti-proxy",
-		"target":  targetWsUrl.Redacted(),
-		"path":    r.URL.Path,
-		"backend": targetUrl.Host,
-	})
+	wsLog := targetWsUrl
+	wsLog.RawQuery = ""
+	logExtra := map[string]interface{}{
+		"service": "insti-proxy", "ws_base": wsLog.String(), "path": r.URL.Path, "backend": targetUrl.Host,
+	}
+	if targetWsUrl.RawQuery != "" {
+		logExtra["query"] = "<hidden>"
+	}
+	fylogger.InfoLog(r.Context(), "websocket_proxy_start", logExtra)
 
 	backendConn, resp, err := dialer.DialContext(r.Context(), targetWsUrl.String(), requestHeader)
 	if err != nil {
@@ -1538,6 +1558,7 @@ func main() {
 	// Backend API routes (basePath/api and basePath/oauth)
 	http.HandleFunc(basePath+"/api/", func(w http.ResponseWriter, r *http.Request) {
 		if strings.HasPrefix(r.URL.Path, basePath+"/api/v1/") {
+			logAPIV1Request(r)
 			setCORSHeaders(w, r)
 			if r.Method == "OPTIONS" {
 				w.WriteHeader(http.StatusOK)
