@@ -23,6 +23,7 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
 	"github.com/joho/godotenv"
+	fylogger "github.com/FyersDev/trading-logger-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -774,6 +775,16 @@ func stripRedirectQueryKey(relPath, key string) string {
 	return pathPart + "?" + v.Encode()
 }
 
+// auditFields prepares fylogger additionalData (structured JSON) for proxy audit lines.
+func auditFields(fields map[string]string) map[string]interface{} {
+	m := make(map[string]interface{}, len(fields)+1)
+	m["service"] = "insti-proxy"
+	for k, v := range fields {
+		m[k] = v
+	}
+	return m
+}
+
 // embedHandler handles GET /auth/embed?token=<FYERS_SSO_TOKEN>&redirect=/c/new
 // Also accepts next= or return_to= as redirect aliases (same sanitization).
 // theme=light|dark|system on the embed URL is forwarded onto the redirect (if not already set).
@@ -787,6 +798,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 
 	ssoToken := r.URL.Query().Get("token")
 	if ssoToken == "" {
+		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "missing_token", "http_status": "400"}))
 		http.Error(w, "token parameter required", http.StatusBadRequest)
 		return
 	}
@@ -812,6 +824,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	email, fullName, ok := extractUserFromFyersToken(ssoToken)
 	if !ok {
 		log.Printf("EmbedHandler: Failed to extract user from token")
+		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "invalid_token", "http_status": "401"}))
 		http.Error(w, "invalid token", http.StatusUnauthorized)
 		return
 	}
@@ -832,11 +845,13 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	mongoUserID, err := createOrUpdateLibreChatUser(apiUser, ssoToken)
 	if err != nil {
 		log.Printf("EmbedHandler: Failed to sync user to MongoDB: %v", err)
+		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "mongo_user_sync", "email": email, "http_status": "500"}))
 		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
 	if mongoUserID == "" {
 		log.Printf("EmbedHandler: Empty mongoUserID after sync")
+		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "empty_mongo_user_id", "email": email, "http_status": "500"}))
 		http.Error(w, "failed to create user", http.StatusInternalServerError)
 		return
 	}
@@ -847,6 +862,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	refreshTokenString, err := createLibreChatSession(mongoUserID)
 	if err != nil {
 		log.Printf("EmbedHandler: Failed to create session: %v", err)
+		fylogger.InfoLog(r.Context(), "embed_rejected", auditFields(map[string]string{"reason": "session_create", "email": email, "http_status": "500"}))
 		http.Error(w, "failed to create session", http.StatusInternalServerError)
 		return
 	}
@@ -982,6 +998,19 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	log.Printf("EmbedHandler: Set %d cookies for %s, redirecting to %s", len(cookies), email, redirectPath)
+
+	saasOK := "false"
+	if saasAccess != "" {
+		saasOK = "true"
+	}
+	fylogger.InfoLog(r.Context(), "embed_success", auditFields(map[string]string{
+		"email":         email,
+		"mongo_user_id": mongoUserID,
+		"redirect_path": redirectPath,
+		"saas_tokens":   saasOK,
+		"cookie_count":  fmt.Sprintf("%d", len(cookies)),
+		"http_status":   "302",
+	}))
 
 	http.Redirect(w, r, redirectPath, http.StatusFound)
 }
@@ -1354,6 +1383,11 @@ func main() {
 	// Add error handler to catch and log proxy errors
 	saasAPIProxy.ErrorHandler = func(w http.ResponseWriter, r *http.Request, err error) {
 		log.Printf("ERROR: saasAPIProxy error for %s %s: %v", r.Method, r.URL.Path, err)
+		fylogger.ErrorLog(r.Context(), "saas_proxy_error", err, map[string]interface{}{
+			"service": "insti-proxy",
+			"method":  r.Method,
+			"path":    r.URL.Path,
+		})
 		http.Error(w, fmt.Sprintf("Bad Gateway: %v", err), http.StatusBadGateway)
 	}
 
