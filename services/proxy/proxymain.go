@@ -53,6 +53,27 @@ type APIUser struct {
 	FullName      string  `json:"full_name"`
 	AvatarURL     *string `json:"avatar_url,omitempty"`
 	EmailVerified bool    `json:"email_verified"`
+	// InstiRole is the raw FYERS Insti role from user-details (e.g. OrgAdmin). Mapped to LibreChat role on write.
+	InstiRole string `json:"insti_role,omitempty"`
+}
+
+// fyInstiRoleToLibreChatRole maps Insti API role strings to LibreChat roles (ADMIN / USER).
+// FY_INSTI_ADMIN_ROLES is a comma-separated list of Insti roles that become ADMIN (default: OrgAdmin).
+func fyInstiRoleToLibreChatRole(instiRole string) string {
+	instiRole = strings.TrimSpace(instiRole)
+	if instiRole == "" {
+		return "USER"
+	}
+	list := strings.TrimSpace(os.Getenv("FY_INSTI_ADMIN_ROLES"))
+	if list == "" {
+		list = "OrgAdmin"
+	}
+	for _, r := range strings.Split(list, ",") {
+		if strings.EqualFold(strings.TrimSpace(r), instiRole) {
+			return "ADMIN"
+		}
+	}
+	return "USER"
 }
 
 func getLibreBackend() string {
@@ -299,6 +320,8 @@ func createOrUpdateLibreChatUser(reqCtx context.Context, user *APIUser, refreshT
 		name = username
 	}
 
+	libreRole := fyInstiRoleToLibreChatRole(user.InstiRole)
+
 	// Prepare refresh token array
 	refreshTokenArray := []interface{}{}
 	if refreshToken != "" {
@@ -313,7 +336,7 @@ func createOrUpdateLibreChatUser(reqCtx context.Context, user *APIUser, refreshT
 		"emailVerified":    user.EmailVerified,
 		"avatar":           user.AvatarURL,
 		"provider":         "header",
-		"role":             "USER",
+		"role":             libreRole,
 		"plugins":          []interface{}{},
 		"twoFactorEnabled": false,
 		"termsAccepted":    false,
@@ -380,6 +403,7 @@ func createOrUpdateLibreChatUser(reqCtx context.Context, user *APIUser, refreshT
 				"username":      username,
 				"emailVerified": user.EmailVerified,
 				"avatar":        user.AvatarURL,
+				"role":          libreRole,
 				"updatedAt":     time.Now(),
 			},
 		}
@@ -566,22 +590,22 @@ func createLibreChatSession(reqCtx context.Context, userID string) (string, erro
 }
 
 // extractUserFromFyersToken decodes a FYERS SSO JWT and fetches user details from FYERS API.
-// Returns email + display name from the API. Returns empty strings if validation fails.
+// Returns email, display name, and Insti role (e.g. OrgAdmin) from user-details. Empty if validation fails.
 // New token format: client_id, org_id (prefixed with INSTI~)
-func extractUserFromFyersToken(ctx context.Context, tokenString string) (email string, displayName string, valid bool) {
+func extractUserFromFyersToken(ctx context.Context, tokenString string) (email string, displayName string, instiRole string, valid bool) {
 	parser := jwt.NewParser()
 	token, _, err := parser.ParseUnverified(tokenString, jwt.MapClaims{})
 	if err != nil {
 		fylogger.WarningLog(ctx, "fyers_token_parse_failed", map[string]interface{}{
 			"service": "insti-proxy", "error": err.Error(),
 		})
-		return "", "", false
+		return "", "", "", false
 	}
 
 	claims, isClaims := token.Claims.(jwt.MapClaims)
 	if !isClaims {
 		fylogger.WarningLog(ctx, "fyers_token_invalid_claims", map[string]interface{}{"service": "insti-proxy"})
-		return "", "", false
+		return "", "", "", false
 	}
 
 	// Verify issuer
@@ -590,14 +614,14 @@ func extractUserFromFyersToken(ctx context.Context, tokenString string) (email s
 		fylogger.WarningLog(ctx, "fyers_token_invalid_issuer", map[string]interface{}{
 			"service": "insti-proxy", "issuer": iss,
 		})
-		return "", "", false
+		return "", "", "", false
 	}
 
 	// Extract client_id (required)
 	clientID, hasClientID := claims["client_id"].(string)
 	if !hasClientID || clientID == "" {
 		fylogger.WarningLog(ctx, "fyers_token_missing_client_id", map[string]interface{}{"service": "insti-proxy"})
-		return "", "", false
+		return "", "", "", false
 	}
 
 	fylogger.InfoLog(ctx, "fyers_token_validated", map[string]interface{}{
@@ -605,25 +629,25 @@ func extractUserFromFyersToken(ctx context.Context, tokenString string) (email s
 	})
 
 	// Call FYERS API to get user details (required - no fallback)
-	email, displayName, err = fetchUserDetailsFromFyersAPI(ctx, tokenString)
+	email, displayName, instiRole, err = fetchUserDetailsFromFyersAPI(ctx, tokenString)
 	if err != nil {
 		fylogger.ErrorLog(ctx, "fyers_user_details_fetch_failed", err, map[string]interface{}{
 			"service": "insti-proxy", "client_id": clientID,
 		})
-		return "", "", false
+		return "", "", "", false
 	}
 
-	return email, displayName, true
+	return email, displayName, instiRole, true
 }
 
 // fetchUserDetailsFromFyersAPI calls the FYERS API to get user details
-func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (email string, displayName string, err error) {
+func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (email string, displayName string, instiRole string, err error) {
 	apiURL := "https://api-t2.fyers.in/insti/admin/user-details"
 
 	// Create request
 	req, err := http.NewRequest("GET", apiURL, nil)
 	if err != nil {
-		return "", "", fmt.Errorf("failed to create request: %w", err)
+		return "", "", "", fmt.Errorf("failed to create request: %w", err)
 	}
 
 	// Set authorization header with INSTI~ prefix
@@ -640,14 +664,14 @@ func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (emai
 	client := &http.Client{Timeout: 10 * time.Second}
 	resp, err := client.Do(req)
 	if err != nil {
-		return "", "", fmt.Errorf("API request failed: %w", err)
+		return "", "", "", fmt.Errorf("API request failed: %w", err)
 	}
 	defer resp.Body.Close()
 
 	// Read response body
 	body, readErr := io.ReadAll(resp.Body)
 	if readErr != nil {
-		return "", "", fmt.Errorf("failed to read response: %w", readErr)
+		return "", "", "", fmt.Errorf("failed to read response: %w", readErr)
 	}
 
 	// Parse response - API now returns wrapped format with code, s, data fields
@@ -670,7 +694,7 @@ func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (emai
 	}
 
 	if err := json.Unmarshal(body, &apiResponse); err != nil {
-		return "", "", fmt.Errorf("failed to parse API response: %w", err)
+		return "", "", "", fmt.Errorf("failed to parse API response: %w", err)
 	}
 
 	// Check response status and code
@@ -683,23 +707,23 @@ func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (emai
 		
 		switch apiResponse.Code {
 		case 401:
-			return "", "", fmt.Errorf("authentication required: %s", errorMsg)
+			return "", "", "", fmt.Errorf("authentication required: %s", errorMsg)
 		case 403:
-			return "", "", fmt.Errorf("FYERS token required: %s", errorMsg)
+			return "", "", "", fmt.Errorf("FYERS token required: %s", errorMsg)
 		case 400:
-			return "", "", fmt.Errorf("invalid token: %s", errorMsg)
+			return "", "", "", fmt.Errorf("invalid token: %s", errorMsg)
 		case 404:
-			return "", "", fmt.Errorf("user not found: %s", errorMsg)
+			return "", "", "", fmt.Errorf("user not found: %s", errorMsg)
 		case 500:
-			return "", "", fmt.Errorf("internal server error: %s", errorMsg)
+			return "", "", "", fmt.Errorf("internal server error: %s", errorMsg)
 		default:
-			return "", "", fmt.Errorf("API error (code %d): %s", apiResponse.Code, errorMsg)
+			return "", "", "", fmt.Errorf("API error (code %d): %s", apiResponse.Code, errorMsg)
 		}
 	}
 
 	// Validate user data
 	if apiResponse.Data.Email == "" {
-		return "", "", fmt.Errorf("email not found in API response")
+		return "", "", "", fmt.Errorf("email not found in API response")
 	}
 
 	email = apiResponse.Data.Email
@@ -708,13 +732,15 @@ func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (emai
 		displayName = strings.Split(email, "@")[0]
 	}
 
+	instiRole = strings.TrimSpace(apiResponse.Data.Role)
+
 	fylogger.InfoLog(ctx, "fyers_api_user_details", map[string]interface{}{
 		"service": "insti-proxy",
 		"email":   email, "name": displayName,
-		"fy_id":   apiResponse.Data.FyID, "role": apiResponse.Data.Role,
+		"fy_id":   apiResponse.Data.FyID, "insti_role": instiRole,
 	})
 
-	return email, displayName, nil
+	return email, displayName, instiRole, nil
 }
 
 // sanitizeEmbedRedirect returns a same-origin relative path for post-login redirect.
@@ -892,7 +918,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 	}
 
 	// Decode the FYERS SSO token to get user info
-	email, fullName, ok := extractUserFromFyersToken(r.Context(), ssoToken)
+	email, fullName, instiRole, ok := extractUserFromFyersToken(r.Context(), ssoToken)
 	if !ok {
 		fylogger.WarningLog(r.Context(), "embed_handler_token_extract_failed", map[string]interface{}{
 			"service": "insti-proxy",
@@ -908,6 +934,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 
 	fylogger.InfoLog(r.Context(), "embed_handler_login_start", map[string]interface{}{
 		"service": "insti-proxy", "email": email, "name": fullName,
+		"insti_role": instiRole, "libre_role": fyInstiRoleToLibreChatRole(instiRole),
 	})
 
 	// Create or update user in LibreChat MongoDB
@@ -915,6 +942,7 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 		Email:         email,
 		FullName:      fullName,
 		EmailVerified: true,
+		InstiRole:     instiRole,
 	}
 
 	mongoUserID, err := createOrUpdateLibreChatUser(r.Context(), apiUser, ssoToken)
