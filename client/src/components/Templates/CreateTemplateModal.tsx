@@ -1,9 +1,18 @@
 import { useState } from 'react';
 import * as Ariakit from '@ariakit/react';
-import { Button, Dialog, DialogContent, DialogHeader, DialogTitle, Input, TextareaAutosize, DropdownPopup } from '@librechat/client';
-import { ChevronDown } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DropdownPopup,
+  Input,
+  TextareaAutosize,
+} from '@librechat/client';
+import { ChevronDown, X } from 'lucide-react';
+import { cn } from '~/utils';
 
-// Create Template Modal
 export default function CreateTemplateModal({
   onClose,
   onSave,
@@ -68,42 +77,129 @@ export default function CreateTemplateModal({
 
   const handleFrameworkChange = (framework: string) => {
     if (framework === 'custom') {
-      setFormData({
-        ...formData,
-        framework: '',
-        customTemplate: true,
-        fields: {},
-      });
+      setFormData({ ...formData, framework: '', customTemplate: true, fields: {} });
     } else {
       setFormData({
         ...formData,
-        framework: framework,
+        framework,
         customTemplate: false,
-        fields: (frameworks as any)[framework].fields,
+        fields: (frameworks as any)[framework]?.fields ?? {},
       });
     }
   };
 
   const handleFieldChange = (key: string, value: string) => {
-    setFormData({
-      ...formData,
-      fields: {
-        ...formData.fields,
-        [key]: value,
-      },
-    });
+    setFormData({ ...formData, fields: { ...formData.fields, [key]: value } });
+  };
+
+  const frameworkLabel = (() => {
+    if (formData.customTemplate) return 'Custom template';
+    if (formData.framework) return (frameworks as any)[formData.framework].name as string;
+    return 'None';
+  })();
+
+  const renderBodyFields = () => {
+    if (formData.framework && !formData.customTemplate) {
+      return (
+        <div className="flex flex-col gap-[var(--Gap-zero-spacer)]">
+          <p className="fy-typography-label-tiny text-fig-Subject-primary">
+            {(frameworks as any)[formData.framework].name}
+          </p>
+          {Object.entries((frameworks as any)[formData.framework].fields).map(([key, label]) => (
+            <div key={key} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+              <label className="fy-typography-label-small text-fig-Subject-neutral">
+                {String(label)}
+              </label>
+              <TextareaAutosize
+                value={formData.fields[key] || ''}
+                onChange={(e) => handleFieldChange(key, e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) e.preventDefault();
+                }}
+                placeholder={`Enter ${String(label).toLowerCase()}`}
+                required
+                minRows={2}
+                maxRows={6}
+                aria-label={String(label)}
+                className={cn(
+                  'fy-typography-body-small w-full resize-none',
+                  'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                  'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+                  'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+                  'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                  'transition-colors duration-200',
+                )}
+              />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    if (formData.customTemplate) {
+      return (
+        <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+          <label className="fy-typography-label-small text-fig-Subject-neutral">
+            {'Description'}
+            <span className="text-fig-Subject-danger"> {'*'}</span>
+          </label>
+          <TextareaAutosize
+            value={formData.fields.custom || ''}
+            onChange={(e) => handleFieldChange('custom', e.target.value)}
+            minRows={4}
+            maxRows={10}
+            placeholder="Example: Create custom templates for executive, analytical view."
+            required
+            aria-label="Custom template content"
+            className={cn(
+              'fy-typography-body-small w-full resize-none',
+              'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+              'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+              'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+              'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+              'transition-colors duration-200',
+            )}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+        <label className="fy-typography-label-small text-fig-Subject-neutral">
+          {'Description'}
+        </label>
+        <TextareaAutosize
+          value={formData.fields.custom || ''}
+          onChange={(e) => handleFieldChange('custom', e.target.value)}
+          minRows={3}
+          maxRows={8}
+          placeholder="Example: Create custom templates for executive, analytical view."
+          aria-label="Template description"
+          className={cn(
+            'fy-typography-body-small w-full resize-none',
+            'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+            'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+            'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+            'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+            'transition-colors duration-200',
+          )}
+        />
+      </div>
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError(null);
+
     if (!formData.name.trim()) {
       setError('Template name is required');
       return;
     }
 
     if (formData.customTemplate) {
-      if (!formData.fields.custom || !formData.fields.custom.trim()) {
+      if (!formData.fields.custom?.trim()) {
         setError('Custom template content is required');
         return;
       }
@@ -130,8 +226,8 @@ export default function CreateTemplateModal({
     try {
       await onSave(template);
       onClose();
-    } catch (error: any) {
-      setError(error.message || 'Failed to create template');
+    } catch (err: any) {
+      setError(err.message || 'Failed to create template');
     } finally {
       setLoading(false);
     }
@@ -139,147 +235,189 @@ export default function CreateTemplateModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Create Template</DialogTitle>
-        </DialogHeader>
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
-            {error}
-          </div>
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
+          'gap-0',
+          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
+          'rounded-[var(--Corner-highlyRounded)]',
+          'text-fig-Subject-standard shadow-none',
+          'dark:!bg-fig-Surface-one-standard',
         )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Template Name *
-            </label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="w-full px-4 py-2.5 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100"
-            />
+      >
+        {/* Header */}
+        <DialogHeader
+          className={cn(
+            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+            'px-[var(--Gap-parentChild)] pt-[var(--Padding-sibling)]',
+          )}
+        >
+          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
+            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
+              {'Create template'}
+            </DialogTitle>
+            <button
+              type="button"
+              onClick={onClose}
+              className={cn(
+                'inline-flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] items-center justify-center',
+                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                'hover:bg-fig-Surface-neutral focus:outline-none focus-visible:ring-fig-Stroke-primary',
+              )}
+              aria-label="Close"
+            >
+              <X className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)]" aria-hidden />
+            </button>
           </div>
+        </DialogHeader>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Select Framework
-            </label>
-            <div className="relative">
-              <DropdownPopup
-                portal={false}
-                sameWidth={true}
-                anchor={{ x: 'start', y: 'bottom' }}
-                menuId="framework-selector-create"
-                isOpen={isFrameworkMenuOpen}
-                setIsOpen={setIsFrameworkMenuOpen}
-                trigger={
-                  <Ariakit.MenuButton
-                    style={{ height: '40px' }}
-                    className="w-full flex items-center justify-between gap-1.5 rounded-lg border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 px-4 text-sm font-normal text-gray-900 dark:text-gray-100 transition-all hover:border-gray-400 dark:hover:border-gray-500"
-                  >
-                    <span>
-                      {formData.customTemplate 
-                        ? 'Create Custom Template'
-                        : formData.framework 
-                          ? (frameworks as any)[formData.framework].name
-                          : '-- Select Framework --'}
-                    </span>
-                    <ChevronDown className="h-4 w-4 text-gray-500" />
-                  </Ariakit.MenuButton>
-                }
-                items={[
-                  {
-                    label: '-- Select Framework --',
-                    onClick: () => {
-                      handleFrameworkChange('');
-                      setIsFrameworkMenuOpen(false);
-                    },
-                  },
-                  ...Object.keys(frameworks).map((key) => ({
-                    label: (frameworks as any)[key].name,
-                    onClick: () => {
-                      handleFrameworkChange(key);
-                      setIsFrameworkMenuOpen(false);
-                    },
-                  })),
-                  {
-                    label: 'Create Custom Template',
-                    onClick: () => {
-                      handleFrameworkChange('custom');
-                      setIsFrameworkMenuOpen(false);
-                    },
-                  },
-                ]}
-                className="w-full rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700"
-                itemClassName="px-4 py-3 text-sm text-gray-900 dark:text-gray-100 hover:bg-gray-100 dark:hover:bg-gray-700 cursor-pointer transition-colors"
-              />
-            </div>
-          </div>
-
-          {formData.framework && !formData.customTemplate && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-5 mt-5">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">
-                {(frameworks as any)[formData.framework].name}
-              </h3>
-              {Object.entries((frameworks as any)[formData.framework].fields).map(([key, label]) => (
-                <div key={key}>
-                  <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                    {String(label)}
-                  </label>
-                  <TextareaAutosize
-                    value={formData.fields[key] || ''}
-                    onChange={(e) => handleFieldChange(key, e.target.value)}
-                    onKeyDown={(e) => {
-                      if (e.key === 'Enter' && !e.shiftKey) {
-                        e.preventDefault();
-                      }
-                    }}
-                    placeholder={`Enter ${String(label).toLowerCase()}`}
-                    required
-                    minRows={3}
-                    maxRows={8}
-                    aria-label={String(label)}
-                    className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
-                  />
-                </div>
-              ))}
+        {/* Body */}
+        <div className="flex max-h-[70vh] flex-col gap-[var(--Gap-parentChild)] overflow-y-auto px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]">
+          {error && (
+            <div
+              className={cn(
+                'fy-typography-body-small',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                'bg-fig-Surface-one-danger px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                'text-fig-Subject-danger',
+              )}
+            >
+              {error}
             </div>
           )}
 
-          {formData.customTemplate && (
-            <div className="space-y-4 border-t border-gray-200 dark:border-gray-700 pt-5 mt-5">
-              <h3 className="font-semibold text-gray-900 dark:text-gray-100 text-base">Custom Template</h3>
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Template Content *
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
+            {/* Inner card */}
+            <div
+              className={cn(
+                'flex flex-col gap-[var(--Gap-zero-spacer)]',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                'p-[var(--Padding-spacer)]',
+              )}
+            >
+              {/* Template name */}
+              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  {'Template name'}
                 </label>
-                <TextareaAutosize
-                  value={formData.fields.custom || ''}
-                  onChange={(e) => handleFieldChange('custom', e.target.value)}
-                  minRows={8}
-                  maxRows={15}
-                  placeholder="Enter your custom template here..."
+                <Input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
-                  aria-label="Custom template content"
-                  className="w-full px-4 py-3 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none"
+                  placeholder="Example: Executive summary, detailed company analysis"
+                  className={cn(
+                    'fy-typography-body-small h-[var(--Size-input)] w-full',
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
+                    '!placeholder:text-fig-Subject-soft',
+                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                    'transition-colors duration-200',
+                  )}
                 />
               </div>
-            </div>
-          )}
 
-          <div className="flex gap-3 pt-4 border-t border-gray-200 dark:border-gray-700 mt-6">
-            <Button type="button" onClick={onClose} variant="outline" className="flex-1 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100">
-              Cancel
-            </Button>
-            <Button type="submit" disabled={loading} className="flex-1 bg-blue-600 hover:bg-blue-700 text-white disabled:bg-blue-400">
-              {loading ? 'Creating...' : 'Save Template'}
-            </Button>
-          </div>
-        </form>
+              {/* Framework selector */}
+              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  {'Select framework'}
+                </label>
+                <DropdownPopup
+                  portal={false}
+                  sameWidth={true}
+                  anchor={{ x: 'start', y: 'bottom' }}
+                  menuId="framework-selector-create"
+                  isOpen={isFrameworkMenuOpen}
+                  setIsOpen={setIsFrameworkMenuOpen}
+                  trigger={
+                    <Ariakit.MenuButton
+                      className={cn(
+                        'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
+                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                        'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
+                        'transition-colors hover:border-fig-Stroke-standard',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
+                        {frameworkLabel}
+                      </span>
+                      <ChevronDown
+                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
+                        aria-hidden
+                      />
+                    </Ariakit.MenuButton>
+                  }
+                  items={[
+                    {
+                      label: 'None',
+                      onClick: () => {
+                        handleFrameworkChange('');
+                        setIsFrameworkMenuOpen(false);
+                      },
+                    },
+                    ...Object.keys(frameworks).map((key) => ({
+                      label: (frameworks as any)[key].name,
+                      onClick: () => {
+                        handleFrameworkChange(key);
+                        setIsFrameworkMenuOpen(false);
+                      },
+                    })),
+                    {
+                      label: 'Custom template',
+                      onClick: () => {
+                        handleFrameworkChange('custom');
+                        setIsFrameworkMenuOpen(false);
+                      },
+                    },
+                  ]}
+                  className={cn(
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    'bg-fig-Surface-standard shadow-sm',
+                  )}
+                  itemClassName={cn(
+                    'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                    'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
+                    'cursor-pointer transition-colors',
+                  )}
+                />
+              </div>
+
+              {/* Dynamic fields based on selection */}
+              {renderBodyFields()}
+            </div>
+
+            {/* Footer buttons */}
+            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
+              <Button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                  'transition-opacity hover:opacity-90',
+                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                  'disabled:opacity-50',
+                )}
+              >
+                {loading ? 'Creating...' : 'Create'}
+              </Button>
+              <Button
+                type="button"
+                onClick={onClose}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
+                  'transition-colors hover:bg-fig-Surface-neutral',
+                  'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
+                )}
+              >
+                {'Dismiss'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
 }
-

@@ -243,7 +243,7 @@ export default function CreatePersonaModal({
         <DialogHeader
           className={cn(
             'mb-0 flex shrink-0 flex-col space-y-0 border-0',
-            'px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]',
+            'px-[var(--Gap-parentChild)] pt-[var(--Padding-sibling)]',
           )}
         >
           <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
@@ -266,11 +266,8 @@ export default function CreatePersonaModal({
           </div>
         </DialogHeader>
 
-        {/* Divider */}
-        <div className="h-px w-full bg-fig-Stroke-soft" />
-
         {/* Body */}
-        <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]">
+        <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
           {error && (
             <div
               className={cn(
@@ -384,9 +381,6 @@ export default function CreatePersonaModal({
               <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
                 <label className="fy-typography-label-small text-fig-Subject-neutral">
                   Description
-                  {!formData.selectedPredefinedId && (
-                    <span className="text-fig-Subject-danger"> *</span>
-                  )}
                 </label>
                 <TextareaAutosize
                   value={formData.description}
@@ -423,7 +417,7 @@ export default function CreatePersonaModal({
                 type="submit"
                 disabled={loading}
                 className={cn(
-                  'fy-typography-label-small h-[var(--Size-zero-button)] rounded-[2px]',
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
                   'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
                   'transition-opacity hover:opacity-90',
                   'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
@@ -436,7 +430,7 @@ export default function CreatePersonaModal({
                 type="button"
                 onClick={onClose}
                 className={cn(
-                  'fy-typography-label-small h-[var(--Size-zero-button)] rounded-[2px]',
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
                   'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
                   'transition-colors hover:bg-fig-Surface-neutral',
                   'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
