@@ -1,4 +1,5 @@
 import * as Ariakit from '@ariakit/react';
+import * as DialogPrimitive from '@radix-ui/react-dialog';
 import {
   Button,
   Dialog,
@@ -1587,153 +1588,261 @@ function EditTemplateModal({
   };
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Edit Template</DialogTitle>
-        </DialogHeader>
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="dium text-fig-Subject-standard">Template Name *</label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="focus::ingring-fig-Strprimriy/20aw0 ull roundedf[2pl] ournere] border-fistrddtadd orr-fig-Stroke text-sm-texp-fig-Trimabody focur:border-fig-Stroke-priyary border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
-            />
-          </div>
-
-          <div>
-            <label className="dium text-fig-Subject-standard">Select Framework</label>
-            <div className="relative">
-              <DropdownPopup
-                portal={false}
-                sameWidth={true}
-                anchor={{ x: 'start', y: 'bottom' }}
-                menuId="framework-selector-edit"
-                isOpen={isFrameworkMenuOpen}
-                setIsOpen={setIsFrameworkMenuOpen}
-                trigger={
-                  <Ariakit.MenuButton
-                    style={{ height: '40px' }}
-                    className="-Surface-standard bordertrorder-fig-Strake-standans bg-fig-Surfaci-standatdion-all hover:border-fig- text-fig-Text-bodyStroke-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
-                  >
-                    <span>
-                      {formData.customTemplate
-                        ? 'Create Custom Template'
-                        : formData.framework
-                          ? (frameworks as any)[formData.framework].name
-                          : '-- Select Framework --'}
-                    </span>
-                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
-                  </Ariakit.MenuButton>
-                }
-                items={[
-                  {
-                    label: '-- Select Framework --',
-                    onClick: () => {
-                      handleFrameworkChange('');
-                      setIsFrameworkMenuOpen(false);
-                    },
-                  },
-                  ...Object.keys(frameworks).map((key) => ({
-                    label: (frameworks as any)[key].name,
-                    onClick: () => {
-                      handleFrameworkChange(key);
-                      setIsFrameworkMenuOpen(false);
-                    },
-                  })),
-                  {
-                    label: 'Create Custom Template',
-                    onClick: () => {
-                      handleFrameworkChange('custom');
-                      setIsFrameworkMenuOpen(false);
-                    },
-                  },
-                ]}
-                className="divide border-da w-full divide-y rounded-[2px] border border-fig-Stroke-soft shadow-lg"
-                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
-              />
+    <DialogPrimitive.Root open={true} onOpenChange={onClose}>
+      <DialogPrimitive.Portal>
+        <DialogPrimitive.Overlay className="fixed inset-0 z-[999] bg-transparent" />
+        <DialogPrimitive.Content
+          className={cn(
+            'fixed left-1/2 top-1/2 z-[999] flex w-full max-w-[var(--Size-overlay)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden p-0',
+            'gap-0',
+            'border border-fig-Stroke-soft bg-fig-Surface-one-standard',
+            'rounded-[var(--Corner-highlyRounded)]',
+            'text-fig-Subject-standard shadow-none',
+            'animate-in data-[state=open]:fade-in-90',
+          )}
+        >
+          {/* Header */}
+          <div
+            className={cn(
+              'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+              'px-[var(--Gap-parentChild)] pt-[var(--Padding-sibling)]',
+            )}
+          >
+            <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
+              <DialogPrimitive.Title className="fy-typography-title m-0 text-fig-Subject-standard">
+                {'Edit template'}
+              </DialogPrimitive.Title>
+              <button
+                type="button"
+                onClick={onClose}
+                className={cn(
+                  'inline-flex h-[var(--Size-icon)] w-[var(--Size-icon)] items-center justify-center',
+                  'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                  'hover:bg-fig-Surface-neutral',
+                  'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+                )}
+                aria-label="Close"
+              >
+                <X className="h-4 w-4" aria-hidden />
+              </button>
             </div>
           </div>
 
-          {formData.framework && !formData.customTemplate && (
-            <div className="border-fig-St border-troke-sr-fig-Stookefsoft pt-5">
-              <h3 className="ont-semibold text-fig-Text-headind text-fig-Text-heaging">
-                {(frameworks as any)[formData.framework].name}
-              </h3>
-              {Object.entries((frameworks as any)[formData.framework].fields).map(
-                ([key, label]) => (
-                  <div key={key}>
-                    <label className="dium text-fig-Subject-standard">{String(label)}</label>
+          {/* Body */}
+          <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
+            {error && (
+              <div
+                className={cn(
+                  'fy-typography-body-small',
+                  'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                  'bg-fig-Surface-one-danger px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                  'text-fig-Subject-danger',
+                )}
+              >
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
+              {/* Inner card */}
+              <div
+                className={cn(
+                  'flex flex-col gap-[var(--Gap-zero-spacer)]',
+                  'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                  'p-[var(--Padding-spacer)]',
+                )}
+              >
+                {/* Template name field */}
+                <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                  <label className="fy-typography-label-small text-fig-Subject-neutral">
+                    {'Template name'}
+                  </label>
+                  <Input
+                    type="text"
+                    value={formData.name}
+                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    required
+                    placeholder="Example: Research template"
+                    className={cn(
+                      'fy-typography-body-small h-[var(--Size-input)] w-full',
+                      'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                      '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
+                      'placeholder:!text-fig-Subject-soft',
+                      'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                      'transition-colors duration-200',
+                    )}
+                  />
+                </div>
+
+                {/* Framework dropdown */}
+                <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                  <label className="fy-typography-label-small text-fig-Subject-neutral">
+                    {'Select framework'}
+                  </label>
+                  <DropdownPopup
+                    portal={false}
+                    sameWidth={true}
+                    anchor={{ x: 'start', y: 'bottom' }}
+                    menuId="framework-selector-edit"
+                    isOpen={isFrameworkMenuOpen}
+                    setIsOpen={setIsFrameworkMenuOpen}
+                    trigger={
+                      <Ariakit.MenuButton
+                        className={cn(
+                          'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
+                          'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                          'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
+                          'transition-colors hover:border-fig-Stroke-standard',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
+                          {formData.customTemplate
+                            ? 'Create Custom Template'
+                            : formData.framework
+                              ? (frameworks as any)[formData.framework].name
+                              : '-- Select Framework --'}
+                        </span>
+                        <ChevronDown
+                          className="h-[var(--Size-icon)] w-[var(--Size-icon)] shrink-0 text-fig-Subject-soft"
+                          aria-hidden
+                        />
+                      </Ariakit.MenuButton>
+                    }
+                    items={[
+                      {
+                        label: '-- Select Framework --',
+                        onClick: () => {
+                          handleFrameworkChange('');
+                          setIsFrameworkMenuOpen(false);
+                        },
+                      },
+                      ...Object.keys(frameworks).map((key) => ({
+                        label: (frameworks as any)[key].name,
+                        onClick: () => {
+                          handleFrameworkChange(key);
+                          setIsFrameworkMenuOpen(false);
+                        },
+                      })),
+                      {
+                        label: 'Create Custom Template',
+                        onClick: () => {
+                          handleFrameworkChange('custom');
+                          setIsFrameworkMenuOpen(false);
+                        },
+                      },
+                    ]}
+                    className={cn(
+                      'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                      'bg-fig-Surface-standard shadow-sm',
+                    )}
+                    itemClassName={cn(
+                      'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                      'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
+                      'cursor-pointer transition-colors',
+                    )}
+                  />
+                </div>
+
+                {/* Framework-specific fields */}
+                {formData.framework && !formData.customTemplate && (
+                  <div className="flex flex-col gap-[var(--Gap-zero-spacer)]">
+                    <p className="fy-typography-label-small text-fig-Subject-neutral">
+                      {(frameworks as any)[formData.framework].name}
+                    </p>
+                    {Object.entries((frameworks as any)[formData.framework].fields).map(
+                      ([key, label]) => (
+                        <div key={key} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                          <label className="fy-typography-label-small text-fig-Subject-neutral">
+                            {String(label)}
+                          </label>
+                          <TextareaAutosize
+                            value={formData.fields[key] || ''}
+                            onChange={(e) => handleFieldChange(key, e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === 'Enter' && !e.shiftKey) {
+                                e.preventDefault();
+                              }
+                            }}
+                            placeholder={`Enter ${String(label).toLowerCase()}`}
+                            required
+                            minRows={3}
+                            maxRows={8}
+                            aria-label={String(label)}
+                            className={cn(
+                              'fy-typography-body-small w-full resize-none',
+                              'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                              'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+                              'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+                              'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                              'transition-colors duration-200',
+                            )}
+                          />
+                        </div>
+                      ),
+                    )}
+                  </div>
+                )}
+
+                {/* Custom template field */}
+                {formData.customTemplate && (
+                  <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                    <label className="fy-typography-label-small text-fig-Subject-neutral">
+                      {'Template content'}
+                    </label>
                     <TextareaAutosize
-                      value={formData.fields[key] || ''}
-                      onChange={(e) => handleFieldChange(key, e.target.value)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' && !e.shiftKey) {
-                          e.preventDefault();
-                        }
-                      }}
-                      placeholder={`Enter ${String(label).toLowerCase()}`}
+                      value={formData.fields.custom || ''}
+                      onChange={(e) => handleFieldChange('custom', e.target.value)}
+                      minRows={8}
+                      maxRows={15}
+                      placeholder="Enter your custom template here..."
                       required
-                      minRows={3}
-                      maxRows={8}
-                      aria-label={String(label)}
-                      className="focus::ingring-fig-Strprimriy/20aw0 ull reswzefnone roundld-[2pl] esriererounded-[2px] bordstordigdface-standard px-4tpyx3 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
+                      aria-label="Custom template content"
+                      className={cn(
+                        'fy-typography-body-small w-full resize-none',
+                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                        'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+                        'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+                        'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                        'transition-colors duration-200',
+                      )}
                     />
                   </div>
-                ),
-              )}
-            </div>
-          )}
-
-          {formData.customTemplate && (
-            <div className="border-fig-St border-troke-sr-fig-Stookefsoft pt-5">
-              <h3 className="ont-semibold text-fig-Text-headind text-fig-Text-heaging">
-                Custom Template
-              </h3>
-              <div>
-                <label className="dium text-fig-Subject-standard">Template Content *</label>
-                <TextareaAutosize
-                  value={formData.fields.custom || ''}
-                  onChange={(e) => handleFieldChange('custom', e.target.value)}
-                  minRows={8}
-                  maxRows={15}
-                  placeholder="Enter your custom template here..."
-                  required
-                  aria-label="Custom template content"
-                  className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzlrnsneernnnded-[2px] roundeeb-Sderke-standard stindagdface-standard tpxx4 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
-                />
+                )}
               </div>
-            </div>
-          )}
 
-          <div className="t border-fig-St border-troke-sr-fig-Stookefsoft pt-4">
-            <Button
-              type="button"
-              onClick={onClose}
-              variant="outline"
-              className="border-fig-Stbg-standarfac -fig-Surfatext-standabjettxt-fig-da flex-1 border"
-            >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="forderex-1 btrok br-fig-Strgrimaryubfacfitwo-g-Surface-two-primary text-fig-Subjechover:opacity-90 flex-1 border disabled:opacity-50"
-            >
-              {loading ? 'Updating...' : 'Update Template'}
-            </Button>
+              {/* Footer buttons */}
+              <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className={cn(
+                    'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                    'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                    'transition-opacity hover:opacity-90',
+                    'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                    'disabled:opacity-50',
+                  )}
+                >
+                  {loading ? 'Updating...' : 'Update template'}
+                </Button>
+                <Button
+                  type="button"
+                  onClick={onClose}
+                  className={cn(
+                    'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                    'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
+                    'transition-colors hover:bg-fig-Surface-neutral',
+                    'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
+                  )}
+                >
+                  {'Dismiss'}
+                </Button>
+              </div>
+            </form>
           </div>
-        </form>
-      </DialogContent>
-    </Dialog>
+        </DialogPrimitive.Content>
+      </DialogPrimitive.Portal>
+    </DialogPrimitive.Root>
   );
 }
 
@@ -2230,127 +2339,219 @@ function EditPersonaModal({
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="overflow-y-auto bg-fig-Surface-neutral p-6">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Edit Agents</DialogTitle>
-        </DialogHeader>
-        {error && (
-          <div className="mb-4 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {error}
-          </div>
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
+          'gap-0',
+          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
+          'rounded-[var(--Corner-highlyRounded)]',
+          'text-fig-Subject-standard shadow-none',
+          'dark:!bg-fig-Surface-one-standard',
         )}
-        <form onSubmit={handleSubmit} className="space-y-5">
-          <div>
-            <label className="dium text-fig-Subject-standard">Name *</label>
-            <Input
-              type="text"
-              value={formData.name}
-              onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              required
-              className="focus:cingring-fig-Strprimeiy/20aw0 ull roundedf[2pl] ournere] border-fistrddtadd orr-fig-Stroke text-sm-texp-fig-Trimabody focur:border-fig-Stroke-priyary border px-4 py-2.5 text-sm focus:outline-none focus:ring-2"
-            />
-          </div>
-
-          {/* Predefined Personas - Above description */}
-          <div>
-            <label className="dium text-fig-Subject-standard">
-              Select Predefined Persona (optional)
-            </label>
-            <div className="relative">
-              <DropdownPopup
-                portal={false}
-                sameWidth={true}
-                anchor={{ x: 'start', y: 'bottom' }}
-                menuId="predefined-persona-selector-edit"
-                isOpen={isPredefinedMenuOpen}
-                setIsOpen={setIsPredefinedMenuOpen}
-                trigger={
-                  <Ariakit.MenuButton
-                    style={{ height: '40px' }}
-                    className="-Surface-standard bordertrorder-fig-Strake-standans bg-fig-Surfaci-standatdion-all hover:border-fig-Stext-fig-Text-body troke-standard px-4 text-sm font-normal text-fig-Text-body hover:border-fig-Stroke-standard"
-                  >
-                    <span>
-                      {formData.selectedPredefinedId
-                        ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
-                        : '-- Select Predefined Persona (Optional) --'}
-                    </span>
-                    <ChevronDown className="text-fig-Subject- h-4 w-4" />
-                  </Ariakit.MenuButton>
-                }
-                items={[
-                  {
-                    label: '-- Select Predefined Persona (Optional) --',
-                    onClick: () => {
-                      handlePredefinedSelect('');
-                      setIsPredefinedMenuOpen(false);
-                    },
-                  },
-                  ...PREDEFINED_PERSONAS.map((persona, idx) => ({
-                    label: persona.name,
-                    onClick: () => {
-                      handlePredefinedSelect(idx.toString());
-                      setIsPredefinedMenuOpen(false);
-                    },
-                  })),
-                ]}
-                className="y divide-divide-y divide-rounded-[2px] fig-St borderroke-soft border-figshadow-lg w-full rounded-[2px] border"
-                itemClassName="text-fig-Text-body cursor-pointer px-4 py-3 text-sm transition-colors hover:bg-fig-Surface-one-standard"
-              />
-            </div>
-            {formData.selectedPredefinedId && (
-              <p className="mm-1 tt-1 xs text-text-xs text-fig-Su">
-                Persona template will be auto-filled below. Just edit the variables like{' '}
-                {`{{variable_name}}`} with your values.
-              </p>
-            )}
-          </div>
-
-          <div>
-            <label className="dium text-fig-Subject-standard">
-              Description {formData.selectedPredefinedId ? '' : '*'}
-            </label>
-            <TextareaAutosize
-              value={formData.description}
-              onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-              minRows={5}
-              maxRows={10}
-              required={!formData.selectedPredefinedId}
-              aria-label="Persona description"
-              className="focus:cingring-fig-Strprimeiy/20aw0 ull reswzefnonl roundedr[2px] esriererounded-[2px] bordstordigdface-standard px-4tpyx3 text-xm text-ftg-Tfxtib-dyxf-cbs:order--figkSprokrapriyary px-4 py-3 focus:outline-none focus:ring-2"
-              placeholder={
-                formData.selectedPredefinedId
-                  ? 'Edit variables like {{focus_area}} with your values'
-                  : 'Enter persona description...'
-              }
-            />
-            {formData.selectedPredefinedId && (
-              <p className="text-fig-Su mt-1 text-xs">
-                Variables to edit:{' '}
-                {PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables
-                  .map((v) => `{{${v}}}`)
-                  .join(', ')}
-              </p>
-            )}
-          </div>
-
-          <div className="t border-fig-St border-troke-sr-fig-Stookefsoft pt-4">
-            <Button
+      >
+        {/* Header */}
+        <DialogHeader
+          className={cn(
+            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+            'px-[var(--Gap-parentChild)] pt-[var(--Padding-sibling)]',
+          )}
+        >
+          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
+            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
+              {'Edit agent'}
+            </DialogTitle>
+            <button
               type="button"
               onClick={onClose}
-              variant="outline"
-              className="border-fig-Stbg-standarfac -fig-Surfatext-standabjettxt-fig-da flex-1 border"
+              className={cn(
+                'inline-flex h-[var(--Size-icon)] w-[var(--Size-icon)] items-center justify-center',
+                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                'hover:bg-fig-Surface-neutral',
+                'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+              )}
+              aria-label="Close"
             >
-              Cancel
-            </Button>
-            <Button
-              type="submit"
-              disabled={loading}
-              className="forderex-1 btrok er-fig-Strgrimaryurface- wgig-Surface-two-primary text-fig-Subje flex-1 border hover:opacity-90 disabled:opacity-50"
-            >
-              {loading ? 'Updating...' : 'Update Agent'}
-            </Button>
+              <X className="h-4 w-4" aria-hidden />
+            </button>
           </div>
-        </form>
+        </DialogHeader>
+
+        {/* Body */}
+        <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
+          {error && (
+            <div
+              className={cn(
+                'fy-typography-body-small',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                'bg-fig-Surface-one-danger px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                'text-fig-Subject-danger',
+              )}
+            >
+              {error}
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
+            {/* Inner card */}
+            <div
+              className={cn(
+                'flex flex-col gap-[var(--Gap-zero-spacer)]',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                'p-[var(--Padding-spacer)]',
+              )}
+            >
+              {/* Name field */}
+              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  {'Name of the agent'}
+                </label>
+                <Input
+                  type="text"
+                  value={formData.name}
+                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                  required
+                  placeholder="Example: Research assistant"
+                  className={cn(
+                    'fy-typography-body-small h-[var(--Size-input)] w-full',
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
+                    'placeholder:!text-fig-Subject-soft',
+                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                    'transition-colors duration-200',
+                  )}
+                />
+              </div>
+
+              {/* Predefined agent dropdown */}
+              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  {'Select pre-defined agent (Optional)'}
+                </label>
+                <DropdownPopup
+                  portal={false}
+                  sameWidth={true}
+                  anchor={{ x: 'start', y: 'bottom' }}
+                  menuId="predefined-persona-selector-edit"
+                  isOpen={isPredefinedMenuOpen}
+                  setIsOpen={setIsPredefinedMenuOpen}
+                  trigger={
+                    <Ariakit.MenuButton
+                      className={cn(
+                        'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
+                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                        'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
+                        'transition-colors hover:border-fig-Stroke-standard',
+                      )}
+                    >
+                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
+                        {formData.selectedPredefinedId
+                          ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
+                          : 'None'}
+                      </span>
+                      <ChevronDown
+                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
+                        aria-hidden
+                      />
+                    </Ariakit.MenuButton>
+                  }
+                  items={[
+                    {
+                      label: 'None',
+                      onClick: () => {
+                        handlePredefinedSelect('');
+                        setIsPredefinedMenuOpen(false);
+                      },
+                    },
+                    ...PREDEFINED_PERSONAS.map((p, idx) => ({
+                      label: p.name,
+                      onClick: () => {
+                        handlePredefinedSelect(idx.toString());
+                        setIsPredefinedMenuOpen(false);
+                      },
+                    })),
+                  ]}
+                  className={cn(
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    'bg-fig-Surface-standard shadow-sm',
+                  )}
+                  itemClassName={cn(
+                    'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                    'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
+                    'cursor-pointer transition-colors',
+                  )}
+                />
+                {formData.selectedPredefinedId && (
+                  <p className="fy-typography-label-tiny text-fig-Subject-primary">
+                    {`Agent template auto-filled. Edit variables like {{variable_name}} with your values.`}
+                  </p>
+                )}
+              </div>
+
+              {/* Description field */}
+              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  {'Description'}
+                </label>
+                <TextareaAutosize
+                  value={formData.description}
+                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                  minRows={3}
+                  maxRows={8}
+                  required={!formData.selectedPredefinedId}
+                  aria-label="Persona description"
+                  className={cn(
+                    'fy-typography-body-small w-full resize-none',
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
+                    'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
+                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+                    'transition-colors duration-200',
+                  )}
+                  placeholder={
+                    formData.selectedPredefinedId
+                      ? `Edit variables like {{focus_area}} with your values`
+                      : `Example: Conduct a deep research on the company and provide key findings.`
+                  }
+                />
+                {formData.selectedPredefinedId && (
+                  <p className="fy-typography-label-tiny text-fig-Subject-neutral">
+                    {`Variables to edit: ${PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map((v) => `{{${v}}}`).join(', ')}`}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Footer buttons */}
+            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
+              <Button
+                type="submit"
+                disabled={loading}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                  'transition-opacity hover:opacity-90',
+                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                  'disabled:opacity-50',
+                )}
+              >
+                {loading ? 'Updating...' : 'Update agent'}
+              </Button>
+              <Button
+                type="button"
+                onClick={onClose}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
+                  'transition-colors hover:bg-fig-Surface-neutral',
+                  'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
+                )}
+              >
+                {'Dismiss'}
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

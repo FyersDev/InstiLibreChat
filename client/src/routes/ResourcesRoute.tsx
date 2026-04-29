@@ -678,7 +678,7 @@ export default function ResourcesRoute() {
                       'sm:flex-none',
                     )}
                   >
-                    <Plus className="h-3 w-3 shrink-0" aria-hidden />
+                    <Plus className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0" aria-hidden />
                     <span className="hidden sm:inline">Create folder</span>
                     <span className="sm:hidden">Folder</span>
                   </button>
@@ -688,7 +688,7 @@ export default function ResourcesRoute() {
                       setShowUploadFileModal(true);
                     }}
                     className={cn(
-                      'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border border-fig-Stroke-standard',
+                      'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-[var(--Gap-one-buddy)] rounded-[2px] border border-fig-Stroke-standard',
                       'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
                       'font-inter text-xs font-normal leading-4 text-fig-Subject-standard',
                       'transition-colors',
@@ -696,11 +696,24 @@ export default function ResourcesRoute() {
                       'sm:flex-none',
                     )}
                   >
-                    <img
-                      src="/research/assets/export.svg"
-                      alt=""
-                      className="h-3 w-3 shrink-0 opacity-90 dark:opacity-100"
-                    />
+                    <svg
+                      width="16"
+                      height="14"
+                      viewBox="0 0 16 14"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                      className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 pr-[var(--Gap-one-buddy)] text-fig-Subject-standard"
+                      aria-hidden="true"
+                    >
+                      <path
+                        d="M1.2 12.2885H14.8V7.78568H16V13.534H0V7.78568H1.2V12.2885Z"
+                        fill="currentColor"
+                      />
+                      <path
+                        d="M11.4688 4.1497L10.6188 5.02869L8.6 2.92365V10.0813H7.4V2.92528L5.38125 5.02869L4.53125 4.1497L8.00078 0.533997L11.4688 4.1497Z"
+                        fill="currentColor"
+                      />
+                    </svg>
                     <span className="hidden sm:inline">Upload document</span>
                     <span className="sm:hidden">Upload</span>
                   </button>
@@ -803,11 +816,6 @@ export default function ResourcesRoute() {
 
       {/* Content View */}
       <div className="flex-1 overflow-auto">
-        {error && (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-red-700 dark:border-red-800 dark:bg-red-900/20 dark:text-red-400">
-            {error}
-          </div>
-        )}
 
         {filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
           <div className="py-12 text-center">
@@ -816,7 +824,7 @@ export default function ResourcesRoute() {
               alt="Empty Folder"
               className="mx-auto mb-4 h-12 w-12 opacity-40 dark:invert"
             />
-            <p className="mb-4 text-gray-600 dark:text-gray-400">This folder is empty</p>
+            <p className="mb-4 text-fig-Subject-standard">This folder is empty</p>
           </div>
         ) : (
           /* List/Table View - Responsive */

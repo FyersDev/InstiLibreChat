@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState, useMemo, memo, lazy, Suspense, useRef } from 'react';
+import { useCallback, useEffect, useState, useMemo, memo, useRef } from 'react';
 import { useRecoilValue } from 'recoil';
 import { AnimatePresence, motion } from 'framer-motion';
 import { useMediaQuery } from '@librechat/client';
@@ -12,10 +12,6 @@ import NewChat from './NewChat';
 import SidebarEdgeTabs from './SidebarEdgeTabs';
 import { cn } from '~/utils';
 import store from '~/store';
-
-const AccountSettings = lazy(() => import('./AccountSettings'));
-const AgentMarketplaceButton = lazy(() => import('./AgentMarketplaceButton'));
-const NavSettingsButton = lazy(() => import('./NavSettingsButton'));
 
 const NAV_WIDTH_DESKTOP = '300px';
 const NAV_WIDTH_MOBILE = '320px';
@@ -58,7 +54,7 @@ const Nav = memo(
 
     const search = useRecoilValue(store.search);
 
-    const { data, fetchNextPage, isFetchingNextPage, isLoading, isFetching, refetch } =
+    const { data, fetchNextPage, isFetchingNextPage, isLoading, isFetching } =
       useConversationsInfiniteQuery(
         {
           search: search.debouncedQuery || undefined,
@@ -139,17 +135,6 @@ const Nav = memo(
       [search.enabled, isSmallScreen],
     );
 
-    const headerButtons = useMemo(
-      () => (
-        <>
-          <Suspense fallback={null}>
-            <AgentMarketplaceButton isSmallScreen={isSmallScreen} toggleNav={toggleNavVisible} />
-          </Suspense>
-        </>
-      ),
-      [isSmallScreen, toggleNavVisible],
-    );
-
     const [isSearchLoading, setIsSearchLoading] = useState(
       !!search.query && (search.isTyping || isLoading || isFetching),
     );
@@ -181,7 +166,7 @@ const Nav = memo(
               key="nav"
             >
               <SidebarEdgeTabs navVisible={navVisible} setNavVisible={setNavVisible} />
-              <div className="bg-fig-Surface-standard h-full w-[320px] rounded-[2px] md:w-[300px]">
+              <div className="h-full w-[320px] rounded-[2px] bg-fig-Surface-standard md:w-[300px]">
                 <div className="flex h-full flex-col">
                   <nav
                     id="chat-history-nav"
@@ -192,7 +177,6 @@ const Nav = memo(
                       <MemoNewChat
                         subHeaders={subHeaders}
                         toggleNav={toggleNavVisible}
-                        headerButtons={headerButtons}
                         isSmallScreen={isSmallScreen}
                       />
                       <Conversations
