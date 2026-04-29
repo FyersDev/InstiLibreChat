@@ -3,6 +3,7 @@ module FyersDev/insti-inquora-proxy
 go 1.25.5
 
 require (
+	github.com/FyersDev/godotenv-ssm v1.0.2
 	github.com/FyersDev/trading-logger-go v1.2.2
 	github.com/golang-jwt/jwt/v5 v5.3.1
 	github.com/gorilla/websocket v1.5.3
@@ -12,6 +13,7 @@ require (
 
 require (
 	github.com/adhocore/gronx v1.19.5 // indirect
+	github.com/aws/aws-sdk-go v1.44.186 // indirect
 	github.com/aws/aws-sdk-go-v2 v1.21.0 // indirect
 	github.com/aws/aws-sdk-go-v2/aws/protocol/eventstream v1.4.13 // indirect
 	github.com/aws/aws-sdk-go-v2/config v1.18.43 // indirect
@@ -42,6 +44,7 @@ require (
 	github.com/go-playground/validator/v10 v10.20.0 // indirect
 	github.com/goccy/go-json v0.10.2 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
+	github.com/jmespath/go-jmespath v0.4.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/klauspost/compress v1.16.7 // indirect
 	github.com/klauspost/cpuid/v2 v2.2.7 // indirect

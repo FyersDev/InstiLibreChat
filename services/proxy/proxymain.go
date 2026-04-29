@@ -20,10 +20,10 @@ import (
 	"syscall"
 	"time"
 
+	godotenvssm "github.com/FyersDev/godotenv-ssm"
+	fylogger "github.com/FyersDev/trading-logger-go"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/gorilla/websocket"
-	"github.com/joho/godotenv"
-	fylogger "github.com/FyersDev/trading-logger-go"
 	"go.mongodb.org/mongo-driver/bson"
 	"go.mongodb.org/mongo-driver/bson/primitive"
 	"go.mongodb.org/mongo-driver/mongo"
@@ -44,6 +44,9 @@ var basePath string  // Configurable base path prefix (e.g., "/research")
 
 // mongoLogLabel is logged instead of the real MONGO_URI value.
 const mongoLogLabel = "<MONGO>"
+
+// proxySSMEnvURI is the single SSM parameter name (via godotenv-ssm GetParameter); value must be KEY=value dotenv body.
+const proxySSMEnvURI = "ssm:/insti/research/proxy"
 
 // APIUser is the subset of Nucleus user fields we persist into LibreChat Mongo.
 type APIUser struct {
@@ -118,27 +121,17 @@ func getBasePath() string {
 }
 
 func init() {
-	// Try multiple paths to find .env file
-	envPaths := []string{
-		".env",       // Current directory
-		"../.env",    // Parent directory
-		"../../.env", // Two levels up
+	// Load dotenv blob from SSM (github.com/FyersDev/godotenv-ssm — GetParameter on proxySSMEnvURI).
+	// Parameter value must be KEY=value lines. Set ONPREM=true to skip (local dev without AWS).
+	ctx := context.Background()
+	log.Println("Loading environment variables from SSM")
+	err := godotenvssm.Load(proxySSMEnvURI)
+	if err != nil {
+		fylogger.ErrorLog(ctx, "Error in getting env from SSM", err, nil)
+		log.Fatal(err)
 	}
 
-	envLoaded := false
-	for _, path := range envPaths {
-		if err := godotenv.Load(path); err == nil {
-			log.Printf("Loaded .env from: %s", path)
-			envLoaded = true
-			break
-		}
-	}
-
-	if !envLoaded {
-		log.Printf("WARNING: No .env file found, trying to read from environment variables")
-	}
-
-	// Read environment variables after loading .env
+	// Read environment variables (SSM and/or process env, e.g. systemd)
 	jwtSecret = []byte(os.Getenv("JWT_SECRET"))
 	libreJWTSecret = []byte(os.Getenv("LIBRE_JWT_SECRET"))
 	libreJWTRefreshSecret = []byte(os.Getenv("LIBRE_JWT_REFRESH_SECRET"))
@@ -177,13 +170,12 @@ func init() {
 	log.Printf("proxy: backend=%s frontend=%s mainAPI=%s mongoDB=%s basePath=%s",
 		libreBackend, libreFrontend, mainAPIURL, mongoLogLabel, basePath)
 	fylogger.InfoLog(context.Background(), "proxy_config_loaded", map[string]interface{}{
-		"service":    "insti-proxy",
-		"backend":    libreBackend,
-		"frontend":   libreFrontend,
-		"main_api":   mainAPIURL,
-		"mongo":      mongoLogLabel,
-		"base_path":  basePath,
-		"env_loaded": true,
+		"service":   "insti-proxy",
+		"backend":   libreBackend,
+		"frontend":  libreFrontend,
+		"main_api":  mainAPIURL,
+		"mongo":     mongoLogLabel,
+		"base_path": basePath,
 	})
 }
 
@@ -704,7 +696,7 @@ func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (emai
 		if errorMsg == "" {
 			errorMsg = string(body)
 		}
-		
+
 		switch apiResponse.Code {
 		case 401:
 			return "", "", "", fmt.Errorf("authentication required: %s", errorMsg)
@@ -737,7 +729,7 @@ func fetchUserDetailsFromFyersAPI(ctx context.Context, tokenString string) (emai
 	fylogger.InfoLog(ctx, "fyers_api_user_details", map[string]interface{}{
 		"service": "insti-proxy",
 		"email":   email, "name": displayName,
-		"fy_id":   apiResponse.Data.FyID, "insti_role": instiRole,
+		"fy_id": apiResponse.Data.FyID, "insti_role": instiRole,
 	})
 
 	return email, displayName, instiRole, nil
@@ -1173,7 +1165,7 @@ func fetchSaasTokens(ctx context.Context, email string) (string, string) {
 		}
 		fylogger.WarningLog(ctx, "saas_internal_login_non_200", map[string]interface{}{
 			"service": "insti-proxy", "email": email,
-			"status":  resp.StatusCode, "body_snippet": bodySnippet,
+			"status": resp.StatusCode, "body_snippet": bodySnippet,
 		})
 		return "", ""
 	}
