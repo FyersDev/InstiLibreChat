@@ -187,6 +187,18 @@ function mapFyersUserDetailsToMe(raw: Record<string, unknown>): Record<string, u
 function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, unknown> {
   const docId = row.documentId ?? row.document_id ?? row.id;
   const idStr = docId != null ? String(docId) : '';
+  const hasOrgKey = 'orgId' in row || 'org_id' in row;
+  const orgRaw = row.orgId ?? row.org_id;
+  let org_id: string | null | undefined;
+  if (!hasOrgKey) {
+    org_id = undefined;
+  } else if (orgRaw === null || orgRaw === '') {
+    org_id = null;
+  } else {
+    org_id = String(orgRaw);
+  }
+  const is_system =
+    row.isSystem === true || (hasOrgKey && (orgRaw === null || orgRaw === ''));
   return {
     id: idStr,
     document_id: idStr,
@@ -197,6 +209,8 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
     storage_key: String(row.storagePath ?? row.storage_key ?? ''),
     created_by: row.createdBy ?? row.created_by,
     created_by_name: row.createdByName ?? row.created_by_name,
+    org_id,
+    is_system,
     uploaded_at: String(row.updatedAt ?? row.uploadedAt ?? row.createdAt ?? ''),
     status: String(row.status ?? 'Completed'),
   };
@@ -229,6 +243,18 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
       } catch {
         files = [];
       }
+      const hasOrgKey = 'orgId' in f || 'org_id' in f;
+      const folderOrgRaw = f.orgId ?? f.org_id;
+      let folder_org_id: string | null | undefined;
+      if (!hasOrgKey) {
+        folder_org_id = undefined;
+      } else if (folderOrgRaw === null || folderOrgRaw === '') {
+        folder_org_id = null;
+      } else {
+        folder_org_id = String(folderOrgRaw);
+      }
+      const is_system =
+        f.isSystem === true || (hasOrgKey && (folderOrgRaw === null || folderOrgRaw === ''));
       result.push({
         id,
         name,
@@ -237,6 +263,10 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
         children,
         files,
         created_at: String(f.createdAt ?? f.created_at ?? ''),
+        created_by: f.createdBy ?? f.created_by,
+        created_by_name: f.createdByName ?? f.created_by_name,
+        org_id: folder_org_id,
+        is_system,
       });
     }
     return result;
