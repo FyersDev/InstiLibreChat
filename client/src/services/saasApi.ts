@@ -750,11 +750,25 @@ export const saasApi = {
     return researchConfluxApi.downloadDocument(org, id);
   },
 
-  /** Calls `GET .../documents/{id}/download` (Insti token), then opens presigned S3 `url` in a new tab. */
+  /**
+   * Opens presigned S3 URL in a new tab. Must open a placeholder window *before* any `await`
+   * so the browser still associates `window.open` with the user gesture (otherwise popups are blocked).
+   */
   async openDocumentDownloadInNewTab(id: string, orgId?: string | null): Promise<void> {
     const org = requireConfluxOrg(orgId);
-    const p = await researchConfluxApi.getDocumentDownloadPresigned(org, id);
-    window.open(p.url, '_blank', 'noopener,noreferrer');
+    const newTab = window.open('about:blank', '_blank');
+    if (!newTab) {
+      throw new Error(
+        'Could not open a new tab for download. Allow popups for this site and try again.',
+      );
+    }
+    try {
+      const p = await researchConfluxApi.getDocumentDownloadPresigned(org, id);
+      newTab.location.assign(p.url);
+    } catch (e) {
+      newTab.close();
+      throw e;
+    }
   },
 
   async createFolder(data: any) {
