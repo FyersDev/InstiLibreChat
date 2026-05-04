@@ -98,13 +98,23 @@ function normalizeResponse<T>(data: any): T {
   return data as T;
 }
 
-/** Explicit `orgId` from caller wins; otherwise use `org_id` from the FYERS JWT payload. */
+/**
+ * Resolves the org id for **FYERS Conflux** URLs (`/insti/admin/org/{orgId}/research/...`).
+ * The API accepts the numeric FYERS `org_id` from the `INSTI~` JWT, not the directory UUID from
+ * `/api/v1` organizations. Callers often pass `organization.id` (UUID); we only honor an explicit
+ * `orgId` when it is all digits; otherwise we use `org_id` from the JWT.
+ */
 function effectiveConfluxOrgId(orgId?: string | null): string | null {
+  const fromJwt = getFyersOrgIdFromJwt();
   const trimmed = orgId != null && String(orgId).trim() !== '' ? String(orgId).trim() : null;
-  if (trimmed) {
+
+  if (trimmed && /^\d+$/.test(trimmed)) {
     return trimmed;
   }
-  return getFyersOrgIdFromJwt();
+  if (fromJwt) {
+    return fromJwt;
+  }
+  return null;
 }
 
 function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, unknown> {

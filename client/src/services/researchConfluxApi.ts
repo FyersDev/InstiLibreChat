@@ -10,7 +10,7 @@
 
 import {
   FYERS_ORG_RESEARCH_SEGMENTS as R,
-  fyersOrgResearchUrl,
+  fyersOrgResearchUrl as fyersOrgResearchUrlBase,
   getFyersT2ApiBaseNormalized,
 } from '~/constants/api_list';
 
@@ -39,9 +39,6 @@ function readBrowserCookie(name: string): string | null {
 export function getConfluxBaseUrl(): string {
   return getFyersT2ApiBaseNormalized();
 }
-
-/** Same as `fyersOrgResearchUrl` from `~/constants/api_list`. */
-export const orgResearchUrl = fyersOrgResearchUrl;
 
 /** Raw JWT payload (with INSTI~ prefix) if available for org research calls. */
 function resolveFyersJwtRaw(): string | null {
@@ -144,6 +141,34 @@ export function getFyersOrgIdFromJwt(): string | null {
   }
   return String(c.org_id);
 }
+
+/**
+ * Path segment for `/insti/admin/org/{orgId}/research/...`. FYERS only accepts the numeric
+ * `org_id` from the `INSTI~` JWT, not org directory UUIDs from `/api/v1`.
+ */
+export function confluxOrgPathId(orgId: number | string): string {
+  const s = String(orgId).trim();
+  if (/^\d+$/.test(s)) {
+    return s;
+  }
+  const j = getFyersOrgIdFromJwt();
+  if (j) {
+    return j;
+  }
+  throw new Error(
+    'FYERS research API expects a numeric org id or an INSTI~ JWT with org_id (directory UUIDs are not valid in the path).',
+  );
+}
+
+/** Builds org-scoped research URLs; normalizes non-numeric `orgId` via `confluxOrgPathId`. */
+export function fyersOrgResearchUrl(
+  orgId: number | string,
+  ...pathSegments: string[]
+): string {
+  return fyersOrgResearchUrlBase(confluxOrgPathId(orgId), ...pathSegments);
+}
+
+export const orgResearchUrl = fyersOrgResearchUrl;
 
 /** Builds `Authorization: Bearer INSTI~…` (prepends `INSTI~` if the stored value omits it). */
 export function getFyersResearchAuthHeaders(): HeadersInit {
