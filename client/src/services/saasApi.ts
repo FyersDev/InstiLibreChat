@@ -25,7 +25,7 @@ import {
 function requireConfluxOrg(orgId?: string | null): string {
   if (!hasFyersResearchAuth()) {
     throw new Error(
-      'FYERS T2 API requires an INSTI~ JWT (localStorage _INSTI, or access_token starting with INSTI~)',
+      'FYERS T2 API requires an INSTI~ JWT (cookie _INSTI, localStorage _INSTI, or access_token starting with INSTI~)',
     );
   }
   const org = effectiveConfluxOrgId(orgId);

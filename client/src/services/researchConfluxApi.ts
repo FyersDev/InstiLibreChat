@@ -3,8 +3,8 @@
  *
  * Base URL / routes: `fyersOrgResearchUrl`, `FYERS_ORG_RESEARCH_SEGMENTS` in `client/src/constants/api_list.ts`.
  *
- * Auth: `Authorization: Bearer INSTI~…` — from `localStorage._INSTI` (`FYERS_RESEARCH_JWT_STORAGE_KEY`), or `access_token` when
- * it already starts with `INSTI~` (embed / SSO).
+ * Auth: `Authorization: Bearer INSTI~…` — from cookie `_INSTI`, then `localStorage._INSTI`, then `access_token`
+ * when it already starts with `INSTI~` (embed / SSO).
  * See docs/integration-instilibrechat-fyers-research.md and docs/research-api-fyers.reference.json.
  */
 
@@ -14,8 +14,27 @@ import {
   getFyersT2ApiBaseNormalized,
 } from '~/constants/api_list';
 
-/** Optional dedicated FYERS JWT; if unset, `access_token` is used when it starts with `INSTI~`. */
+/** Cookie and localStorage key for FYERS `INSTI~` JWT (fixed). */
 export const FYERS_RESEARCH_JWT_STORAGE_KEY = '_INSTI' as const;
+
+function readBrowserCookie(name: string): string | null {
+  if (typeof document === 'undefined') {
+    return null;
+  }
+  const prefix = `${name}=`;
+  const segments = document.cookie.split(';');
+  for (const segment of segments) {
+    const part = segment.trim();
+    if (part.startsWith(prefix)) {
+      try {
+        return decodeURIComponent(part.slice(prefix.length));
+      } catch {
+        return part.slice(prefix.length);
+      }
+    }
+  }
+  return null;
+}
 
 export function getConfluxBaseUrl(): string {
   return getFyersT2ApiBaseNormalized();
@@ -26,7 +45,12 @@ export const orgResearchUrl = fyersOrgResearchUrl;
 
 /** Raw JWT payload (with INSTI~ prefix) if available for org research calls. */
 function resolveFyersJwtRaw(): string | null {
-  const fromKey = localStorage.getItem(FYERS_RESEARCH_JWT_STORAGE_KEY)?.trim();
+  const key = FYERS_RESEARCH_JWT_STORAGE_KEY;
+  const fromCookie = readBrowserCookie(key)?.trim();
+  if (fromCookie) {
+    return fromCookie.replace(/^Bearer\s+/i, '').trim();
+  }
+  const fromKey = localStorage.getItem(key)?.trim();
   if (fromKey) {
     return fromKey.replace(/^Bearer\s+/i, '').trim();
   }
