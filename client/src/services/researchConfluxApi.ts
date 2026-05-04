@@ -435,6 +435,46 @@ export const researchConfluxApi = {
     await parseConfluxResponse(res);
   },
 
+  async listPersonas(orgId: number | string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.personas);
+    const res = await confluxFetch(url, { method: 'GET' });
+    return parseConfluxResponse(res);
+  },
+
+  async createPersona(orgId: number | string, body: Record<string, unknown>): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.personas);
+    const res = await confluxFetch(url, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    });
+    return parseConfluxResponse(res);
+  },
+
+  async getPersona(orgId: number | string, personaId: string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.personas, personaId);
+    const res = await confluxFetch(url, { method: 'GET' });
+    return parseConfluxResponse(res);
+  },
+
+  async updatePersona(
+    orgId: number | string,
+    personaId: string,
+    body: Record<string, unknown>,
+  ): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.personas, personaId);
+    const res = await confluxFetch(url, {
+      method: 'PUT',
+      body: JSON.stringify(body),
+    });
+    return parseConfluxResponse(res);
+  },
+
+  async deletePersona(orgId: number | string, personaId: string): Promise<void> {
+    const url = fyersOrgResearchUrl(orgId, R.personas, personaId);
+    const res = await confluxFetch(url, { method: 'DELETE' });
+    await parseConfluxResponse(res);
+  },
+
   async getFolder(orgId: number | string, folderId: string): Promise<unknown> {
     const url = fyersOrgResearchUrl(orgId, R.folders, folderId);
     const res = await confluxFetch(url, { method: 'GET' });

@@ -12,8 +12,8 @@
  *
  * **Document, folder, and org-scoped template** calls use **FYERS api-t2** / insti-conflux-users
  * (`researchConfluxApi`) only — not `/api/v1`. Requires an `INSTI~` JWT and an org id (argument or
- * JWT `org_id` claim). Auth, org directory, users, roles, permissions, and personas still use
- * `GET/POST ${base}/api/v1/...` via the local proxy.
+ * JWT `org_id` claim). Auth, org directory, users, roles, and permissions still use
+ * `GET/POST ${base}/api/v1/...` via the local proxy. Personas and templates use FYERS Conflux.
  */
 
 import {
@@ -576,48 +576,36 @@ export const saasApi = {
     await researchConfluxApi.deleteTemplate(org, id);
   },
 
-  // Personas
-  async getPersonas() {
-    const url = `${API_BASE_URL}/personas?limit=1000`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response, { url, method: 'GET' });
+  // Personas (FYERS T2 / insti-conflux-users — same pattern as templates)
+  async getPersonas(orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.listPersonas(org);
+    const p = raw as Record<string, unknown> | null;
+    if (Array.isArray(raw)) {
+      return { data: raw };
+    }
+    if (p && Array.isArray(p.personas)) {
+      return { data: p.personas };
+    }
+    if (p && Array.isArray(p.data)) {
+      return p;
+    }
+    return { data: [] };
   },
 
-  async createPersona(data: any) {
-    const url = `${API_BASE_URL}/personas`;
-    const method = 'POST';
-    const body = JSON.stringify(data);
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-      body,
-    });
-    return handleResponse(response, { url, method, body });
+  async createPersona(data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId ?? data?.org_id);
+    return researchConfluxApi.createPersona(org, data);
   },
 
-  async updatePersona(id: string, data: any) {
-    const url = `${API_BASE_URL}/personas/${id}`;
-    const method = 'PUT';
-    const body = JSON.stringify(data);
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-      body,
-    });
-    return handleResponse(response, { url, method, body });
+  async updatePersona(id: string, data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId ?? data?.org_id);
+    return researchConfluxApi.updatePersona(org, id, data);
   },
 
-  async deletePersona(id: string) {
-    const url = `${API_BASE_URL}/personas/${id}`;
-    const method = 'DELETE';
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response, { url, method });
+  async deletePersona(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    await researchConfluxApi.deletePersona(org, id);
   },
 
   // Folders (FYERS T2 / insti-conflux-users only)
