@@ -40,9 +40,7 @@ export default function FileViewRoute() {
 
       console.log('Loading file:', fileId);
 
-      // Get file metadata
-      const file: any = await saasApi.getFile(parseInt(fileId!, 10));
-      console.log('File metadata:', file);
+      const file: any = await saasApi.getFile(fileId!);
       setFileInfo(file);
 
       // Use static file route for preview
@@ -189,7 +187,7 @@ export default function FileViewRoute() {
     if (!fileId) return;
     
     try {
-      const blob = await saasApi.downloadFile(parseInt(fileId, 10));
+      const blob = await saasApi.downloadFile(fileId);
       const url = window.URL.createObjectURL(blob);
       const link = document.createElement('a');
       link.href = url;

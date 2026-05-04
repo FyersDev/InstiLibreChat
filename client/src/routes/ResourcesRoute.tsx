@@ -23,8 +23,8 @@ interface FolderNode {
 }
 
 interface FileNode {
-  id: string; // Legacy UUID for compatibility
-  document_id?: number; // Actual document ID for deletion/updates
+  id: string;
+  document_id?: string;
   name: string;
   extension?: string;
   size_bytes?: number;
@@ -448,12 +448,11 @@ export default function ResourcesRoute() {
   const handleDeleteFile = async (file: FileNode) => {
     if (!confirm(`Delete file "${file.name}"?`)) return;
     try {
-      // Use document_id if available, otherwise fall back to id (for backward compatibility)
-      const fileId = file.document_id || parseInt(file.id);
-      if (isNaN(fileId)) {
+      const fileIdRaw = file.document_id ?? file.id;
+      if (fileIdRaw === undefined || fileIdRaw === null || String(fileIdRaw).trim() === '') {
         throw new Error('Invalid file ID');
       }
-      await saasApi.deleteFile(fileId);
+      await saasApi.deleteFile(String(fileIdRaw));
 
       showToast({
         message: `File "${file.name}" deleted successfully`,
@@ -467,7 +466,9 @@ export default function ResourcesRoute() {
           try {
             const data = JSON.parse(localStorage.getItem(key) || '{}');
             if (data.documents && Array.isArray(data.documents)) {
-              const filteredDocs = data.documents.filter((doc: any) => doc.document_id !== fileId);
+              const filteredDocs = data.documents.filter(
+                (doc: any) => String(doc.document_id) !== String(fileIdRaw),
+              );
               if (filteredDocs.length !== data.documents.length) {
                 // Document was removed, update localStorage
                 if (filteredDocs.length === 0) {

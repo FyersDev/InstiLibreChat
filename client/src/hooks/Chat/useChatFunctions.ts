@@ -336,49 +336,33 @@ export default function useChatFunctions({
           // documentPrompt = `Documents:\n${documentNames}`;
           
           // Always prepare ephemeral agent with document search info when documents are selected
-          // Extract document_ids from the documents list - CRITICAL: document_id must be passed correctly
-          const documentIds = documentsList.map((doc: any) => {
-            // Log each document to debug
-            console.log(`[DOCUMENT SEARCH] Processing document:`, {
-              filename: doc.filename,
-              document_id: doc.document_id,
-              document_id_type: typeof doc.document_id,
-              raw_doc: doc
-            });
-            
-            // Ensure document_id is a number
-            const docId = typeof doc.document_id === 'number' ? doc.document_id : parseInt(doc.document_id, 10);
-            if (isNaN(docId)) {
-              console.error(`[DOCUMENT SEARCH] ❌ Invalid document_id: ${doc.document_id} (type: ${typeof doc.document_id}) for document ${doc.filename}`);
-              return null;
-            }
-            return docId;
-          }).filter((id: any) => id !== null && !isNaN(id));
+          // Extract string document_ids (FYERS / Conflux use UUID string ids)
+          const documentIds = documentsList
+            .map((doc: any) => {
+              console.log(`[DOCUMENT SEARCH] Processing document:`, {
+                filename: doc.filename,
+                document_id: doc.document_id,
+                document_id_type: typeof doc.document_id,
+                raw_doc: doc,
+              });
+              const id =
+                doc.document_id != null && doc.document_id !== ''
+                  ? String(doc.document_id).trim()
+                  : '';
+              if (!id) {
+                console.error(
+                  `[DOCUMENT SEARCH] ❌ Invalid document_id for document ${doc.filename}`,
+                );
+                return null;
+              }
+              return id;
+            })
+            .filter((id: string | null): id is string => id != null);
           
-          console.log('[DOCUMENT SEARCH] ✅ Extracted document_ids (will be used as collection IDs):', documentIds);
-          console.log('[DOCUMENT SEARCH] Document IDs details:', {
-            count: documentIds.length,
-            ids: documentIds,
-            types: documentIds.map(id => typeof id),
-            first_id: documentIds[0],
-            first_id_type: typeof documentIds[0],
-          });
+          console.log('[DOCUMENT SEARCH] ✅ Extracted document_ids (collection ids, strings):', documentIds);
           
           if (documentIds.length === 0) {
             console.error('[DOCUMENT SEARCH] ❌ No valid document_ids found! Cannot pass collection to MCP.');
-          } else {
-            // Ensure all document_ids are numbers
-            const numericDocumentIds = documentIds.map((id: any) => {
-              const numId = typeof id === 'number' ? id : parseInt(String(id), 10);
-              if (isNaN(numId)) {
-                console.error(`[DOCUMENT SEARCH] ❌ Invalid document_id in array: ${id} (type: ${typeof id})`);
-                return null;
-              }
-              return numId;
-            }).filter((id: any) => id !== null && !isNaN(id));
-            
-            if (numericDocumentIds.length === 0) {
-              console.error('[DOCUMENT SEARCH] ❌ No valid numeric document_ids after conversion!');
           } else {
             // CRITICAL: Preserve ALL existing MCP servers from ephemeralAgent
             const existingMCPServers = ephemeralAgent?.mcp || [];
@@ -388,34 +372,29 @@ export default function useChatFunctions({
             
             enhancedEphemeralAgent = {
               ...(ephemeralAgent || {}),
-              // Preserve ALL MCP tools and add document search capability
               mcp: allMCPServers,
               // @ts-ignore - Adding documentSearch property for MCP
               documentSearch: {
                 enabled: true,
                 documents: documentsList.map((doc: any) => doc.filename),
-                  document_ids: numericDocumentIds, // Pass document IDs as numbers for MCP collection parameter
-                selected_files: documentsList.map((doc: any) => doc.filename) // Add this for MCP compatibility
-              }
+                document_ids: documentIds,
+                selected_files: documentsList.map((doc: any) => doc.filename),
+              },
             };
             
-            // Log document search configuration
             console.log('%c[DOCUMENT SEARCH] ✅ Enabling document search:', 'color: #4CAF50; font-weight: bold;');
-            console.log('Documents:', documentsList.map((doc: any) => ({
-              filename: doc.filename,
-              document_id: doc.document_id,
-              document_id_type: typeof doc.document_id
-            })));
-              console.log('%c[DOCUMENT SEARCH] Document IDs (collection IDs) to pass to MCP:', 'color: #FF6B6B; font-weight: bold;', numericDocumentIds);
-              console.log('%c[DOCUMENT SEARCH] First document_id (will be used as collection):', 'color: #FF6B6B; font-weight: bold;', numericDocumentIds[0]);
+            console.log(
+              '%c[DOCUMENT SEARCH] Document IDs (collection ids) to pass to MCP:',
+              'color: #FF6B6B; font-weight: bold;',
+              documentIds,
+            );
             console.log('EphemeralAgent documentSearch:', {
               enabled: true,
-                document_ids: numericDocumentIds,
-                first_document_id: numericDocumentIds[0],
-              documents: documentsList.map((doc: any) => doc.filename)
+              document_ids: documentIds,
+              first_document_id: documentIds[0],
+              documents: documentsList.map((doc: any) => doc.filename),
             });
-              console.log('Full enhancedEphemeralAgent:', JSON.stringify(enhancedEphemeralAgent, null, 2));
-            }
+            console.log('Full enhancedEphemeralAgent:', JSON.stringify(enhancedEphemeralAgent, null, 2));
           }
         }
       } catch (error) {
@@ -685,13 +664,18 @@ export default function useChatFunctions({
                                   ephemeralAgent?.mcp?.includes('document_search');
     
     if (documentsList.length > 0 && hasDocumentSearchMCP) {
-      const validDocuments = documentsList.map((doc: any) => {
-        const docId = typeof doc.document_id === 'number' ? doc.document_id : parseInt(doc.document_id, 10);
-        return {
-          name: doc.filename,
-          collection: isNaN(docId) ? null : docId
-        };
-      }).filter((doc: any) => doc.collection !== null);
+      const validDocuments = documentsList
+        .map((doc: any) => {
+          const docId =
+            doc.document_id != null && doc.document_id !== ''
+              ? String(doc.document_id).trim()
+              : '';
+          return {
+            name: doc.filename,
+            collection: docId || null,
+          };
+        })
+        .filter((doc: any) => doc.collection != null && doc.collection !== '');
       
       // Only include documents array if there are valid documents
       if (validDocuments.length > 0) {

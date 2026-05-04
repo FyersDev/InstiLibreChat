@@ -8,7 +8,7 @@ import { cn } from '~/utils';
 interface StoredDocument {
   filename?: string;
   name?: string;
-  document_id: number;
+  document_id: string;
   file_path?: string;
   status?: string;
 }

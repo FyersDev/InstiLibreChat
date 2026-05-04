@@ -36,7 +36,7 @@ interface FolderNode {
 
 interface FileNode {
   id: string;
-  document_id?: number;
+  document_id?: string;
   name: string;
   extension?: string;
   size_bytes?: number;
@@ -308,10 +308,10 @@ export default function DocumentSelector({
   };
 
   const handleToggleSelection = useCallback(
-    (documentId: number) => {
+    (documentId: string) => {
       setSelectedDocuments((prev) => {
         const newSet = new Set(prev);
-        const idStr = documentId.toString();
+        const idStr = String(documentId);
         if (newSet.has(idStr)) {
           // Deselecting - always allowed
           newSet.delete(idStr);
@@ -336,7 +336,7 @@ export default function DocumentSelector({
   const convertFileToDocument = useCallback((file: FileNode): DocumentListItem | null => {
     if (!file.document_id) return null;
     return {
-      document_id: file.document_id,
+      document_id: String(file.document_id),
       name: file.name,
       file_path: file.storage_key || file.name,
       status: file.status || 'Completed',

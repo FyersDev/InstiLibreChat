@@ -9,8 +9,57 @@
  * The service handles both response formats:
  *   - insti-inquora: { code: 200, s: "ok", data: {...}, message: "..." }
  *   - Legacy saas-api: { access_token, refresh_token, user, ... } (flat structure)
- * 
+ *
+ * **Document, folder, and org-scoped template** calls use **FYERS api-t2** / insti-conflux-users
+ * (`researchConfluxApi`) only — not `/api/v1`. Requires an `INSTI~` JWT and an org id (argument or
+ * JWT `org_id` claim). Auth, org directory, users, roles, permissions, and personas still use
+ * `GET/POST ${base}/api/v1/...` via the local proxy.
  */
+
+import {
+  getFyersOrgIdFromJwt,
+  hasFyersResearchAuth,
+  researchConfluxApi,
+} from '~/services/researchConfluxApi';
+
+function requireConfluxOrg(orgId?: string | null): string {
+  if (!hasFyersResearchAuth()) {
+    throw new Error(
+      'FYERS T2 API requires an INSTI~ JWT (localStorage _INSTI, or access_token starting with INSTI~)',
+    );
+  }
+  const org = effectiveConfluxOrgId(orgId);
+  if (!org) {
+    throw new Error(
+      'Organization id is required — pass org_id or use an INSTI~ JWT with an org_id claim',
+    );
+  }
+  return org;
+}
+
+function normalizeConfluxDocumentMetadata(raw: unknown): Record<string, unknown> {
+  const row = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const path = row.storagePath ?? row.storage_key;
+  return {
+    ...row,
+    ...(path != null ? { storage_key: String(path) } : {}),
+  };
+}
+
+/** Build same-origin static file URL (matches `FileViewRoute` / `uploads` prefix rules). */
+function staticResourceUrlFromStorageKey(storageKey: string): string {
+  const storagePath = 'uploads';
+  let filePath = storageKey;
+  if (filePath.startsWith(`${storagePath}/`)) {
+    filePath = filePath.substring(storagePath.length + 1);
+  } else if (filePath.startsWith(`/${storagePath}/`)) {
+    filePath = filePath.substring(storagePath.length + 2);
+  } else if (filePath.startsWith('/')) {
+    filePath = filePath.substring(1);
+  }
+  filePath = filePath.replace(/\\/g, '/');
+  return `/static/resources/folder/file/${filePath}`;
+}
 
 const getBaseHref = () => {
   const base = document.querySelector('base')?.getAttribute('href') || '/';
@@ -47,6 +96,75 @@ function normalizeResponse<T>(data: any): T {
   }
   // Otherwise return as-is (saas-api format)
   return data as T;
+}
+
+/** Explicit `orgId` from caller wins; otherwise use `org_id` from the FYERS JWT payload. */
+function effectiveConfluxOrgId(orgId?: string | null): string | null {
+  const trimmed = orgId != null && String(orgId).trim() !== '' ? String(orgId).trim() : null;
+  if (trimmed) {
+    return trimmed;
+  }
+  return getFyersOrgIdFromJwt();
+}
+
+function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, unknown> {
+  const docId = row.documentId ?? row.document_id ?? row.id;
+  const idStr = docId != null ? String(docId) : '';
+  return {
+    id: idStr,
+    document_id: idStr,
+    name: String(row.name ?? ''),
+    extension: row.extension != null ? String(row.extension) : undefined,
+    size_bytes: typeof row.sizeBytes === 'number' ? row.sizeBytes : row.size_bytes,
+    created_at: String(row.createdAt ?? row.created_at ?? ''),
+    storage_key: String(row.storagePath ?? row.storage_key ?? ''),
+    created_by: row.createdBy ?? row.created_by,
+    created_by_name: row.createdByName ?? row.created_by_name,
+    uploaded_at: String(row.updatedAt ?? row.uploadedAt ?? row.createdAt ?? ''),
+    status: String(row.status ?? 'Completed'),
+  };
+}
+
+/** Builds a nested folder tree + per-folder documents (Conflux has no single `/folders/tree`). */
+async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
+  const loadLevel = async (parentFolderId?: string): Promise<any[]> => {
+    const raw = await researchConfluxApi.listFolders(orgId, parentFolderId);
+    const payload = raw as Record<string, unknown>;
+    const folders = (Array.isArray(payload.folders) ? payload.folders : []) as Record<
+      string,
+      unknown
+    >[];
+    const result: any[] = [];
+    for (const f of folders) {
+      const id = String(f.folderId ?? f.id ?? f.folder_id ?? '');
+      const name = String(f.name ?? '');
+      const path = String(f.path ?? '');
+      const parentRaw = f.parentFolderId ?? f.parent_id;
+      const children = await loadLevel(id);
+      let files: any[] = [];
+      try {
+        const docsRaw = await researchConfluxApi.listDocuments(orgId, { folderId: id });
+        const docsPayload = docsRaw as Record<string, unknown>;
+        const docs = (Array.isArray(docsPayload.documents)
+          ? docsPayload.documents
+          : []) as Record<string, unknown>[];
+        files = docs.map((d) => mapConfluxDocToFileNode(d));
+      } catch {
+        files = [];
+      }
+      result.push({
+        id,
+        name,
+        path,
+        parent_id: parentRaw != null ? String(parentRaw) : parentFolderId ?? undefined,
+        children,
+        files,
+        created_at: String(f.createdAt ?? f.created_at ?? ''),
+      });
+    }
+    return result;
+  };
+  return loadLevel(undefined);
 }
 
 async function handleResponse<T>(response: Response, originalRequest?: { url: string; method: string; body?: string }, retry = true): Promise<T> {
@@ -416,48 +534,36 @@ export const saasApi = {
     return handleResponse(response);
   },
 
-  // Templates
-  async getTemplates() {
-    const url = `${API_BASE_URL}/templates?limit=1000`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response, { url, method: 'GET' });
+  // Templates (FYERS T2 org research list/create + REST by id)
+  async getTemplates(orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.listTemplates(org);
+    const p = raw as Record<string, unknown> | null;
+    if (Array.isArray(raw)) {
+      return { data: raw };
+    }
+    if (p && Array.isArray(p.templates)) {
+      return { data: p.templates };
+    }
+    if (p && Array.isArray(p.data)) {
+      return p;
+    }
+    return { data: [] };
   },
 
-  async createTemplate(data: any) {
-    const url = `${API_BASE_URL}/templates`;
-    const method = 'POST';
-    const body = JSON.stringify(data);
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-      body,
-    });
-    return handleResponse(response, { url, method, body });
+  async createTemplate(data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId ?? data?.org_id);
+    return researchConfluxApi.createTemplate(org, data);
   },
 
-  async updateTemplate(id: string, data: any) {
-    const url = `${API_BASE_URL}/templates/${id}`;
-    const method = 'PUT';
-    const body = JSON.stringify(data);
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-      body,
-    });
-    return handleResponse(response, { url, method, body });
+  async updateTemplate(id: string, data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.updateTemplate(org, id, data);
   },
 
-  async deleteTemplate(id: string) {
-    const url = `${API_BASE_URL}/templates/${id}`;
-    const method = 'DELETE';
-    const response = await fetch(url, {
-      method,
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response, { url, method });
+  async deleteTemplate(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    await researchConfluxApi.deleteTemplate(org, id);
   },
 
   // Personas
@@ -504,283 +610,142 @@ export const saasApi = {
     return handleResponse(response, { url, method });
   },
 
-  // Folders
+  // Folders (FYERS T2 / insti-conflux-users only)
   async getFolders(parentId?: string) {
-    const url = parentId 
-      ? `${API_BASE_URL}/folders?parent_id=${parentId}`
-      : `${API_BASE_URL}/folders`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+    const org = requireConfluxOrg();
+    return researchConfluxApi.listFolders(org, parentId);
   },
 
   async getFolderTree(orgId?: string | null) {
-    let url = `${API_BASE_URL}/folders/tree`;
-    if (orgId) {
-      url += `?org_id=${orgId}`;
+    const org = requireConfluxOrg(orgId);
+    return confluxBuildFolderTree(org);
+  },
+
+  async getFolder(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.getFolder(org, id);
+  },
+
+  async downloadFile(id: string, orgId?: string | null): Promise<Blob> {
+    const org = requireConfluxOrg(orgId);
+    const meta = normalizeConfluxDocumentMetadata(
+      await researchConfluxApi.getDocument(org, id),
+    );
+    const storageKey =
+      meta.storage_key != null
+        ? String(meta.storage_key)
+        : meta.storagePath != null
+          ? String(meta.storagePath)
+          : '';
+    if (!storageKey) {
+      throw new Error('Document has no storage path — cannot download');
     }
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async getFolder(id: string) {
-    const response = await fetch(`${API_BASE_URL}/folders/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async downloadFile(id: number): Promise<Blob> {
+    const staticUrl = staticResourceUrlFromStorageKey(storageKey);
     const token = getAuthToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-    const url = `${API_BASE_URL}/documents/${id}/download`;
-    console.log('Downloading file:', url);
-    
-    const response = await fetch(url, {
+    const response = await fetch(staticUrl, {
       method: 'GET',
-      headers,
+      headers: token ? { Authorization: `Bearer ${token}` } : {},
+      credentials: 'include',
     });
-    
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error('Download failed:', {
-        status: response.status,
-        statusText: response.statusText,
-        error: errorText,
-      });
+      const errorText = await response.text().catch(() => '');
       throw new Error(`Failed to download file: ${response.statusText} - ${errorText}`);
     }
-    
-    const contentType = response.headers.get('content-type');
-    console.log('Download response:', {
-      status: response.status,
-      contentType,
-      contentLength: response.headers.get('content-length'),
-    });
-    
-    const blob = await response.blob();
-    console.log('Downloaded blob:', {
-      size: blob.size,
-      type: blob.type,
-    });
-    
-    // Validate PDF blob
-    if (blob.type.includes('pdf') || blob.type.includes('octet-stream')) {
-      const arrayBuffer = await blob.arrayBuffer();
-      const bytes = new Uint8Array(arrayBuffer);
-      if (bytes.length >= 4) {
-        const header = String.fromCharCode(...bytes.slice(0, 4));
-        console.log('File header:', header);
-        if (header === '%PDF') {
-          console.log('Valid PDF detected');
-        } else {
-          console.warn('Warning: File does not start with PDF header:', header);
-        }
-      }
-    }
-    
-    return blob;
+    return response.blob();
   },
 
   async createFolder(data: any) {
-    const response = await fetch(`${API_BASE_URL}/folders`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
+    const org = requireConfluxOrg(data?.org_id);
+    const parent = data.parent_id;
+    const parentNum =
+      parent != null && parent !== '' ? Number(parent) : NaN;
+    return researchConfluxApi.createFolder(org, {
+      name: data.name,
+      parentFolderId: Number.isFinite(parentNum) ? parentNum : null,
     });
-    return handleResponse(response);
   },
 
-  async updateFolder(id: string, data: any) {
-    const url = `${API_BASE_URL}/folders/${id}`;
-    const response = await fetch(url, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response, { url, method: 'PUT', body: JSON.stringify(data) });
+  async updateFolder(id: string, data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.updateFolder(org, id, data);
   },
 
-  async deleteFolder(id: string) {
-    const response = await fetch(`${API_BASE_URL}/folders/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+  async deleteFolder(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    await researchConfluxApi.deleteFolder(org, id);
   },
 
-  async getFolderPermissions(id: string) {
-    const response = await fetch(`${API_BASE_URL}/folders/${id}/permissions`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+  async getFolderPermissions(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.getFolderPermissions(org, id);
   },
 
-  async assignFolderPermission(folderId: string, data: any) {
-    const response = await fetch(`${API_BASE_URL}/folders/${folderId}/permissions`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
+  async assignFolderPermission(folderId: string, data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.assignFolderPermission(org, folderId, data);
   },
 
-  async removeFolderPermission(folderId: string, roleId: string) {
-    const response = await fetch(`${API_BASE_URL}/folders/${folderId}/permissions/${roleId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+  async removeFolderPermission(folderId: string, roleId: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    await researchConfluxApi.removeFolderPermission(org, folderId, roleId);
   },
 
-  // Files (now using documents API)
-  async getFiles(folderId?: string, page = 1, limit = 1000) {
-    const url = folderId
-      ? `${API_BASE_URL}/documents?folder_id=${folderId}&page=${page}&limit=${limit}`
-      : `${API_BASE_URL}/documents?page=${page}&limit=${limit}`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
+  // Documents / files (FYERS T2 only)
+  async getFiles(folderId?: string, page = 1, limit = 1000, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.listDocuments(org, {
+      folderId: folderId,
+      scope: folderId ? undefined : 'all',
     });
-    return handleResponse(response);
+    const payload = raw as Record<string, unknown>;
+    const docs = (Array.isArray(payload.documents) ? payload.documents : []) as Record<
+      string,
+      unknown
+    >[];
+    return {
+      documents: docs.map((d) => mapConfluxDocToFileNode(d)),
+      page,
+      limit,
+      total_count: docs.length,
+    } as any;
   },
 
-  async getFile(id: number) {
-    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+  async getFile(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.getDocument(org, id);
+    return normalizeConfluxDocumentMetadata(raw);
   },
 
-  async createFile(data: any) {
-    // Files are created via document upload
-    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
+  async createFile(_data: any) {
+    throw new Error('createFile is not supported for FYERS T2 — use uploadFile(file, folderId, orgId)');
   },
 
   async uploadFile(file: File, folderId?: string, orgId?: string | null) {
-    const formData = new FormData();
-    formData.append('file', file);
-    if (folderId) {
-      formData.append('folder_id', folderId);
-    }
-    if (orgId) {
-      formData.append('org_id', orgId);
-    }
-
-    const token = getAuthToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    const response = await fetch(`${API_BASE_URL}/documents/upload`, {
-      method: 'POST',
-      headers,
-      body: formData,
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.documentUpload(org, file, {
+      folderId: folderId,
     });
-    return handleResponse(response);
   },
 
   async saveReport(file: File, orgId?: string | null, metadata?: any) {
-    // Validate file before creating FormData
     if (!file) {
       throw new Error('File is required for saveReport');
     }
     if (file.size === 0) {
       throw new Error('File is empty');
     }
-    
-    console.log('saveReport called with:', {
-      fileName: file.name,
-      fileSize: file.size,
-      fileType: file.type,
-      orgId,
-      metadata,
-    });
-    
-    // Validate file before proceeding
-    if (!file || file.size === 0) {
-      throw new Error('Invalid file: file is empty or undefined');
-    }
-    
-    // Read the file to ensure it's fully loaded
-    await new Promise<void>((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = () => resolve();
-      reader.onerror = () => reject(new Error('Failed to read file'));
-      reader.readAsArrayBuffer(file);
-    });
-    
-    console.log('File validated and ready for upload');
-    
-    const formData = new FormData();
-    formData.append('file', file, file.name); // Explicitly include filename
-    if (orgId) {
-      formData.append('org_id', orgId);
-    }
-    if (metadata) {
-      formData.append('metadata', JSON.stringify(metadata));
-    }
-
-    // Log FormData contents
-    console.log('FormData entries:');
-    for (const [key, value] of formData.entries()) {
-      if (typeof value === 'object' && value !== null && 'name' in value && 'size' in value) {
-        const fileValue = value as File;
-        console.log(`  ${key}: File(${fileValue.name}, ${fileValue.size} bytes, ${fileValue.type})`);
-      } else {
-        console.log(`  ${key}: ${value}`);
-      }
-    }
-
-    const token = getAuthToken();
-    const headers: HeadersInit = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
-    console.log('Sending request to:', `${API_BASE_URL}/documents/save-report`);
-    const response = await fetch(`${API_BASE_URL}/documents/save-report`, {
-      method: 'POST',
-      headers,
-      body: formData,
-    });
-    
-    console.log('Response status:', response.status, response.statusText);
-    return handleResponse(response);
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.saveReportUpload(org, file, metadata);
   },
 
-  async updateFile(id: number, data: any) {
-    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
+  async updateFile(id: string, data: any, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.updateDocument(org, id, data);
   },
 
-  async deleteFile(id: number) {
-    const response = await fetch(`${API_BASE_URL}/documents/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+  async deleteFile(id: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    await researchConfluxApi.deleteDocument(org, id);
   },
 };
 

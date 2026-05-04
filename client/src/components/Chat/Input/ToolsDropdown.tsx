@@ -16,7 +16,7 @@ interface ToolsDropdownProps {
 interface StoredDocument {
   filename?: string;
   name?: string;
-  document_id: number;
+  document_id: string;
   file_path?: string;
   status?: string;
 }
@@ -116,7 +116,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
     window.dispatchEvent(new Event('documentsUpdated'));
   }, [conversationId]);
 
-  const handleRemoveDocument = useCallback((documentId: number) => {
+  const handleRemoveDocument = useCallback((documentId: string) => {
     const convoId = conversationId || Constants.NEW_CONVO;
     const updatedDocuments = selectedDocuments.filter(doc => doc.document_id !== documentId);
     

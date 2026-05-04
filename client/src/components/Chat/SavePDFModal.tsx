@@ -1041,8 +1041,8 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         throw new Error('Upload failed: No file returned from server');
       }
 
-      // Normalize file ID (could be 'id' or 'document_id')
-      const uploadedFileId = fileData.id || fileData.document_id;
+      // Normalize file ID (could be 'id' or 'document_id') — Conflux uses string UUIDs
+      const uploadedFileId = String(fileData.id ?? fileData.document_id ?? '');
       const uploadedFileName = fileData.name || fileData.filename || pdfFile.name;
       const uploadedFileSize = fileData.size_bytes || fileData.size;
       const uploadedStorageKey = fileData.storage_key || fileData.file_path;

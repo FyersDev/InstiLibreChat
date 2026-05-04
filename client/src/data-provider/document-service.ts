@@ -19,7 +19,7 @@ export interface DocumentUploadResponse {
 }
 
 export interface DocumentListItem {
-  document_id: number;
+  document_id: string;
   name: string;
   file_path: string;
   uploaded_at: string | null;
