@@ -48,6 +48,28 @@ function normalizeConfluxDocumentMetadata(raw: unknown): Record<string, unknown>
   };
 }
 
+/**
+ * FYERS Conflux template create/update unmarshals strict JSON — rejects unknown keys such as
+ * `is_custom` from CreateTemplateModal / TemplatesView.
+ */
+function normalizeConfluxTemplateWrite(data: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  const d = data && typeof data === 'object' ? data : {};
+  const out: Record<string, unknown> = {};
+  if (d.name != null) {
+    out.name = d.name;
+  }
+  if (d.framework != null) {
+    out.framework = d.framework;
+  }
+  if (d.content != null) {
+    out.content = d.content;
+  }
+  if (d.description != null) {
+    out.description = d.description;
+  }
+  return out;
+}
+
 const getBaseHref = () => {
   const base = document.querySelector('base')?.getAttribute('href') || '/';
   return base.endsWith('/') ? base.slice(0, -1) : base;
@@ -626,12 +648,18 @@ export const saasApi = {
 
   async createTemplate(data: any, orgId?: string | null) {
     const org = requireConfluxOrg(orgId ?? data?.org_id);
-    return researchConfluxApi.createTemplate(org, data);
+    const body = normalizeConfluxTemplateWrite(
+      data && typeof data === 'object' ? (data as Record<string, unknown>) : {},
+    );
+    return researchConfluxApi.createTemplate(org, body);
   },
 
   async updateTemplate(id: string, data: any, orgId?: string | null) {
     const org = requireConfluxOrg(orgId);
-    return researchConfluxApi.updateTemplate(org, id, data);
+    const body = normalizeConfluxTemplateWrite(
+      data && typeof data === 'object' ? (data as Record<string, unknown>) : {},
+    );
+    return researchConfluxApi.updateTemplate(org, id, body);
   },
 
   async deleteTemplate(id: string, orgId?: string | null) {
