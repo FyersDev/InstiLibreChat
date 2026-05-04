@@ -16,6 +16,7 @@ const {
   performStartupChecks,
   handleJsonParseError,
   initializeFileStorage,
+  getBasePath,
 } = require('@librechat/api');
 const { connectDb, indexSync } = require('~/db');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
@@ -63,17 +64,12 @@ const startServer = async () => {
   const indexPath = path.join(appConfig.paths.dist, 'index.html');
   let indexHTML = fs.readFileSync(indexPath, 'utf8');
 
-  // In order to provide support to serving the application in a sub-directory
-  // We need to update the base href if the DOMAIN_CLIENT is specified and not the root path
-  if (process.env.DOMAIN_CLIENT) {
-    const clientUrl = new URL(process.env.DOMAIN_CLIENT);
-    const baseHref = clientUrl.pathname.endsWith('/')
-      ? clientUrl.pathname
-      : `${clientUrl.pathname}/`;
-    if (baseHref !== '/') {
-      logger.info(`Setting base href to ${baseHref}`);
-      indexHTML = indexHTML.replace(/base href="\/"/, `base href="${baseHref}"`);
-    }
+  // Sub-directory hosting: base href from DOMAIN_CLIENT (safe URL parsing via getBasePath)
+  const basePath = getBasePath();
+  if (basePath) {
+    const baseHref = basePath.endsWith('/') ? basePath : `${basePath}/`;
+    logger.info(`Setting base href to ${baseHref}`);
+    indexHTML = indexHTML.replace(/base href="\/"/, `base href="${baseHref}"`);
   }
 
   app.get('/health', (_req, res) => res.status(200).send('OK'));

@@ -6,12 +6,13 @@ import { logger } from '@librechat/data-schemas';
  * @returns {string} The base path (e.g., '/librechat' or '')
  */
 export function getBasePath(): string {
-  if (!process.env.DOMAIN_CLIENT) {
+  const raw = process.env.DOMAIN_CLIENT;
+  if (typeof raw !== 'string' || !raw.trim()) {
     return '';
   }
 
   try {
-    const clientUrl = new URL(process.env.DOMAIN_CLIENT);
+    const clientUrl = new URL(raw.trim());
     // Keep consistent with the logic in api/server/index.js
     const baseHref = clientUrl.pathname.endsWith('/')
       ? clientUrl.pathname.slice(0, -1) // Remove trailing slash for path construction

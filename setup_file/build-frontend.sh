@@ -23,7 +23,7 @@ print_success() {
 
 print_error() {
     echo -e "${RED}✗${NC} $1"
-}
+}sh stat
 
 # Get the directory where the script is located
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
