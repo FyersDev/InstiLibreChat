@@ -18,6 +18,7 @@ const {
   performStartupChecks,
   handleJsonParseError,
   initializeFileStorage,
+  getBasePath,
 } = require('@librechat/api');
 const { connectDb, indexSync } = require('~/db');
 const initializeOAuthReconnectManager = require('./services/initializeOAuthReconnectManager');
@@ -227,16 +228,12 @@ if (cluster.isMaster) {
     const indexPath = path.join(appConfig.paths.dist, 'index.html');
     let indexHTML = fs.readFileSync(indexPath, 'utf8');
 
-    /** Support serving in subdirectory if DOMAIN_CLIENT is set */
-    if (process.env.DOMAIN_CLIENT) {
-      const clientUrl = new URL(process.env.DOMAIN_CLIENT);
-      const baseHref = clientUrl.pathname.endsWith('/')
-        ? clientUrl.pathname
-        : `${clientUrl.pathname}/`;
-      if (baseHref !== '/') {
-        logger.info(`Setting base href to ${baseHref}`);
-        indexHTML = indexHTML.replace(/base href="\/"/, `base href="${baseHref}"`);
-      }
+    /** Support serving in subdirectory if DOMAIN_CLIENT parses to a non-root path */
+    const basePath = getBasePath();
+    if (basePath) {
+      const baseHref = basePath.endsWith('/') ? basePath : `${basePath}/`;
+      logger.info(`Setting base href to ${baseHref}`);
+      indexHTML = indexHTML.replace(/base href="\/"/, `base href="${baseHref}"`);
     }
 
     /** Health check endpoint */
