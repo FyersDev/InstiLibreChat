@@ -29,6 +29,8 @@ export const FYERS_ORG_RESEARCH_SEGMENTS = {
   documentUpload: 'document-upload',
   saveReportUpload: 'save-report-upload',
   documents: 'documents',
+  /** Binary file bytes — `GET .../documents/{documentId}/download` */
+  download: 'download',
   folders: 'folders',
   templates: 'templates',
   personas: 'personas',
@@ -57,6 +59,7 @@ export const fyersT2Urls = {
   instiOrgResearchSaveReportUpload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/save-report-upload`,
   instiOrgResearchDocuments: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents`,
   instiOrgResearchDocumentsById: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}`,
+  instiOrgResearchDocumentDownload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/download`,
   instiOrgResearchFolders: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/folders`,
   instiOrgResearchTemplates: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/templates`,
   instiOrgResearchPersonas: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/personas`,
@@ -102,6 +105,12 @@ export const fyersT2ApiList: ReadonlyArray<{
     method: 'GET',
     url: fyersT2Urls.instiOrgResearchDocumentsById,
     usedIn: 'researchConfluxApi.getDocument, deleteDocument',
+  },
+  {
+    key: 'instiOrgResearchDocumentDownload',
+    method: 'GET',
+    url: fyersT2Urls.instiOrgResearchDocumentDownload,
+    usedIn: 'researchConfluxApi.downloadDocument; saasApi.downloadFile',
   },
   {
     key: 'instiOrgResearchFolders',
@@ -315,7 +324,11 @@ export const apiV1Catalog = {
   folderPermissionRemove: { method: 'DELETE' as const, path: '/api/v1/folders/{folderId}/permissions/{roleId}', usedIn: 'saasApi.removeFolderPermission' },
   documentsList: { method: 'GET' as const, path: '/api/v1/documents', usedIn: 'saasApi.getFiles' },
   documentById: { method: 'GET' as const, path: '/api/v1/documents/{id}', usedIn: 'saasApi.getFile, updateFile' },
-  documentDownload: { method: 'GET' as const, path: '/api/v1/documents/{id}/download', usedIn: 'saasApi.downloadFile' },
+  documentDownload: {
+    method: 'GET' as const,
+    path: '/api/v1/documents/{id}/download',
+    usedIn: 'legacy insti-inquora; research bytes use fyersT2Urls.instiOrgResearchDocumentDownload / researchConfluxApi.downloadDocument',
+  },
   documentDelete: { method: 'DELETE' as const, path: '/api/v1/documents/{id}', usedIn: 'saasApi.deleteFile' },
   documentsUpload: { method: 'POST' as const, path: '/api/v1/documents/upload', usedIn: 'saasApi.uploadFile, createFile' },
   documentsSaveReport: { method: 'POST' as const, path: '/api/v1/documents/save-report', usedIn: 'saasApi.saveReport' },

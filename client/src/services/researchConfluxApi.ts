@@ -319,6 +319,45 @@ export const researchConfluxApi = {
     return parseConfluxResponse(res);
   },
 
+  /** Raw file bytes from Conflux (`GET .../documents/{documentId}/download`). */
+  async downloadDocument(orgId: number | string, documentId: string): Promise<Blob> {
+    const url = fyersOrgResearchUrl(orgId, R.documents, documentId, R.download);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: '*/*' },
+    });
+    const ct = res.headers.get('Content-Type') || '';
+    if (!res.ok) {
+      const text = await res.text();
+      let msg = res.statusText;
+      try {
+        const j = JSON.parse(text) as Record<string, unknown>;
+        if (typeof j.message === 'string' && j.message) {
+          msg = j.message;
+        }
+      } catch {
+        if (text && text.length < 500) {
+          msg = text;
+        }
+      }
+      throw new Error(msg || `HTTP ${res.status}`);
+    }
+    if (ct.includes('application/json')) {
+      const text = await res.text();
+      let msg = 'Server returned JSON instead of a file';
+      try {
+        const j = JSON.parse(text) as Record<string, unknown>;
+        if (typeof j.message === 'string' && j.message) {
+          msg = j.message;
+        }
+      } catch {
+        // use default msg
+      }
+      throw new Error(msg);
+    }
+    return res.blob();
+  },
+
   async deleteDocument(orgId: number | string, documentId: string): Promise<void> {
     const url = fyersOrgResearchUrl(orgId, R.documents, documentId);
     const res = await confluxFetch(url, { method: 'DELETE' });

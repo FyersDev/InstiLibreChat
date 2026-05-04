@@ -575,6 +575,32 @@ export default function ResourcesRoute() {
     }
   };
 
+  /** Conflux `GET .../documents/{id}/download` via `saasApi.downloadFile`. */
+  const handleDownloadFile = async (file: FileNode) => {
+    const docId = file.document_id ?? file.id;
+    if (!docId) {
+      showToast({ message: 'Missing document id', status: 'error' });
+      return;
+    }
+    const orgId = isSuperAdmin ? selectedOrgId : userOrgId;
+    try {
+      const blob = await saasApi.downloadFile(String(docId), orgId);
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = file.name || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+    } catch (err: any) {
+      showToast({
+        message: err?.message || 'Failed to download file',
+        status: 'error',
+      });
+    }
+  };
+
   const hasFolderPermission = permissionManager?.canCreate('folders') || false;
   const hasFilePermission = permissionManager?.canCreate('files') || false;
   const hasFileUpdatePermission = permissionManager?.canUpdate('files') || false;
@@ -1107,7 +1133,7 @@ export default function ResourcesRoute() {
                           ? 'bg-fig-Surface-standard'
                           : 'bg-fig-Surface-zero-neutral',
                       )}
-                      onDoubleClick={() => handlePreviewFile(file)}
+                      onDoubleClick={() => handleDownloadFile(file)}
                     >
                       <td
                         className={cn(

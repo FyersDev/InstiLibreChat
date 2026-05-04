@@ -48,21 +48,6 @@ function normalizeConfluxDocumentMetadata(raw: unknown): Record<string, unknown>
   };
 }
 
-/** Build same-origin static file URL (matches `FileViewRoute` / `uploads` prefix rules). */
-function staticResourceUrlFromStorageKey(storageKey: string): string {
-  const storagePath = 'uploads';
-  let filePath = storageKey;
-  if (filePath.startsWith(`${storagePath}/`)) {
-    filePath = filePath.substring(storagePath.length + 1);
-  } else if (filePath.startsWith(`/${storagePath}/`)) {
-    filePath = filePath.substring(storagePath.length + 2);
-  } else if (filePath.startsWith('/')) {
-    filePath = filePath.substring(1);
-  }
-  filePath = filePath.replace(/\\/g, '/');
-  return `/static/resources/folder/file/${filePath}`;
-}
-
 const getBaseHref = () => {
   const base = document.querySelector('base')?.getAttribute('href') || '/';
   return base.endsWith('/') ? base.slice(0, -1) : base;
@@ -704,30 +689,7 @@ export const saasApi = {
 
   async downloadFile(id: string, orgId?: string | null): Promise<Blob> {
     const org = requireConfluxOrg(orgId);
-    const meta = normalizeConfluxDocumentMetadata(
-      await researchConfluxApi.getDocument(org, id),
-    );
-    const storageKey =
-      meta.storage_key != null
-        ? String(meta.storage_key)
-        : meta.storagePath != null
-          ? String(meta.storagePath)
-          : '';
-    if (!storageKey) {
-      throw new Error('Document has no storage path — cannot download');
-    }
-    const staticUrl = staticResourceUrlFromStorageKey(storageKey);
-    const token = getAuthToken();
-    const response = await fetch(staticUrl, {
-      method: 'GET',
-      headers: token ? { Authorization: `Bearer ${token}` } : {},
-      credentials: 'include',
-    });
-    if (!response.ok) {
-      const errorText = await response.text().catch(() => '');
-      throw new Error(`Failed to download file: ${response.statusText} - ${errorText}`);
-    }
-    return response.blob();
+    return researchConfluxApi.downloadDocument(org, id);
   },
 
   async createFolder(data: any) {
