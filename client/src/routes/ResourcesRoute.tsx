@@ -575,7 +575,7 @@ export default function ResourcesRoute() {
     }
   };
 
-  /** Conflux `GET .../documents/{id}/download` via `saasApi.downloadFile`. */
+  /** Conflux `GET .../documents/{id}/download` returns presigned URL — open S3 link in new tab. */
   const handleDownloadFile = async (file: FileNode) => {
     const docId = file.document_id ?? file.id;
     if (!docId) {
@@ -584,15 +584,7 @@ export default function ResourcesRoute() {
     }
     const orgId = isSuperAdmin ? selectedOrgId : userOrgId;
     try {
-      const blob = await saasApi.downloadFile(String(docId), orgId);
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = file.name || 'download';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
+      await saasApi.openDocumentDownloadInNewTab(String(docId), orgId);
     } catch (err: any) {
       showToast({
         message: err?.message || 'Failed to download file',

@@ -249,6 +249,65 @@ export interface ProcessorSuccessEnvelope {
   data?: Record<string, unknown>;
 }
 
+/** Unwrapped from `GET .../documents/{id}/download` success `data` (same shape as multipart presign). */
+export interface PresignedHTTPRequest {
+  url: string;
+  method: string;
+  headers?: Record<string, string>;
+  expiresAt?: string;
+}
+
+function headersFromPresignedPayload(raw: unknown): Headers {
+  const h = new Headers();
+  if (raw && typeof raw === 'object' && !Array.isArray(raw)) {
+    for (const [k, v] of Object.entries(raw as Record<string, unknown>)) {
+      if (typeof v === 'string') {
+        h.set(k, v);
+      }
+    }
+  }
+  return h;
+}
+
+async function getDocumentDownloadPresigned(
+  orgId: number | string,
+  documentId: string,
+): Promise<PresignedHTTPRequest> {
+  const url = fyersOrgResearchUrl(orgId, R.documents, documentId, R.download);
+  const res = await confluxFetch(url, {
+    method: 'GET',
+    headers: { Accept: 'application/json' },
+  });
+  const payload = await parseConfluxResponse<Record<string, unknown>>(res);
+  if (!payload || typeof payload.url !== 'string' || !payload.url) {
+    throw new Error('Download response missing presigned url');
+  }
+  const method =
+    typeof payload.method === 'string' && payload.method.trim() !== ''
+      ? payload.method
+      : 'GET';
+  const out: PresignedHTTPRequest = { url: payload.url, method };
+  if (
+    payload.headers &&
+    typeof payload.headers === 'object' &&
+    !Array.isArray(payload.headers)
+  ) {
+    const hdrs: Record<string, string> = {};
+    for (const [k, v] of Object.entries(payload.headers as Record<string, unknown>)) {
+      if (typeof v === 'string') {
+        hdrs[k] = v;
+      }
+    }
+    if (Object.keys(hdrs).length > 0) {
+      out.headers = hdrs;
+    }
+  }
+  if (typeof payload.expiresAt === 'string') {
+    out.expiresAt = payload.expiresAt;
+  }
+  return out;
+}
+
 export const researchConfluxApi = {
   /** Single-shot multipart upload — fields align with inquora-style (`folder_id`, optional `metadata` JSON string). */
   async documentUpload(
@@ -319,43 +378,21 @@ export const researchConfluxApi = {
     return parseConfluxResponse(res);
   },
 
-  /** Raw file bytes from Conflux (`GET .../documents/{documentId}/download`). */
+  /** `GET .../download` with Insti token — JSON `data` contains presigned S3 URL (no Insti auth on S3). */
+  getDocumentDownloadPresigned: getDocumentDownloadPresigned,
+
+  /** Follow presigned URL and return bytes (for programmatic download). */
   async downloadDocument(orgId: number | string, documentId: string): Promise<Blob> {
-    const url = fyersOrgResearchUrl(orgId, R.documents, documentId, R.download);
-    const res = await confluxFetch(url, {
-      method: 'GET',
-      headers: { Accept: '*/*' },
+    const p = await getDocumentDownloadPresigned(orgId, documentId);
+    const s3Res = await fetch(p.url, {
+      method: p.method || 'GET',
+      headers: headersFromPresignedPayload(p.headers),
     });
-    const ct = res.headers.get('Content-Type') || '';
-    if (!res.ok) {
-      const text = await res.text();
-      let msg = res.statusText;
-      try {
-        const j = JSON.parse(text) as Record<string, unknown>;
-        if (typeof j.message === 'string' && j.message) {
-          msg = j.message;
-        }
-      } catch {
-        if (text && text.length < 500) {
-          msg = text;
-        }
-      }
-      throw new Error(msg || `HTTP ${res.status}`);
+    if (!s3Res.ok) {
+      const text = await s3Res.text().catch(() => '');
+      throw new Error(text || s3Res.statusText || `HTTP ${s3Res.status}`);
     }
-    if (ct.includes('application/json')) {
-      const text = await res.text();
-      let msg = 'Server returned JSON instead of a file';
-      try {
-        const j = JSON.parse(text) as Record<string, unknown>;
-        if (typeof j.message === 'string' && j.message) {
-          msg = j.message;
-        }
-      } catch {
-        // use default msg
-      }
-      throw new Error(msg);
-    }
-    return res.blob();
+    return s3Res.blob();
   },
 
   async deleteDocument(orgId: number | string, documentId: string): Promise<void> {

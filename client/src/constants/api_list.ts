@@ -29,7 +29,7 @@ export const FYERS_ORG_RESEARCH_SEGMENTS = {
   documentUpload: 'document-upload',
   saveReportUpload: 'save-report-upload',
   documents: 'documents',
-  /** Binary file bytes — `GET .../documents/{documentId}/download` */
+  /** `GET .../documents/{documentId}/download` returns JSON `data`: presigned S3 `PresignedHTTPRequest` */
   download: 'download',
   folders: 'folders',
   templates: 'templates',
@@ -110,7 +110,8 @@ export const fyersT2ApiList: ReadonlyArray<{
     key: 'instiOrgResearchDocumentDownload',
     method: 'GET',
     url: fyersT2Urls.instiOrgResearchDocumentDownload,
-    usedIn: 'researchConfluxApi.downloadDocument; saasApi.downloadFile',
+    usedIn:
+      'JSON presigned request in data; researchConfluxApi.getDocumentDownloadPresigned, downloadDocument; saasApi',
   },
   {
     key: 'instiOrgResearchFolders',

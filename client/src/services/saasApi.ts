@@ -720,6 +720,13 @@ export const saasApi = {
     return researchConfluxApi.downloadDocument(org, id);
   },
 
+  /** Calls `GET .../documents/{id}/download` (Insti token), then opens presigned S3 `url` in a new tab. */
+  async openDocumentDownloadInNewTab(id: string, orgId?: string | null): Promise<void> {
+    const org = requireConfluxOrg(orgId);
+    const p = await researchConfluxApi.getDocumentDownloadPresigned(org, id);
+    window.open(p.url, '_blank', 'noopener,noreferrer');
+  },
+
   async createFolder(data: any) {
     const org = requireConfluxOrg(data?.org_id);
     const parent = data.parent_id;
