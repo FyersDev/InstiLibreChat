@@ -563,12 +563,18 @@ export default function TemplatesView() {
               <tbody className="divide-y divide-fig-Stroke-soft">
                 {activeTab === 'templates'
                   ? templates.map((template, rowIndex) => {
+                      const templateKey = String(
+                        template?.id ??
+                          template?.templateId ??
+                          template?.template_id ??
+                          `row-${rowIndex}`,
+                      );
                       const isSelected =
                         selectedItem?.type === 'template' && selectedItem.id === template.id;
                       const shortDescriptionLine = getTemplateShortDescriptionLine(template);
                       return (
                         <tr
-                          key={template.id}
+                          key={templateKey}
                           className={cn(
                             'group cursor-pointer',
                             'hover:bg-fig-Surface-neutral',
@@ -720,11 +726,17 @@ export default function TemplatesView() {
                       );
                     })
                   : personas.map((persona, rowIndex) => {
+                      const personaKey = String(
+                        persona?.id ??
+                          persona?.personaId ??
+                          persona?.persona_id ??
+                          `row-${rowIndex}`,
+                      );
                       const isSelected =
                         selectedItem?.type === 'persona' && selectedItem.id === persona.id;
                       return (
                         <tr
-                          key={persona.id}
+                          key={personaKey}
                           className={cn(
                             'group cursor-pointer',
                             'hover:bg-fig-Surface-neutral',
