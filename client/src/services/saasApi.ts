@@ -16,8 +16,10 @@
  * `GET/POST ${base}/api/v1/...` via the local proxy. Personas and templates use FYERS Conflux.
  */
 
+import { fyersT2Urls } from '~/constants/api_list';
 import {
   getFyersOrgIdFromJwt,
+  getFyersResearchAuthHeaders,
   hasFyersResearchAuth,
   researchConfluxApi,
 } from '~/services/researchConfluxApi';
@@ -115,6 +117,64 @@ function effectiveConfluxOrgId(orgId?: string | null): string | null {
     return fromJwt;
   }
   return null;
+}
+
+/** Maps FYERS `GET /insti/admin/user-details` payload to fields used across InstiLibreChat (`org_id`, `org_role`, …). */
+function mapFyersUserDetailsToMe(raw: Record<string, unknown>): Record<string, unknown> {
+  const roleRaw = String(raw.role ?? '')
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, '_');
+  let org_role: string | undefined;
+  let is_super_admin = false;
+
+  if (roleRaw.includes('super') && roleRaw.includes('admin')) {
+    is_super_admin = true;
+    org_role = 'admin';
+  } else if (roleRaw === 'org_admin' || roleRaw === 'orgadmin') {
+    org_role = 'admin';
+  } else if (roleRaw === 'viewer') {
+    org_role = 'viewer';
+  } else if (roleRaw === 'admin') {
+    org_role = 'admin';
+  } else if (roleRaw) {
+    org_role = roleRaw;
+  }
+
+  const institutionId = raw.institutionId ?? raw.institution_id;
+  const jwtOrg = getFyersOrgIdFromJwt();
+  const org_id =
+    jwtOrg ??
+    (institutionId != null && institutionId !== ''
+      ? String(institutionId as string | number)
+      : undefined);
+
+  const id = raw.id != null ? String(raw.id as string | number) : undefined;
+
+  return {
+    ...raw,
+    id,
+    name: raw.name,
+    email: raw.email,
+    mobile: raw.mobile,
+    fyId: raw.fyId ?? raw.fy_id,
+    org_id,
+    organization_id: org_id,
+    org_role,
+    orgRole: org_role,
+    is_super_admin,
+    institutionId,
+    institutionName: raw.institutionName ?? raw.institution_name,
+    deptId: raw.deptId ?? raw.dept_id,
+    deptName: raw.deptName ?? raw.dept_name,
+    subDeptId: raw.subDeptId ?? raw.sub_dept_id,
+    subDeptName: raw.subDeptName ?? raw.sub_dept_name,
+    jobTitle: raw.jobTitle ?? raw.job_title,
+    status: raw.status,
+    lastActive: raw.lastActive ?? raw.last_active,
+    licenseStartDate: raw.licenseStartDate ?? raw.license_start_date,
+    licenseEndDate: raw.licenseEndDate ?? raw.license_end_date,
+  };
 }
 
 function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, unknown> {
@@ -366,6 +426,24 @@ export const saasApi = {
   },
 
   async getMe() {
+    if (hasFyersResearchAuth()) {
+      const url = fyersT2Urls.instiAdminUserDetails;
+      const headers = new Headers({
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+      });
+      const auth = getFyersResearchAuthHeaders();
+      if ('Authorization' in auth && auth.Authorization) {
+        headers.set('Authorization', auth.Authorization as string);
+      }
+      const response = await fetch(url, { method: 'GET', headers });
+      const raw = await handleResponse<Record<string, unknown>>(response, {
+        url,
+        method: 'GET',
+      });
+      return mapFyersUserDetailsToMe(raw ?? {});
+    }
+
     const url = `${API_BASE_URL}/auth/me`;
     const response = await fetch(url, {
       method: 'GET',

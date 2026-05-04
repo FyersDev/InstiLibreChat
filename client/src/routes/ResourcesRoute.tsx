@@ -99,8 +99,11 @@ export default function ResourcesRoute() {
   const [showSearch, setShowSearch] = useState<boolean>(false);
 
   const isSuperAdmin = userInfo?.is_super_admin || false;
-  const userOrgId = userInfo?.org_id || null;
-  const isOrgAdmin = userInfo?.org_role === 'admin';
+  const userOrgId =
+    userInfo?.org_id ?? userInfo?.organization_id ?? userInfo?.organizationId ?? null;
+  const orgRoleRaw = userInfo?.org_role ?? userInfo?.orgRole;
+  const isOrgAdmin =
+    typeof orgRoleRaw === 'string' && orgRoleRaw.trim().toLowerCase() === 'admin';
 
   useEffect(() => {
     loadUserInfo();
@@ -576,7 +579,13 @@ export default function ResourcesRoute() {
   const hasFilePermission = permissionManager?.canCreate('files') || false;
   const hasFileUpdatePermission = permissionManager?.canUpdate('files') || false;
   const hasFileDeletePermission = permissionManager?.canDelete('files') || false;
-  const canManage = isSuperAdmin || isOrgAdmin || hasFolderPermission || hasFilePermission;
+  /** Show create/upload when admin, explicit RBAC, or any org membership (API still enforces writes). */
+  const canManage =
+    isSuperAdmin ||
+    isOrgAdmin ||
+    hasFolderPermission ||
+    hasFilePermission ||
+    Boolean(userOrgId);
   const canManageFiles =
     isSuperAdmin || isOrgAdmin || hasFileUpdatePermission || hasFileDeletePermission;
 
