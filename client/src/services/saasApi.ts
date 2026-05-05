@@ -49,8 +49,8 @@ function normalizeConfluxDocumentMetadata(raw: unknown): Record<string, unknown>
 }
 
 /**
- * FYERS Conflux template create/update unmarshals strict JSON — rejects unknown keys such as
- * `is_custom` from CreateTemplateModal / TemplatesView.
+ * FYERS `PUT /research/templates/{id}` — strict camelCase body, e.g.
+ * `{ name, description?, framework, isCustom, content }`. UI may send `is_custom`; we emit `isCustom`.
  */
 function normalizeConfluxTemplateWrite(data: Record<string, unknown> | null | undefined): Record<string, unknown> {
   const d = data && typeof data === 'object' ? data : {};
@@ -58,21 +58,33 @@ function normalizeConfluxTemplateWrite(data: Record<string, unknown> | null | un
   if (d.name != null) {
     out.name = d.name;
   }
+  if (d.description != null) {
+    out.description = d.description;
+  }
   if (d.framework != null) {
     out.framework = d.framework;
   }
-  if (d.content != null) {
-    out.content = d.content;
+  const isCustom =
+    d.isCustom !== undefined
+      ? Boolean(d.isCustom)
+      : d.is_custom !== undefined
+        ? Boolean(d.is_custom)
+        : undefined;
+  if (typeof isCustom === 'boolean') {
+    out.isCustom = isCustom;
   }
-  if (d.description != null) {
-    out.description = d.description;
+  if (d.content != null && typeof d.content === 'object' && !Array.isArray(d.content)) {
+    out.content = d.content;
+  } else {
+    out.content = {};
   }
   return out;
 }
 
 /**
- * FYERS org research persona POST/PUT — snake_case body: `template_id`, `is_custom_template`, `content`.
- * User-driven create/update defaults `is_custom_template` to true when not specified.
+ * FYERS `PUT /research/personas/{id}` — snake_case body, e.g.
+ * `{ name, description?, template_id, is_custom_template, content }`.
+ * `template_id` may be `null` (no linked template). Create flows often omit `template_id`; updates may pass null explicitly.
  */
 function normalizeConfluxPersonaWrite(data: Record<string, unknown> | null | undefined): Record<string, unknown> {
   const d = data && typeof data === 'object' ? data : {};
@@ -85,8 +97,14 @@ function normalizeConfluxPersonaWrite(data: Record<string, unknown> | null | und
     out.description = d.description;
   }
 
+  const hasTemplateIdKey =
+    Object.prototype.hasOwnProperty.call(d, 'template_id') ||
+    Object.prototype.hasOwnProperty.call(d, 'templateId');
   const tid = d.template_id ?? d.templateId;
-  if (tid != null && tid !== '') {
+  if (hasTemplateIdKey) {
+    out.template_id =
+      tid != null && tid !== '' ? (typeof tid === 'number' ? String(tid) : String(tid).trim()) : null;
+  } else if (tid != null && tid !== '') {
     out.template_id = typeof tid === 'number' ? String(tid) : String(tid).trim();
   }
 

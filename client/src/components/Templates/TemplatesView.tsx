@@ -2509,14 +2509,22 @@ function EditPersonaModal({
       setError('Description is required');
       return;
     }
+    const p = persona as Record<string, unknown>;
     const updatedPersona = {
       name: formData.name,
       description: formData.description || null,
-      is_custom_template: true,
-      content: {},
+      template_id: (p.template_id ?? p.templateId ?? null) as string | null,
+      is_custom_template:
+        typeof p.is_custom_template === 'boolean'
+          ? p.is_custom_template
+          : typeof p.isCustomTemplate === 'boolean'
+            ? p.isCustomTemplate
+            : true,
+      content:
+        p.content != null && typeof p.content === 'object' && !Array.isArray(p.content)
+          ? (p.content as Record<string, unknown>)
+          : {},
     };
-
-    console.log('Updating persona with:', updatedPersona);
 
     setLoading(true);
     try {
