@@ -18,6 +18,7 @@ import { useSearchParams } from 'react-router-dom';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
 import { asset } from '~/utils/assetPath';
+import { isResearchSystemRow, researchOwnerColumnLabel } from '~/utils/researchOwner';
 
 /** One-line summary for the templates table (role/task/format or flattened text). */
 function getTemplateShortDescriptionLine(template: {
@@ -370,9 +371,21 @@ export default function TemplatesView() {
     setDropdownPosition(null);
   };
 
+  /** Conflux often returns camelCase `createdAt`; UI historically used `created_at`. */
+  const pickCreatedAt = (row: Record<string, unknown>): string => {
+    const raw =
+      row.created_at ??
+      row.createdAt ??
+      row.date_created ??
+      row.dateCreated ??
+      '';
+    return raw === null || raw === undefined ? '' : String(raw);
+  };
+
   const formatDate = (dateString: string) => {
     if (!dateString) return 'Unknown';
     const date = new Date(dateString);
+    if (Number.isNaN(date.getTime())) return 'Unknown';
     return date.toLocaleDateString('en-US', {
       year: 'numeric',
       month: 'short',
@@ -516,7 +529,7 @@ export default function TemplatesView() {
           </div>
         ) : (
           <div className="overflow-x-auto rounded-[2px] border border-fig-Stroke-soft">
-            <table className="w-full min-w-[640px] table-fixed border-separate border-spacing-0">
+            <table className="w-full min-w-[800px] table-fixed border-separate border-spacing-0">
               <thead className="bg-fig-Surface-one-neutral">
                 <tr>
                   <th
@@ -537,6 +550,16 @@ export default function TemplatesView() {
                     )}
                   >
                     Short description
+                  </th>
+                  <th
+                    scope="col"
+                    className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                      'hidden md:table-cell',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                    )}
+                  >
+                    Owner
                   </th>
                   <th
                     scope="col"
@@ -572,6 +595,8 @@ export default function TemplatesView() {
                       const isSelected =
                         selectedItem?.type === 'template' && selectedItem.id === template.id;
                       const shortDescriptionLine = getTemplateShortDescriptionLine(template);
+                      const templateRow = template as Record<string, unknown>;
+                      const isSystemTemplate = isResearchSystemRow(templateRow);
                       return (
                         <tr
                           key={templateKey}
@@ -625,12 +650,21 @@ export default function TemplatesView() {
                           </td>
                           <td
                             className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                              'hidden p-[var(--Padding-spacer)] text-left align-middle md:table-cell',
+                              'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
+                            )}
+                          >
+                            {researchOwnerColumnLabel(templateRow)}
+                          </td>
+                          <td
+                            className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]',
                               'min-w-0 whitespace-nowrap text-right',
                               'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
                             )}
                           >
-                            {formatDate(template.created_at)}
+                            {formatDate(pickCreatedAt(templateRow))}
                           </td>
                           <td
                             className={cn(
@@ -638,89 +672,91 @@ export default function TemplatesView() {
                               'font-inter text-sm font-medium leading-5',
                             )}
                           >
-                            <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
-                              <button
-                                ref={(el) => {
-                                  if (el) {
-                                    buttonRefs.current.set(`template-${template.id}`, el);
-                                  } else {
-                                    buttonRefs.current.delete(`template-${template.id}`);
-                                  }
-                                }}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  const isCurrentlySelected =
-                                    selectedItem?.type === 'template' &&
-                                    selectedItem.id === template.id;
-                                  if (isCurrentlySelected) {
-                                    setSelectedItem(null);
-                                    setDropdownPosition(null);
-                                  } else {
-                                    const button = buttonRefs.current.get(
-                                      `template-${template.id}`,
-                                    );
-                                    if (button) {
-                                      const rect = button.getBoundingClientRect();
-                                      setDropdownPosition({
-                                        top: rect.bottom + 4,
-                                        right: window.innerWidth - rect.right,
-                                      });
+                            {!isSystemTemplate ? (
+                              <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
+                                <button
+                                  ref={(el) => {
+                                    if (el) {
+                                      buttonRefs.current.set(`template-${template.id}`, el);
+                                    } else {
+                                      buttonRefs.current.delete(`template-${template.id}`);
                                     }
-                                    setSelectedItem({ type: 'template', id: template.id });
-                                  }
-                                }}
-                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
-                                title="More options"
-                              >
-                                <MoreVertical className="h-3 w-3" aria-hidden />
-                              </button>
-                              {isSelected &&
-                                dropdownPosition &&
-                                createPortal(
-                                  <div
-                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
-                                    style={{
-                                      top: `${dropdownPosition.top}px`,
-                                      right: `${dropdownPosition.right}px`,
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="py-1">
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          handleEditTemplate(template);
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                        Edit
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          handleDeleteTemplate(template);
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
-                                      >
-                                        <img
-                                          src={asset('delete.svg')}
-                                          alt="Delete"
-                                          className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
-                                        />
-                                        Delete
-                                      </button>
-                                    </div>
-                                  </div>,
-                                  document.body,
-                                )}
-                            </div>
+                                  }}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    const isCurrentlySelected =
+                                      selectedItem?.type === 'template' &&
+                                      selectedItem.id === template.id;
+                                    if (isCurrentlySelected) {
+                                      setSelectedItem(null);
+                                      setDropdownPosition(null);
+                                    } else {
+                                      const button = buttonRefs.current.get(
+                                        `template-${template.id}`,
+                                      );
+                                      if (button) {
+                                        const rect = button.getBoundingClientRect();
+                                        setDropdownPosition({
+                                          top: rect.bottom + 4,
+                                          right: window.innerWidth - rect.right,
+                                        });
+                                      }
+                                      setSelectedItem({ type: 'template', id: template.id });
+                                    }
+                                  }}
+                                  className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
+                                  title="More options"
+                                >
+                                  <MoreVertical className="h-3 w-3" aria-hidden />
+                                </button>
+                                {isSelected &&
+                                  dropdownPosition &&
+                                  createPortal(
+                                    <div
+                                      className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
+                                      style={{
+                                        top: `${dropdownPosition.top}px`,
+                                        right: `${dropdownPosition.right}px`,
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="py-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleEditTemplate(template);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                          Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleDeleteTemplate(template);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
+                                        >
+                                          <img
+                                            src={asset('delete.svg')}
+                                            alt="Delete"
+                                            className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                          />
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </div>,
+                                    document.body,
+                                  )}
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       );
@@ -732,6 +768,8 @@ export default function TemplatesView() {
                           persona?.persona_id ??
                           `row-${rowIndex}`,
                       );
+                      const personaRow = persona as Record<string, unknown>;
+                      const isSystemPersona = isResearchSystemRow(personaRow);
                       const isSelected =
                         selectedItem?.type === 'persona' && selectedItem.id === persona.id;
                       return (
@@ -787,12 +825,21 @@ export default function TemplatesView() {
                           </td>
                           <td
                             className={cn(
+                              'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                              'hidden p-[var(--Padding-spacer)] text-left align-middle md:table-cell',
+                              'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
+                            )}
+                          >
+                            {researchOwnerColumnLabel(personaRow)}
+                          </td>
+                          <td
+                            className={cn(
                               'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]',
                               'min-w-0 whitespace-nowrap text-right',
                               'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
                             )}
                           >
-                            {formatDate(persona.created_at)}
+                            {formatDate(pickCreatedAt(personaRow))}
                           </td>
                           <td
                             className={cn(
@@ -800,87 +847,89 @@ export default function TemplatesView() {
                               'font-inter text-sm font-medium leading-5',
                             )}
                           >
-                            <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
-                              <button
-                                ref={(el) => {
-                                  if (el) {
-                                    buttonRefs.current.set(`persona-${persona.id}`, el);
-                                  } else {
-                                    buttonRefs.current.delete(`persona-${persona.id}`);
-                                  }
-                                }}
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  e.preventDefault();
-                                  const isCurrentlySelected =
-                                    selectedItem?.type === 'persona' &&
-                                    selectedItem.id === persona.id;
-                                  if (isCurrentlySelected) {
-                                    setSelectedItem(null);
-                                    setDropdownPosition(null);
-                                  } else {
-                                    const button = buttonRefs.current.get(`persona-${persona.id}`);
-                                    if (button) {
-                                      const rect = button.getBoundingClientRect();
-                                      setDropdownPosition({
-                                        top: rect.bottom + 4,
-                                        right: window.innerWidth - rect.right,
-                                      });
+                            {!isSystemPersona ? (
+                              <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
+                                <button
+                                  ref={(el) => {
+                                    if (el) {
+                                      buttonRefs.current.set(`persona-${persona.id}`, el);
+                                    } else {
+                                      buttonRefs.current.delete(`persona-${persona.id}`);
                                     }
-                                    setSelectedItem({ type: 'persona', id: persona.id });
-                                  }
-                                }}
-                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
-                                title="More options"
-                              >
-                                <MoreVertical className="h-3 w-3" aria-hidden />
-                              </button>
-                              {isSelected &&
-                                dropdownPosition &&
-                                createPortal(
-                                  <div
-                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
-                                    style={{
-                                      top: `${dropdownPosition.top}px`,
-                                      right: `${dropdownPosition.right}px`,
-                                    }}
-                                    onClick={(e) => e.stopPropagation()}
-                                  >
-                                    <div className="py-1">
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          handleEditPersona(persona);
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
-                                      >
-                                        <Edit className="h-4 w-4" />
-                                        Edit
-                                      </button>
-                                      <button
-                                        type="button"
-                                        onClick={(e) => {
-                                          e.stopPropagation();
-                                          e.preventDefault();
-                                          handleDeletePersona(persona);
-                                        }}
-                                        className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
-                                      >
-                                        <img
-                                          src={asset('delete.svg')}
-                                          alt="Delete"
-                                          className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
-                                        />
-                                        Delete
-                                      </button>
-                                    </div>
-                                  </div>,
-                                  document.body,
-                                )}
-                            </div>
+                                  }}
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    e.preventDefault();
+                                    const isCurrentlySelected =
+                                      selectedItem?.type === 'persona' &&
+                                      selectedItem.id === persona.id;
+                                    if (isCurrentlySelected) {
+                                      setSelectedItem(null);
+                                      setDropdownPosition(null);
+                                    } else {
+                                      const button = buttonRefs.current.get(`persona-${persona.id}`);
+                                      if (button) {
+                                        const rect = button.getBoundingClientRect();
+                                        setDropdownPosition({
+                                          top: rect.bottom + 4,
+                                          right: window.innerWidth - rect.right,
+                                        });
+                                      }
+                                      setSelectedItem({ type: 'persona', id: persona.id });
+                                    }
+                                  }}
+                                  className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
+                                  title="More options"
+                                >
+                                  <MoreVertical className="h-3 w-3" aria-hidden />
+                                </button>
+                                {isSelected &&
+                                  dropdownPosition &&
+                                  createPortal(
+                                    <div
+                                      className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
+                                      style={{
+                                        top: `${dropdownPosition.top}px`,
+                                        right: `${dropdownPosition.right}px`,
+                                      }}
+                                      onClick={(e) => e.stopPropagation()}
+                                    >
+                                      <div className="py-1">
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleEditPersona(persona);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
+                                        >
+                                          <Edit className="h-4 w-4" />
+                                          Edit
+                                        </button>
+                                        <button
+                                          type="button"
+                                          onClick={(e) => {
+                                            e.stopPropagation();
+                                            e.preventDefault();
+                                            handleDeletePersona(persona);
+                                          }}
+                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
+                                        >
+                                          <img
+                                            src={asset('delete.svg')}
+                                            alt="Delete"
+                                            className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                          />
+                                          Delete
+                                        </button>
+                                      </div>
+                                    </div>,
+                                    document.body,
+                                  )}
+                              </div>
+                            ) : null}
                           </td>
                         </tr>
                       );

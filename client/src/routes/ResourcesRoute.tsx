@@ -9,6 +9,7 @@ import UploadFileModal from '~/components/Resources/Modals/UploadFileModal';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
 import { PermissionManager } from '~/utils/permissions';
+import { isResearchSystemRow, researchOwnerColumnLabel } from '~/utils/researchOwner';
 
 interface FolderNode {
   id: string;
@@ -18,7 +19,10 @@ interface FolderNode {
   children?: FolderNode[];
   files?: FileNode[];
   created_by?: string;
+  /** From API `createdByName` / `created_by_name` via saasApi mapper. */
   created_by_name?: string;
+  /** Fallback for Owner when display name is absent but email exists on the row/user object. */
+  created_by_email?: string;
   created_at: string;
   /** Present when API sends org scope; `null` means system-managed (org_id null). */
   org_id?: string | null;
@@ -35,31 +39,17 @@ interface FileNode {
   storage_key?: string;
   created_by?: string;
   created_by_name?: string;
+  created_by_email?: string;
   org_id?: string | null;
   is_system?: boolean;
 }
 
-/** System content: explicit flag or org_id explicitly null (API key present). */
-function isSystemResource(item: { is_system?: boolean; org_id?: string | null }): boolean {
-  if (item.is_system === true) {
-    return true;
+/** API may send numeric `createdBy` / string user id — compare coercively. */
+function sameCreatorAsCurrentUser(actorId: unknown, currentUserId: unknown): boolean {
+  if (actorId === undefined || actorId === null || currentUserId === undefined || currentUserId === null) {
+    return false;
   }
-  return item.org_id === null;
-}
-
-function ownerDisplayName(item: {
-  is_system?: boolean;
-  org_id?: string | null;
-  created_by_name?: string;
-}): string {
-  if (isSystemResource(item)) {
-    return 'SYSTEM';
-  }
-  const name = item.created_by_name?.trim();
-  if (name) {
-    return name;
-  }
-  return 'Unknown';
+  return String(actorId) === String(currentUserId);
 }
 
 // Custom document icon component for list view
@@ -451,7 +441,7 @@ export default function ResourcesRoute() {
   };
 
   const handleDeleteFolder = async (folder: FolderNode) => {
-    if (isSystemResource(folder)) {
+    if (isResearchSystemRow(folder)) {
       showToast({
         message: 'System-managed folders cannot be deleted.',
         status: 'error',
@@ -479,7 +469,7 @@ export default function ResourcesRoute() {
   };
 
   const handleDeleteFile = async (file: FileNode) => {
-    if (isSystemResource(file)) {
+    if (isResearchSystemRow(file)) {
       showToast({
         message: 'System-managed files cannot be deleted.',
         status: 'error',
@@ -946,7 +936,7 @@ export default function ResourcesRoute() {
                   const isResources = folderNameLower === 'resources';
                   const currentUserId = userInfo?.user_id || userInfo?.id;
 
-                  const isSystemFolder = isSystemResource(folder);
+                  const isSystemFolder = isResearchSystemRow(folder);
                   // FYERS Resources folder restrictions:
                   // - Only super admin can rename/delete FYERS Resources folder
                   // Resources folder (for user uploads) can be deleted by users when empty
@@ -956,7 +946,9 @@ export default function ResourcesRoute() {
                     !isSystemFolder &&
                     (isFyersResources
                       ? isSuperAdmin // Only super admin can modify FYERS Resources
-                      : isSuperAdmin || isOrgAdmin || folder.created_by === currentUserId); // Others follow normal rules
+                      : isSuperAdmin ||
+                        isOrgAdmin ||
+                        sameCreatorAsCurrentUser(folder.created_by, currentUserId)); // Others follow normal rules
 
                   // Check if folder can be renamed
                   // - FYERS Resources: only superadmin can rename
@@ -1023,7 +1015,7 @@ export default function ResourcesRoute() {
                           'hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 text-fig-Subject-standard md:table-cell',
                         )}
                       >
-                        {ownerDisplayName(folder)}
+                        {researchOwnerColumnLabel(folder)}
                       </td>
                       <td
                         className={cn(
@@ -1154,12 +1146,14 @@ export default function ResourcesRoute() {
                   const currentFolderNameLower = currentFolderObj?.name.toLowerCase() || '';
                   const isInFyersResources = currentFolderNameLower === 'fyers resources';
 
-                  const isSystemFile = isSystemResource(file);
+                  const isSystemFile = isResearchSystemRow(file);
                   const canModifyFile =
                     !isSystemFile &&
                     (isInFyersResources
                       ? isSuperAdmin // Only super admin can delete files in FYERS Resources
-                      : isSuperAdmin || isOrgAdmin || file.created_by === currentUserId); // Normal rules for other folders
+                      : isSuperAdmin ||
+                        isOrgAdmin ||
+                        sameCreatorAsCurrentUser(file.created_by, currentUserId)); // Normal rules for other folders
                   const rowIndex = filteredContent.folders.length + fileIndex;
                   return (
                     <tr
@@ -1211,7 +1205,7 @@ export default function ResourcesRoute() {
                           'hidden p-[var(--Padding-spacer)] text-left align-middle text-sm font-normal leading-5 text-fig-Subject-standard md:table-cell',
                         )}
                       >
-                        {ownerDisplayName(file)}
+                        {researchOwnerColumnLabel(file)}
                       </td>
                       <td
                         className={cn(

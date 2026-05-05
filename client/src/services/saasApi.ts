@@ -184,6 +184,17 @@ function mapFyersUserDetailsToMe(raw: Record<string, unknown>): Record<string, u
   };
 }
 
+/** Maps FYERS research v1.1 `createdByName` / `created_by_name` (and processor snake_case). */
+function pickCreatorDisplayName(row: Record<string, unknown>): string | undefined {
+  const n = row.createdByName ?? row.created_by_name;
+  return typeof n === 'string' && n.trim() ? n.trim() : undefined;
+}
+
+function pickCreatorEmail(row: Record<string, unknown>): string | undefined {
+  const e = row.createdByEmail ?? row.created_by_email;
+  return typeof e === 'string' && e.trim() ? e.trim() : undefined;
+}
+
 function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, unknown> {
   const docId = row.documentId ?? row.document_id ?? row.id;
   const idStr = docId != null ? String(docId) : '';
@@ -198,7 +209,11 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
     org_id = String(orgRaw);
   }
   const is_system =
-    row.isSystem === true || (hasOrgKey && (orgRaw === null || orgRaw === ''));
+    row.isSystem === true ||
+    row.is_system === true ||
+    (hasOrgKey && (orgRaw === null || orgRaw === ''));
+  const ownerName = pickCreatorDisplayName(row);
+  const ownerEmail = pickCreatorEmail(row);
   return {
     id: idStr,
     document_id: idStr,
@@ -207,8 +222,12 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
     size_bytes: typeof row.sizeBytes === 'number' ? row.sizeBytes : row.size_bytes,
     created_at: String(row.createdAt ?? row.created_at ?? ''),
     storage_key: String(row.storagePath ?? row.storage_key ?? ''),
-    created_by: row.createdBy ?? row.created_by,
-    created_by_name: row.createdByName ?? row.created_by_name,
+    created_by:
+      row.createdBy !== undefined || row.created_by !== undefined
+        ? String(row.createdBy ?? row.created_by)
+        : undefined,
+    created_by_name: ownerName,
+    created_by_email: ownerEmail,
     org_id,
     is_system,
     uploaded_at: String(row.updatedAt ?? row.uploadedAt ?? row.createdAt ?? ''),
@@ -254,7 +273,11 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
         folder_org_id = String(folderOrgRaw);
       }
       const is_system =
-        f.isSystem === true || (hasOrgKey && (folderOrgRaw === null || folderOrgRaw === ''));
+        f.isSystem === true ||
+        f.is_system === true ||
+        (hasOrgKey && (folderOrgRaw === null || folderOrgRaw === ''));
+      const folderOwnerName = pickCreatorDisplayName(f);
+      const folderOwnerEmail = pickCreatorEmail(f);
       result.push({
         id,
         name,
@@ -263,8 +286,12 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
         children,
         files,
         created_at: String(f.createdAt ?? f.created_at ?? ''),
-        created_by: f.createdBy ?? f.created_by,
-        created_by_name: f.createdByName ?? f.created_by_name,
+        created_by:
+          f.createdBy !== undefined || f.created_by !== undefined
+            ? String(f.createdBy ?? f.created_by)
+            : undefined,
+        created_by_name: folderOwnerName,
+        created_by_email: folderOwnerEmail,
         org_id: folder_org_id,
         is_system,
       });

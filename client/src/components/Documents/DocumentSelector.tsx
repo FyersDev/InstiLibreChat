@@ -13,6 +13,7 @@ import { useLocalize, useMCPServerManager } from '~/hooks';
 import { type DocumentListItem } from '~/data-provider/document-service';
 import { Constants } from 'librechat-data-provider';
 import { cn } from '~/utils';
+import { researchOwnerColumnLabel } from '~/utils/researchOwner';
 import { saasApi } from '~/services/saasApi';
 
 interface DocumentSelectorProps {
@@ -341,7 +342,7 @@ export default function DocumentSelector({
       file_path: file.storage_key || file.name,
       status: file.status || 'Completed',
       uploaded_at: file.uploaded_at || file.created_at,
-      owner: file.created_by_name || 'System',
+      owner: researchOwnerColumnLabel(file),
     };
   }, []);
 
@@ -761,9 +762,9 @@ export default function DocumentSelector({
                               >
                                 <div
                                   className="truncate"
-                                  title={folder.created_by_name || 'System'}
+                                  title={researchOwnerColumnLabel(folder)}
                                 >
-                                  {folder.created_by_name || 'System'}
+                                  {researchOwnerColumnLabel(folder)}
                                 </div>
                               </td>
                               {/*
@@ -882,9 +883,9 @@ export default function DocumentSelector({
                                 >
                                   <div
                                     className="truncate"
-                                    title={file.created_by_name || 'System'}
+                                    title={researchOwnerColumnLabel(file)}
                                   >
-                                    {file.created_by_name || 'System'}
+                                    {researchOwnerColumnLabel(file)}
                                   </div>
                                 </td>
                                 {/*
