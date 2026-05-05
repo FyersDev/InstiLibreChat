@@ -193,7 +193,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
       setLoading(true);
       setError(null);
       const data = await saasApi.getFolderTree(orgId);
-      setFolders(Array.isArray(data) ? data : []);
+      setFolders(data.folders);
     } catch (err: any) {
       setError(err.message || 'Failed to load folders');
       setFolders([]);

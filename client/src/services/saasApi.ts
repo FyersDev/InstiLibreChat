@@ -245,11 +245,34 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
     (hasOrgKey && (orgRaw === null || orgRaw === ''));
   const ownerName = pickCreatorDisplayName(row);
   const ownerEmail = pickCreatorEmail(row);
+  const nameStr = String(row.name ?? '');
+  let extension: string | undefined =
+    row.extension != null && String(row.extension) !== '' ? String(row.extension) : undefined;
+  if (!extension && nameStr.includes('.')) {
+    extension = nameStr.slice(nameStr.lastIndexOf('.') + 1).toLowerCase();
+  }
+  if (!extension) {
+    const mt = String(row.mimeType ?? row.mime_type ?? '').toLowerCase();
+    if (mt === 'application/pdf') {
+      extension = 'pdf';
+    } else if (mt === 'text/csv' || mt === 'application/csv') {
+      extension = 'csv';
+    } else if (mt === 'text/plain') {
+      extension = 'txt';
+    } else if (mt.startsWith('image/')) {
+      const sub = mt.split('/')[1];
+      if (sub === 'jpeg') {
+        extension = 'jpg';
+      } else if (sub) {
+        extension = sub;
+      }
+    }
+  }
   return {
     id: idStr,
     document_id: idStr,
-    name: String(row.name ?? ''),
-    extension: row.extension != null ? String(row.extension) : undefined,
+    name: nameStr,
+    extension,
     size_bytes: typeof row.sizeBytes === 'number' ? row.sizeBytes : row.size_bytes,
     created_at: String(row.createdAt ?? row.created_at ?? ''),
     storage_key: String(row.storagePath ?? row.storage_key ?? ''),
@@ -266,85 +289,111 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
   };
 }
 
-/** Builds a nested folder tree + per-folder documents (Conflux has no single `/folders/tree`). */
-async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
-  const loadLevel = async (parentFolderId?: string): Promise<any[]> => {
-    const raw = await researchConfluxApi.listFolders(orgId, parentFolderId);
-    const payload = raw as Record<string, unknown>;
-    const folders = (Array.isArray(payload.folders) ? payload.folders : []) as Record<
-      string,
-      unknown
-    >[];
-    const result: any[] = [];
-    for (const f of folders) {
-      const id = String(f.folderId ?? f.id ?? f.folder_id ?? '');
-      const name = String(f.name ?? '');
-      const path = String(f.path ?? '');
-      const parentRaw = f.parentFolderId ?? f.parent_id;
-      const children = await loadLevel(id);
-      let files: any[] = [];
-      try {
-        const docsRaw = await researchConfluxApi.listDocuments(orgId, { folderId: id });
-        const docsPayload = docsRaw as Record<string, unknown>;
-        const docs = (Array.isArray(docsPayload.documents)
-          ? docsPayload.documents
-          : []) as Record<string, unknown>[];
-        files = docs.map((d) => mapConfluxDocToFileNode(d));
-      } catch {
-        files = [];
-      }
-      const hasOrgKey = 'orgId' in f || 'org_id' in f;
-      const folderOrgRaw = f.orgId ?? f.org_id;
-      let folder_org_id: string | null | undefined;
-      if (!hasOrgKey) {
-        folder_org_id = undefined;
-      } else if (folderOrgRaw === null || folderOrgRaw === '') {
-        folder_org_id = null;
-      } else {
-        folder_org_id = String(folderOrgRaw);
-      }
-      const is_system =
-        f.isSystem === true ||
-        f.is_system === true ||
-        (hasOrgKey && (folderOrgRaw === null || folderOrgRaw === ''));
-      const folderOwnerName = pickCreatorDisplayName(f);
-      const folderOwnerEmail = pickCreatorEmail(f);
-      const folderKindRaw =
-        f.folderKind ??
-        f.folder_kind ??
-        f.kind ??
-        f.category ??
-        f.purpose ??
-        f.folderType ??
-        f.folder_type;
-      const folder_kind =
-        typeof folderKindRaw === 'string' && folderKindRaw.trim()
-          ? folderKindRaw.trim().toLowerCase()
-          : undefined;
-      const rename_locked = f.renameLocked === true || f.rename_locked === true;
-      result.push({
-        id,
-        name,
-        path,
-        parent_id: parentRaw != null ? String(parentRaw) : parentFolderId ?? undefined,
-        children,
-        files,
-        created_at: String(f.createdAt ?? f.created_at ?? ''),
-        created_by:
-          f.createdBy !== undefined || f.created_by !== undefined
-            ? String(f.createdBy ?? f.created_by)
-            : undefined,
-        created_by_name: folderOwnerName,
-        created_by_email: folderOwnerEmail,
-        org_id: folder_org_id,
-        is_system,
-        folder_kind,
-        rename_locked,
-      });
-    }
-    return result;
+/** Result of `GET .../research/hierarchy` mapped to app folder/file nodes. */
+export type ResearchFolderTreeResult = {
+  folders: any[];
+  rootFiles: any[];
+};
+
+function mapConfluxFolderRecord(f: Record<string, unknown>): {
+  id: string;
+  name: string;
+  path: string;
+  parent_id?: string;
+  created_at: string;
+  created_by?: string;
+  created_by_name?: string;
+  created_by_email?: string;
+  org_id: string | null | undefined;
+  is_system: boolean;
+  folder_kind?: string;
+  rename_locked: boolean;
+} {
+  const id = String(f.folderId ?? f.id ?? f.folder_id ?? '');
+  const name = String(f.name ?? '');
+  const path = String(f.path ?? '');
+  const parentRaw = f.parentFolderId ?? f.parent_id;
+  const parent_id =
+    parentRaw != null && String(parentRaw) !== '' ? String(parentRaw) : undefined;
+  const hasOrgKey = 'orgId' in f || 'org_id' in f;
+  const folderOrgRaw = f.orgId ?? f.org_id;
+  let folder_org_id: string | null | undefined;
+  if (!hasOrgKey) {
+    folder_org_id = undefined;
+  } else if (folderOrgRaw === null || folderOrgRaw === '') {
+    folder_org_id = null;
+  } else {
+    folder_org_id = String(folderOrgRaw);
+  }
+  const is_system =
+    f.isSystem === true ||
+    f.is_system === true ||
+    (hasOrgKey && (folderOrgRaw === null || folderOrgRaw === ''));
+  const folderOwnerName = pickCreatorDisplayName(f);
+  const folderOwnerEmail = pickCreatorEmail(f);
+  const folderKindRaw =
+    f.folderKind ??
+    f.folder_kind ??
+    f.kind ??
+    f.category ??
+    f.purpose ??
+    f.folderType ??
+    f.folder_type;
+  const folder_kind =
+    typeof folderKindRaw === 'string' && folderKindRaw.trim()
+      ? folderKindRaw.trim().toLowerCase()
+      : undefined;
+  const rename_locked = f.renameLocked === true || f.rename_locked === true;
+  return {
+    id,
+    name,
+    path,
+    parent_id,
+    created_at: String(f.createdAt ?? f.created_at ?? ''),
+    created_by:
+      f.createdBy !== undefined || f.created_by !== undefined
+        ? String(f.createdBy ?? f.created_by)
+        : undefined,
+    created_by_name: folderOwnerName,
+    created_by_email: folderOwnerEmail,
+    org_id: folder_org_id,
+    is_system,
+    folder_kind,
+    rename_locked,
   };
-  return loadLevel(undefined);
+}
+
+/** Maps one hierarchy branch `{ folder, documents, folders }` to a client folder node. */
+function mapHierarchyFolderBranch(node: Record<string, unknown>): any | null {
+  const folderRaw = node.folder;
+  if (!folderRaw || typeof folderRaw !== 'object') {
+    return null;
+  }
+  const f = folderRaw as Record<string, unknown>;
+  const nested = (Array.isArray(node.folders) ? node.folders : []) as Record<string, unknown>[];
+  const docs = (Array.isArray(node.documents) ? node.documents : []) as Record<string, unknown>[];
+  const children = nested.map((child) => mapHierarchyFolderBranch(child)).filter(Boolean);
+  const files = docs.map((d) => mapConfluxDocToFileNode(d));
+  const meta = mapConfluxFolderRecord(f);
+  return {
+    ...meta,
+    children,
+    files,
+  };
+}
+
+/** Single GET `/research/hierarchy` → nested folders + root-level unfiled documents. */
+async function confluxBuildFolderTree(orgId: string): Promise<ResearchFolderTreeResult> {
+  const raw = await researchConfluxApi.getResearchHierarchy(orgId);
+  const payload = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+  const unfiled = (Array.isArray(payload.unfiledDocuments) ? payload.unfiledDocuments : []) as Record<
+    string,
+    unknown
+  >[];
+  const roots = (Array.isArray(payload.folders) ? payload.folders : []) as Record<string, unknown>[];
+  const rootFiles = unfiled.map((d) => mapConfluxDocToFileNode(d));
+  const folders = roots.map((n) => mapHierarchyFolderBranch(n)).filter(Boolean);
+  return { folders, rootFiles };
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {
@@ -485,7 +534,7 @@ export const saasApi = {
     return researchConfluxApi.listFolders(org, parentId);
   },
 
-  async getFolderTree(orgId?: string | null) {
+  async getFolderTree(orgId?: string | null): Promise<ResearchFolderTreeResult> {
     const org = requireConfluxOrg(orgId);
     return confluxBuildFolderTree(org);
   },

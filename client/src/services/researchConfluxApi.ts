@@ -426,6 +426,19 @@ export const researchConfluxApi = {
     return parseConfluxResponse(res);
   },
 
+  /**
+   * Full folder tree and documents in one response (`unfiledDocuments` + nested `folders`).
+   * Prefer over recursive `listFolders` + `listDocuments`.
+   */
+  async getResearchHierarchy(orgId: number | string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.hierarchy);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return parseConfluxResponse(res);
+  },
+
   async createFolder(
     orgId: number | string,
     body: { name: string; parentFolderId?: number | null },

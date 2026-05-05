@@ -23,6 +23,8 @@ export function getFyersT2ApiBaseNormalized(): string {
  * @see `fyersOrgResearchUrl`
  */
 export const FYERS_ORG_RESEARCH_SEGMENTS = {
+  /** Single-call folder tree + documents incl. `unfiledDocuments`. */
+  hierarchy: 'hierarchy',
   documentUpload: 'document-upload',
   saveReportUpload: 'save-report-upload',
   documents: 'documents',
@@ -57,6 +59,7 @@ export const fyersT2Urls = {
   instiOrgResearchDocuments: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents`,
   instiOrgResearchDocumentsById: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}`,
   instiOrgResearchDocumentDownload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/download`,
+  instiOrgResearchHierarchy: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/hierarchy`,
   instiOrgResearchFolders: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/folders`,
   instiOrgResearchTemplates: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/templates`,
   instiOrgResearchPersonas: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/personas`,
@@ -73,6 +76,12 @@ export const fyersT2ApiList: ReadonlyArray<{
   url: string;
   usedIn: string;
 }> = [
+  {
+    key: 'instiOrgResearchHierarchy',
+    method: 'GET',
+    url: fyersT2Urls.instiOrgResearchHierarchy,
+    usedIn: 'researchConfluxApi.getResearchHierarchy; saasApi.getFolderTree',
+  },
   {
     key: 'instiAdminUserDetails',
     method: 'GET',

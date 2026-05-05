@@ -61,6 +61,7 @@ export default function DocumentSelector({
   const { showToast } = useToastContext();
   const mcpServerManager = useMCPServerManager({ conversationId: conversationId || null });
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
+  const [rootUnfiledFiles, setRootUnfiledFiles] = useState<FileNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([
     { id: null, name: 'Home' },
@@ -125,7 +126,7 @@ export default function DocumentSelector({
         (f) => !f.parent_id && f.id !== reportsFolderId,
       );
       folders = filterReportsFolder(filteredRootFolders);
-      files = [] as FileNode[];
+      files = rootUnfiledFiles;
     } else {
       const folder = findFolder(allFolders, currentFolderId);
       const filteredChildren = folder?.children ? filterReportsFolder(folder.children) : [];
@@ -134,7 +135,7 @@ export default function DocumentSelector({
     }
 
     return { folders, files };
-  }, [currentFolderId, allFolders]);
+  }, [currentFolderId, allFolders, rootUnfiledFiles]);
 
   const loadFolders = useCallback(async () => {
     setLoading(true);
@@ -157,6 +158,7 @@ export default function DocumentSelector({
         if (!userOrgId) {
           setError('Organization ID is required.');
           setAllFolders([]);
+          setRootUnfiledFiles([]);
           setLoading(false);
           return;
         }
@@ -195,12 +197,14 @@ export default function DocumentSelector({
           setError('Organization ID is required.');
         }
         setAllFolders([]);
+        setRootUnfiledFiles([]);
         setLoading(false);
         return;
       }
 
       const data = await saasApi.getFolderTree(orgIdToUse);
-      setAllFolders(Array.isArray(data) ? data : []);
+      setAllFolders(data.folders);
+      setRootUnfiledFiles(data.rootFiles);
     } catch (err) {
       console.error('Error loading folders:', err);
       const errorMessage = err instanceof Error ? err.message : 'Failed to load folders';

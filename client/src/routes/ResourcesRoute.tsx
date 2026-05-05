@@ -97,6 +97,8 @@ const formatDate = (dateString: string | undefined | null) => {
 export default function ResourcesRoute() {
   const { showToast } = useToastContext();
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
+  /** Documents with no folder from hierarchy `unfiledDocuments` (shown at Home). */
+  const [rootUnfiledFiles, setRootUnfiledFiles] = useState<FileNode[]>([]);
   const [currentFolderId, setCurrentFolderId] = useState<string | null>(null);
   const [breadcrumbs, setBreadcrumbs] = useState<Array<{ id: string | null; name: string }>>([
     { id: null, name: 'Home' },
@@ -280,6 +282,7 @@ export default function ResourcesRoute() {
       if (isSuperAdmin) {
         if (organizations.length > 0 && !orgId && !selectedOrgId) {
           setAllFolders([]);
+          setRootUnfiledFiles([]);
           setLoading(false);
           return;
         }
@@ -289,11 +292,13 @@ export default function ResourcesRoute() {
             setError('Please select an organization to view its resources.');
           }
           setAllFolders([]);
+          setRootUnfiledFiles([]);
           setLoading(false);
           return;
         }
         const data = await saasApi.getFolderTree(targetOrgId);
-        setAllFolders(Array.isArray(data) ? data : []);
+        setAllFolders(data.folders);
+        setRootUnfiledFiles(data.rootFiles);
         return;
       }
 
@@ -301,12 +306,14 @@ export default function ResourcesRoute() {
       if (!targetOrgId) {
         setError('Organization ID is required.');
         setAllFolders([]);
+        setRootUnfiledFiles([]);
         setLoading(false);
         return;
       }
 
       const data = await saasApi.getFolderTree(targetOrgId);
-      setAllFolders(Array.isArray(data) ? data : []);
+      setAllFolders(data.folders);
+      setRootUnfiledFiles(data.rootFiles);
     } catch (err: any) {
       setError(err.message || 'Failed to load folders');
       console.error('Error loading folders:', err);
@@ -369,7 +376,7 @@ export default function ResourcesRoute() {
       const rootFolders = allFolders.filter((f) => !f.parent_id && f.id !== reportsFolderId);
       return {
         folders: rootFolders,
-        files: [],
+        files: rootUnfiledFiles,
       };
     }
 
@@ -386,7 +393,7 @@ export default function ResourcesRoute() {
       folders: folder.children ? filterReportsFolder(folder.children) : [],
       files: folder.files || [],
     };
-  }, [currentFolderId, allFolders, activeTab]);
+  }, [currentFolderId, allFolders, rootUnfiledFiles, activeTab]);
 
   // Filter folders and files based on search query
   const filteredContent = useMemo(() => {
