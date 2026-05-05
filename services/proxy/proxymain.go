@@ -847,23 +847,6 @@ func stripRedirectQueryKey(relPath, key string) string {
 	return pathPart + "?" + v.Encode()
 }
 
-// logAPIV1Request logs proxied saas-api traffic under /api/v1/ (query string omitted — may contain tokens).
-func logAPIV1Request(r *http.Request) {
-	m := map[string]interface{}{
-		"service": "insti-proxy",
-		"method":  r.Method,
-		"path":    r.URL.Path,
-		"remote":  r.RemoteAddr,
-	}
-	if r.URL.RawQuery != "" {
-		m["has_query"] = true
-	}
-	if ua := r.Header.Get("User-Agent"); ua != "" {
-		m["user_agent"] = ua
-	}
-	fylogger.InfoLog(r.Context(), "api_v1_request", m)
-}
-
 // auditFields prepares fylogger additionalData (structured JSON) for proxy audit lines.
 func auditFields(fields map[string]string) map[string]interface{} {
 	m := make(map[string]interface{}, len(fields)+1)
@@ -1482,18 +1465,6 @@ func main() {
 
 	// Backend API routes (basePath/api and basePath/oauth)
 	http.HandleFunc(basePath+"/api/", func(w http.ResponseWriter, r *http.Request) {
-		if strings.HasPrefix(r.URL.Path, basePath+"/api/v1/") {
-			logAPIV1Request(r)
-			setCORSHeaders(w, r)
-			if r.Method == "OPTIONS" {
-				w.WriteHeader(http.StatusOK)
-				return
-			}
-			stripPrefixPath(r, basePath)
-			saasAPIProxy.ServeHTTP(w, r)
-			return
-		}
-
 		stripPrefixPath(r, basePath)
 		email := extractEmailFromRequest(r)
 		if strings.EqualFold(r.Header.Get("Connection"), "Upgrade") || strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
