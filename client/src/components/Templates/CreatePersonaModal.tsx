@@ -209,8 +209,7 @@ export default function CreatePersonaModal({
     const persona = {
       name: formData.name,
       description: formData.description || null,
-      template_id: null,
-      is_custom_template: false,
+      is_custom_template: true,
       content: {},
     };
 

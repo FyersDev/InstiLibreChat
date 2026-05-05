@@ -70,6 +70,39 @@ function normalizeConfluxTemplateWrite(data: Record<string, unknown> | null | un
   return out;
 }
 
+/**
+ * FYERS org research persona POST/PUT — snake_case body: `template_id`, `is_custom_template`, `content`.
+ * User-driven create/update defaults `is_custom_template` to true when not specified.
+ */
+function normalizeConfluxPersonaWrite(data: Record<string, unknown> | null | undefined): Record<string, unknown> {
+  const d = data && typeof data === 'object' ? data : {};
+  const out: Record<string, unknown> = {};
+
+  if (d.name != null) {
+    out.name = d.name;
+  }
+  if (d.description != null) {
+    out.description = d.description;
+  }
+
+  const tid = d.template_id ?? d.templateId;
+  if (tid != null && tid !== '') {
+    out.template_id = typeof tid === 'number' ? String(tid) : String(tid).trim();
+  }
+
+  const customExplicit = d.is_custom_template ?? d.isCustomTemplate;
+  out.is_custom_template =
+    typeof customExplicit === 'boolean' ? customExplicit : true;
+
+  if (d.content != null && typeof d.content === 'object' && !Array.isArray(d.content)) {
+    out.content = d.content;
+  } else {
+    out.content = {};
+  }
+
+  return out;
+}
+
 const getBaseHref = () => {
   const base = document.querySelector('base')?.getAttribute('href') || '/';
   return base.endsWith('/') ? base.slice(0, -1) : base;
@@ -743,12 +776,18 @@ export const saasApi = {
 
   async createPersona(data: any, orgId?: string | null) {
     const org = requireConfluxOrg(orgId ?? data?.org_id);
-    return researchConfluxApi.createPersona(org, data);
+    const body = normalizeConfluxPersonaWrite(
+      data && typeof data === 'object' ? (data as Record<string, unknown>) : {},
+    );
+    return researchConfluxApi.createPersona(org, body);
   },
 
   async updatePersona(id: string, data: any, orgId?: string | null) {
     const org = requireConfluxOrg(orgId ?? data?.org_id);
-    return researchConfluxApi.updatePersona(org, id, data);
+    const body = normalizeConfluxPersonaWrite(
+      data && typeof data === 'object' ? (data as Record<string, unknown>) : {},
+    );
+    return researchConfluxApi.updatePersona(org, id, body);
   },
 
   async deletePersona(id: string, orgId?: string | null) {

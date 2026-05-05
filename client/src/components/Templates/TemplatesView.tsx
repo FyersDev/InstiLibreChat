@@ -11,7 +11,7 @@ import {
   TextareaAutosize,
   useToastContext,
 } from '@librechat/client';
-import { ChevronDown, Edit, MoreVertical, X } from 'lucide-react';
+import { ChevronDown, Edit, Eye, MoreVertical, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
@@ -77,6 +77,9 @@ export default function TemplatesView() {
   const [showEditPersonaModal, setShowEditPersonaModal] = useState(false);
   const [selectedTemplate, setSelectedTemplate] = useState<any>(null);
   const [selectedPersona, setSelectedPersona] = useState<any>(null);
+  /** System templates / personas open Edit modal in read-only (View) mode. */
+  const [templateModalReadOnly, setTemplateModalReadOnly] = useState(false);
+  const [personaModalReadOnly, setPersonaModalReadOnly] = useState(false);
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -327,6 +330,15 @@ export default function TemplatesView() {
 
   const handleEditTemplate = (template: any) => {
     setSelectedTemplate(template);
+    setTemplateModalReadOnly(false);
+    setShowEditTemplateModal(true);
+    setSelectedItem(null);
+    setDropdownPosition(null);
+  };
+
+  const handleViewTemplate = (template: any) => {
+    setSelectedTemplate(template);
+    setTemplateModalReadOnly(true);
     setShowEditTemplateModal(true);
     setSelectedItem(null);
     setDropdownPosition(null);
@@ -334,6 +346,15 @@ export default function TemplatesView() {
 
   const handleEditPersona = (persona: any) => {
     setSelectedPersona(persona);
+    setPersonaModalReadOnly(false);
+    setShowEditPersonaModal(true);
+    setSelectedItem(null);
+    setDropdownPosition(null);
+  };
+
+  const handleViewPersona = (persona: any) => {
+    setSelectedPersona(persona);
+    setPersonaModalReadOnly(true);
     setShowEditPersonaModal(true);
     setSelectedItem(null);
     setDropdownPosition(null);
@@ -672,91 +693,104 @@ export default function TemplatesView() {
                               'font-inter text-sm font-medium leading-5',
                             )}
                           >
-                            {!isSystemTemplate ? (
-                              <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
-                                <button
-                                  ref={(el) => {
-                                    if (el) {
-                                      buttonRefs.current.set(`template-${template.id}`, el);
-                                    } else {
-                                      buttonRefs.current.delete(`template-${template.id}`);
+                            <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
+                              <button
+                                ref={(el) => {
+                                  if (el) {
+                                    buttonRefs.current.set(`template-${template.id}`, el);
+                                  } else {
+                                    buttonRefs.current.delete(`template-${template.id}`);
+                                  }
+                                }}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  const isCurrentlySelected =
+                                    selectedItem?.type === 'template' &&
+                                    selectedItem.id === template.id;
+                                  if (isCurrentlySelected) {
+                                    setSelectedItem(null);
+                                    setDropdownPosition(null);
+                                  } else {
+                                    const button = buttonRefs.current.get(`template-${template.id}`);
+                                    if (button) {
+                                      const rect = button.getBoundingClientRect();
+                                      setDropdownPosition({
+                                        top: rect.bottom + 4,
+                                        right: window.innerWidth - rect.right,
+                                      });
                                     }
-                                  }}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    const isCurrentlySelected =
-                                      selectedItem?.type === 'template' &&
-                                      selectedItem.id === template.id;
-                                    if (isCurrentlySelected) {
-                                      setSelectedItem(null);
-                                      setDropdownPosition(null);
-                                    } else {
-                                      const button = buttonRefs.current.get(
-                                        `template-${template.id}`,
-                                      );
-                                      if (button) {
-                                        const rect = button.getBoundingClientRect();
-                                        setDropdownPosition({
-                                          top: rect.bottom + 4,
-                                          right: window.innerWidth - rect.right,
-                                        });
-                                      }
-                                      setSelectedItem({ type: 'template', id: template.id });
-                                    }
-                                  }}
-                                  className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
-                                  title="More options"
-                                >
-                                  <MoreVertical className="h-3 w-3" aria-hidden />
-                                </button>
-                                {isSelected &&
-                                  dropdownPosition &&
-                                  createPortal(
-                                    <div
-                                      className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
-                                      style={{
-                                        top: `${dropdownPosition.top}px`,
-                                        right: `${dropdownPosition.right}px`,
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <div className="py-1">
+                                    setSelectedItem({ type: 'template', id: template.id });
+                                  }
+                                }}
+                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
+                                title="More options"
+                              >
+                                <MoreVertical className="h-3 w-3" aria-hidden />
+                              </button>
+                              {isSelected &&
+                                dropdownPosition &&
+                                createPortal(
+                                  <div
+                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
+                                    style={{
+                                      top: `${dropdownPosition.top}px`,
+                                      right: `${dropdownPosition.right}px`,
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      {isSystemTemplate ? (
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             e.preventDefault();
-                                            handleEditTemplate(template);
+                                            handleViewTemplate(template);
                                           }}
                                           className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
                                         >
-                                          <Edit className="h-4 w-4" />
-                                          Edit
+                                          <Eye className="h-4 w-4" aria-hidden />
+                                          View
                                         </button>
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleDeleteTemplate(template);
-                                          }}
-                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
-                                        >
-                                          <img
-                                            src={asset('delete.svg')}
-                                            alt="Delete"
-                                            className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
-                                          />
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </div>,
-                                    document.body,
-                                  )}
-                              </div>
-                            ) : null}
+                                      ) : (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              e.preventDefault();
+                                              handleEditTemplate(template);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                            Edit
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              e.preventDefault();
+                                              handleDeleteTemplate(template);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
+                                          >
+                                            <img
+                                              src={asset('delete.svg')}
+                                              alt="Delete"
+                                              className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                            />
+                                            Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>,
+                                  document.body,
+                                )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -847,89 +881,104 @@ export default function TemplatesView() {
                               'font-inter text-sm font-medium leading-5',
                             )}
                           >
-                            {!isSystemPersona ? (
-                              <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
-                                <button
-                                  ref={(el) => {
-                                    if (el) {
-                                      buttonRefs.current.set(`persona-${persona.id}`, el);
-                                    } else {
-                                      buttonRefs.current.delete(`persona-${persona.id}`);
+                            <div className="relative flex h-full min-h-0 items-center justify-end gap-2 text-left">
+                              <button
+                                ref={(el) => {
+                                  if (el) {
+                                    buttonRefs.current.set(`persona-${persona.id}`, el);
+                                  } else {
+                                    buttonRefs.current.delete(`persona-${persona.id}`);
+                                  }
+                                }}
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  e.preventDefault();
+                                  const isCurrentlySelected =
+                                    selectedItem?.type === 'persona' &&
+                                    selectedItem.id === persona.id;
+                                  if (isCurrentlySelected) {
+                                    setSelectedItem(null);
+                                    setDropdownPosition(null);
+                                  } else {
+                                    const button = buttonRefs.current.get(`persona-${persona.id}`);
+                                    if (button) {
+                                      const rect = button.getBoundingClientRect();
+                                      setDropdownPosition({
+                                        top: rect.bottom + 4,
+                                        right: window.innerWidth - rect.right,
+                                      });
                                     }
-                                  }}
-                                  type="button"
-                                  onClick={(e) => {
-                                    e.stopPropagation();
-                                    e.preventDefault();
-                                    const isCurrentlySelected =
-                                      selectedItem?.type === 'persona' &&
-                                      selectedItem.id === persona.id;
-                                    if (isCurrentlySelected) {
-                                      setSelectedItem(null);
-                                      setDropdownPosition(null);
-                                    } else {
-                                      const button = buttonRefs.current.get(`persona-${persona.id}`);
-                                      if (button) {
-                                        const rect = button.getBoundingClientRect();
-                                        setDropdownPosition({
-                                          top: rect.bottom + 4,
-                                          right: window.innerWidth - rect.right,
-                                        });
-                                      }
-                                      setSelectedItem({ type: 'persona', id: persona.id });
-                                    }
-                                  }}
-                                  className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
-                                  title="More options"
-                                >
-                                  <MoreVertical className="h-3 w-3" aria-hidden />
-                                </button>
-                                {isSelected &&
-                                  dropdownPosition &&
-                                  createPortal(
-                                    <div
-                                      className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
-                                      style={{
-                                        top: `${dropdownPosition.top}px`,
-                                        right: `${dropdownPosition.right}px`,
-                                      }}
-                                      onClick={(e) => e.stopPropagation()}
-                                    >
-                                      <div className="py-1">
+                                    setSelectedItem({ type: 'persona', id: persona.id });
+                                  }
+                                }}
+                                className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
+                                title="More options"
+                              >
+                                <MoreVertical className="h-3 w-3" aria-hidden />
+                              </button>
+                              {isSelected &&
+                                dropdownPosition &&
+                                createPortal(
+                                  <div
+                                    className="fixed z-[9999] w-48 rounded-[2px] border border-fig-Stroke-soft bg-fig-Surface-standard shadow-lg"
+                                    style={{
+                                      top: `${dropdownPosition.top}px`,
+                                      right: `${dropdownPosition.right}px`,
+                                    }}
+                                    onClick={(e) => e.stopPropagation()}
+                                  >
+                                    <div className="py-1">
+                                      {isSystemPersona ? (
                                         <button
                                           type="button"
                                           onClick={(e) => {
                                             e.stopPropagation();
                                             e.preventDefault();
-                                            handleEditPersona(persona);
+                                            handleViewPersona(persona);
                                           }}
                                           className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
                                         >
-                                          <Edit className="h-4 w-4" />
-                                          Edit
+                                          <Eye className="h-4 w-4" aria-hidden />
+                                          View
                                         </button>
-                                        <button
-                                          type="button"
-                                          onClick={(e) => {
-                                            e.stopPropagation();
-                                            e.preventDefault();
-                                            handleDeletePersona(persona);
-                                          }}
-                                          className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
-                                        >
-                                          <img
-                                            src={asset('delete.svg')}
-                                            alt="Delete"
-                                            className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
-                                          />
-                                          Delete
-                                        </button>
-                                      </div>
-                                    </div>,
-                                    document.body,
-                                  )}
-                              </div>
-                            ) : null}
+                                      ) : (
+                                        <>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              e.preventDefault();
+                                              handleEditPersona(persona);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard"
+                                          >
+                                            <Edit className="h-4 w-4" />
+                                            Edit
+                                          </button>
+                                          <button
+                                            type="button"
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              e.preventDefault();
+                                              handleDeletePersona(persona);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-destructive hover:bg-fig-Surface-one-standard"
+                                          >
+                                            <img
+                                              src={asset('delete.svg')}
+                                              alt="Delete"
+                                              className="h-4 w-4 opacity-70 dark:opacity-70 dark:brightness-0 dark:invert"
+                                            />
+                                            Delete
+                                          </button>
+                                        </>
+                                      )}
+                                    </div>
+                                  </div>,
+                                  document.body,
+                                )}
+                            </div>
                           </td>
                         </tr>
                       );
@@ -970,9 +1019,11 @@ export default function TemplatesView() {
       {showEditTemplateModal && selectedTemplate && (
         <EditTemplateModal
           template={selectedTemplate}
+          readOnly={templateModalReadOnly}
           onClose={() => {
             setShowEditTemplateModal(false);
             setSelectedTemplate(null);
+            setTemplateModalReadOnly(false);
             setSelectedItem(null);
             setDropdownPosition(null);
           }}
@@ -981,6 +1032,7 @@ export default function TemplatesView() {
               await saveTemplate({ ...template, id: selectedTemplate.id });
               setShowEditTemplateModal(false);
               setSelectedTemplate(null);
+              setTemplateModalReadOnly(false);
               setActiveTab('templates');
               setSelectedItem(null);
               setDropdownPosition(null);
@@ -1019,9 +1071,11 @@ export default function TemplatesView() {
       {showEditPersonaModal && selectedPersona && (
         <EditPersonaModal
           persona={selectedPersona}
+          readOnly={personaModalReadOnly}
           onClose={() => {
             setShowEditPersonaModal(false);
             setSelectedPersona(null);
+            setPersonaModalReadOnly(false);
             setSelectedItem(null);
             setDropdownPosition(null);
           }}
@@ -1030,47 +1084,7 @@ export default function TemplatesView() {
               await savePersona({ ...persona, id: selectedPersona.id });
               setShowEditPersonaModal(false);
               setSelectedPersona(null);
-              setActiveTab('personas');
-              setSelectedItem(null);
-              setDropdownPosition(null);
-            } catch (error) {
-              // Error is handled in modal
-            }
-          }}
-        />
-      )}
-
-      {showCreatePersonaModal && (
-        <CreatePersonaModal
-          onClose={() => setShowCreatePersonaModal(false)}
-          onSave={async (persona) => {
-            try {
-              await savePersona(persona);
-              setShowCreatePersonaModal(false);
-              // Switch to personas tab to show the newly created persona
-              setActiveTab('personas');
-              setSelectedItem(null);
-              setDropdownPosition(null);
-            } catch (error) {
-              // Error is handled in modal
-            }
-          }}
-        />
-      )}
-
-      {showEditPersonaModal && selectedPersona && (
-        <EditPersonaModal
-          persona={selectedPersona}
-          onClose={() => {
-            setShowEditPersonaModal(false);
-            setSelectedPersona(null);
-          }}
-          onSave={async (persona) => {
-            try {
-              await savePersona({ ...persona, id: selectedPersona.id });
-              setShowEditPersonaModal(false);
-              setSelectedPersona(null);
-              // Ensure we stay on personas tab
+              setPersonaModalReadOnly(false);
               setActiveTab('personas');
               setSelectedItem(null);
               setDropdownPosition(null);
@@ -1517,10 +1531,12 @@ function EditTemplateModal({
   template,
   onClose,
   onSave,
+  readOnly = false,
 }: {
   template: any;
   onClose: () => void;
   onSave: (template: any) => Promise<void>;
+  readOnly?: boolean;
 }) {
   const [formData, setFormData] = useState({
     name: template.name || '',
@@ -1578,6 +1594,9 @@ function EditTemplateModal({
   };
 
   const handleFrameworkChange = (framework: string) => {
+    if (readOnly) {
+      return;
+    }
     if (framework === 'custom') {
       setFormData({
         ...formData,
@@ -1596,6 +1615,9 @@ function EditTemplateModal({
   };
 
   const handleFieldChange = (key: string, value: string) => {
+    if (readOnly) {
+      return;
+    }
     setFormData({
       ...formData,
       fields: {
@@ -1607,6 +1629,9 @@ function EditTemplateModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      return;
+    }
     setError(null);
     if (!formData.name.trim()) {
       setError('Template name is required');
@@ -1671,7 +1696,7 @@ function EditTemplateModal({
           >
             <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
               <DialogPrimitive.Title className="fy-typography-title m-0 text-fig-Subject-standard">
-                {'Edit template'}
+                {readOnly ? 'View template' : 'Edit template'}
               </DialogPrimitive.Title>
               <button
                 type="button"
@@ -1721,6 +1746,7 @@ function EditTemplateModal({
                   <Input
                     type="text"
                     value={formData.name}
+                    readOnly={readOnly}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                     required
                     placeholder="Example: Research template"
@@ -1731,6 +1757,7 @@ function EditTemplateModal({
                       'placeholder:!text-fig-Subject-soft',
                       'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
                       'transition-colors duration-200',
+                      readOnly && 'cursor-default opacity-90',
                     )}
                   />
                 </div>
@@ -1745,15 +1772,21 @@ function EditTemplateModal({
                     sameWidth={true}
                     anchor={{ x: 'start', y: 'bottom' }}
                     menuId="framework-selector-edit"
-                    isOpen={isFrameworkMenuOpen}
-                    setIsOpen={setIsFrameworkMenuOpen}
+                    isOpen={readOnly ? false : isFrameworkMenuOpen}
+                    setIsOpen={(open) => {
+                      if (!readOnly) {
+                        setIsFrameworkMenuOpen(open);
+                      }
+                    }}
                     trigger={
                       <Ariakit.MenuButton
+                        disabled={readOnly}
                         className={cn(
                           'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
                           'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
                           'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
                           'transition-colors hover:border-fig-Stroke-standard',
+                          readOnly && 'cursor-default opacity-90',
                         )}
                       >
                         <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
@@ -1818,6 +1851,7 @@ function EditTemplateModal({
                           </label>
                           <TextareaAutosize
                             value={formData.fields[key] || ''}
+                            readOnly={readOnly}
                             onChange={(e) => handleFieldChange(key, e.target.value)}
                             onKeyDown={(e) => {
                               if (e.key === 'Enter' && !e.shiftKey) {
@@ -1836,6 +1870,7 @@ function EditTemplateModal({
                               'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
                               'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
                               'transition-colors duration-200',
+                              readOnly && 'cursor-default opacity-90',
                             )}
                           />
                         </div>
@@ -1852,6 +1887,7 @@ function EditTemplateModal({
                     </label>
                     <TextareaAutosize
                       value={formData.fields.custom || ''}
+                      readOnly={readOnly}
                       onChange={(e) => handleFieldChange('custom', e.target.value)}
                       minRows={8}
                       maxRows={15}
@@ -1865,6 +1901,7 @@ function EditTemplateModal({
                         'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
                         'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
                         'transition-colors duration-200',
+                        readOnly && 'cursor-default opacity-90',
                       )}
                     />
                   </div>
@@ -1873,19 +1910,21 @@ function EditTemplateModal({
 
               {/* Footer buttons */}
               <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
-                <Button
-                  type="submit"
-                  disabled={loading}
-                  className={cn(
-                    'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
-                    'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
-                    'transition-opacity hover:opacity-90',
-                    'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
-                    'disabled:opacity-50',
-                  )}
-                >
-                  {loading ? 'Updating...' : 'Update template'}
-                </Button>
+                {!readOnly && (
+                  <Button
+                    type="submit"
+                    disabled={loading}
+                    className={cn(
+                      'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                      'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                      'transition-opacity hover:opacity-90',
+                      'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                      'disabled:opacity-50',
+                    )}
+                  >
+                    {loading ? 'Updating...' : 'Update template'}
+                  </Button>
+                )}
                 <Button
                   type="button"
                   onClick={onClose}
@@ -2103,8 +2142,7 @@ function CreatePersonaModal({
     const persona = {
       name: formData.name,
       description: formData.description || null,
-      template_id: null,
-      is_custom_template: false,
+      is_custom_template: true,
       content: {},
     };
 
@@ -2332,10 +2370,12 @@ function EditPersonaModal({
   persona,
   onClose,
   onSave,
+  readOnly = false,
 }: {
   persona: any;
   onClose: () => void;
   onSave: (persona: any) => Promise<void>;
+  readOnly?: boolean;
 }) {
   // Initialize formData based on persona's current state
   const getInitialFormData = () => {
@@ -2354,6 +2394,9 @@ function EditPersonaModal({
 
   // Handle predefined persona selection
   const handlePredefinedSelect = (predefinedId: string) => {
+    if (readOnly) {
+      return;
+    }
     const predefined = PREDEFINED_PERSONAS.find((_, idx) => idx.toString() === predefinedId);
     if (predefined) {
       setFormData({
@@ -2368,6 +2411,9 @@ function EditPersonaModal({
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (readOnly) {
+      return;
+    }
     if (!formData.name.trim()) {
       setError('Persona name is required');
       return;
@@ -2380,8 +2426,7 @@ function EditPersonaModal({
     const updatedPersona = {
       name: formData.name,
       description: formData.description || null,
-      template_id: null,
-      is_custom_template: false,
+      is_custom_template: true,
       content: {},
     };
 
@@ -2420,7 +2465,7 @@ function EditPersonaModal({
         >
           <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
             <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
-              {'Edit agent'}
+              {readOnly ? 'View agent' : 'Edit agent'}
             </DialogTitle>
             <button
               type="button"
@@ -2470,6 +2515,7 @@ function EditPersonaModal({
                 <Input
                   type="text"
                   value={formData.name}
+                  readOnly={readOnly}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
                   required
                   placeholder="Example: Research assistant"
@@ -2480,6 +2526,7 @@ function EditPersonaModal({
                     'placeholder:!text-fig-Subject-soft',
                     'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
                     'transition-colors duration-200',
+                    readOnly && 'cursor-default opacity-90',
                   )}
                 />
               </div>
@@ -2494,15 +2541,21 @@ function EditPersonaModal({
                   sameWidth={true}
                   anchor={{ x: 'start', y: 'bottom' }}
                   menuId="predefined-persona-selector-edit"
-                  isOpen={isPredefinedMenuOpen}
-                  setIsOpen={setIsPredefinedMenuOpen}
+                  isOpen={readOnly ? false : isPredefinedMenuOpen}
+                  setIsOpen={(open) => {
+                    if (!readOnly) {
+                      setIsPredefinedMenuOpen(open);
+                    }
+                  }}
                   trigger={
                     <Ariakit.MenuButton
+                      disabled={readOnly}
                       className={cn(
                         'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
                         'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
                         'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
                         'transition-colors hover:border-fig-Stroke-standard',
+                        readOnly && 'cursor-default opacity-90',
                       )}
                     >
                       <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
@@ -2556,6 +2609,7 @@ function EditPersonaModal({
                 </label>
                 <TextareaAutosize
                   value={formData.description}
+                  readOnly={readOnly}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                   minRows={3}
                   maxRows={8}
@@ -2568,6 +2622,7 @@ function EditPersonaModal({
                     'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
                     'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
                     'transition-colors duration-200',
+                    readOnly && 'cursor-default opacity-90',
                   )}
                   placeholder={
                     formData.selectedPredefinedId
@@ -2585,19 +2640,21 @@ function EditPersonaModal({
 
             {/* Footer buttons */}
             <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
-              <Button
-                type="submit"
-                disabled={loading}
-                className={cn(
-                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
-                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
-                  'transition-opacity hover:opacity-90',
-                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
-                  'disabled:opacity-50',
-                )}
-              >
-                {loading ? 'Updating...' : 'Update agent'}
-              </Button>
+              {!readOnly && (
+                <Button
+                  type="submit"
+                  disabled={loading}
+                  className={cn(
+                    'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                    'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                    'transition-opacity hover:opacity-90',
+                    'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                    'disabled:opacity-50',
+                  )}
+                >
+                  {loading ? 'Updating...' : 'Update agent'}
+                </Button>
+              )}
               <Button
                 type="button"
                 onClick={onClose}
