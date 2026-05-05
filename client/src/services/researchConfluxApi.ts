@@ -381,13 +381,27 @@ export const researchConfluxApi = {
   /** `GET .../download` with Insti token — JSON `data` contains presigned S3 URL (no Insti auth on S3). */
   getDocumentDownloadPresigned: getDocumentDownloadPresigned,
 
-  /** Follow presigned URL and return bytes (for programmatic download). */
+  /**
+   * Follow presigned URL and return bytes.
+   *
+   * Uses `fetch`, so the S3 (or other) host must allow your **web app origin** in CORS, or the
+   * request fails. That is different from opening the same URL in a new tab or via `<a href>` (no
+   * XHR CORS). For a file save in the UI without S3 CORS, use `saasApi.downloadDocumentWithBrowser`
+   * (GET + no extra signed headers: uses a link click, not `fetch` to S3).
+   */
   async downloadDocument(orgId: number | string, documentId: string): Promise<Blob> {
     const p = await getDocumentDownloadPresigned(orgId, documentId);
-    const s3Res = await fetch(p.url, {
-      method: p.method || 'GET',
-      headers: headersFromPresignedPayload(p.headers),
-    });
+    const method = (p.method || 'GET').toUpperCase();
+    const hasHeaders = p.headers && Object.keys(p.headers).length > 0;
+    const init: RequestInit = {
+      method,
+      credentials: 'omit',
+      cache: 'no-store',
+    };
+    if (hasHeaders) {
+      init.headers = headersFromPresignedPayload(p.headers);
+    }
+    const s3Res = await fetch(p.url, init);
     if (!s3Res.ok) {
       const text = await s3Res.text().catch(() => '');
       throw new Error(text || s3Res.statusText || `HTTP ${s3Res.status}`);

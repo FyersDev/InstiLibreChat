@@ -751,12 +751,15 @@ export const saasApi = {
   },
 
   /**
-   * Saves the document via the browser download UI (Save / folder picker). Uses a Blob + temporary
-   * `<a download>` — **no `window.open`**, so it works when popups are blocked or the app runs in an iframe.
+   * Triggers a browser download for the document.
    *
-   * Other approaches (when this isn’t suitable):
-   * - **Open in new tab:** `openDocumentDownloadInNewTab` — needs popups allowed and a direct user gesture.
-   * - **Same-tab navigation:** `location.assign(presignedUrl)` — leaves the SPA (only as a last resort).
+   * **CORS:** For a plain GET presigned URL (typical S3), we use `<a href={url} download>` so the
+   * browser performs a **navigation-style** request to S3 — not `fetch()` — so **bucket CORS does not
+   * apply** the same way as XHR. If the API returns a non-GET presigned request or extra headers, we
+   * fall back to `fetch` + Blob (that path **does** require S3 CORS for your web origin, or a server proxy).
+   *
+   * Other approaches: `openDocumentDownloadInNewTab` (view in tab); same-tab `location.assign`
+   * (leaves the SPA).
    */
   async downloadDocumentWithBrowser(
     id: string,
@@ -764,8 +767,23 @@ export const saasApi = {
     filename?: string,
   ): Promise<void> {
     const org = requireConfluxOrg(orgId);
-    const blob = await researchConfluxApi.downloadDocument(org, id);
     const safeName = filename?.trim() ? filename.trim() : `document-${id}`;
+    const p = await researchConfluxApi.getDocumentDownloadPresigned(org, id);
+    const method = (p.method || 'GET').toUpperCase();
+    const headerCount = p.headers ? Object.keys(p.headers).length : 0;
+
+    if (method === 'GET' && headerCount === 0) {
+      const a = document.createElement('a');
+      a.href = p.url;
+      a.setAttribute('download', safeName);
+      a.rel = 'noopener noreferrer';
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      return;
+    }
+
+    const blob = await researchConfluxApi.downloadDocument(org, id);
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
@@ -774,7 +792,6 @@ export const saasApi = {
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
-    // Delay revoke so the download isn’t cancelled in Chrome/Safari.
     setTimeout(() => URL.revokeObjectURL(url), 60_000);
   },
 
