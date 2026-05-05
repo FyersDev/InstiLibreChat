@@ -1075,33 +1075,6 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 		},
 	}
 
-	// Call Go Main API internal endpoint to get saas-api tokens
-	saasAccess, saasRefresh := fetchSaasTokens(r.Context(), email)
-	if saasAccess != "" {
-		cookies = append(cookies, &http.Cookie{
-			Name:     "saas_access_token",
-			Value:    saasAccess,
-			Path:     "/",
-			Expires:  next6AM,
-			MaxAge:   int(time.Until(next6AM).Seconds()),
-			Secure:   useHTTPS,
-			HttpOnly: false, // needs to be readable by JS to sync to localStorage
-			SameSite: sameSiteMode,
-		})
-	}
-	if saasRefresh != "" {
-		cookies = append(cookies, &http.Cookie{
-			Name:     "saas_refresh_token",
-			Value:    saasRefresh,
-			Path:     "/",
-			Expires:  refresh6AM,
-			MaxAge:   int(time.Until(refresh6AM).Seconds()),
-			Secure:   useHTTPS,
-			HttpOnly: false,
-			SameSite: sameSiteMode,
-		})
-	}
-
 	for _, c := range cookies {
 		http.SetCookie(w, c)
 	}
@@ -1110,83 +1083,15 @@ func embedHandler(w http.ResponseWriter, r *http.Request) {
 		"service": "insti-proxy", "email": email, "cookie_count": len(cookies), "redirect_path": redirectPath,
 	})
 
-	saasOK := "false"
-	if saasAccess != "" {
-		saasOK = "true"
-	}
 	fylogger.InfoLog(r.Context(), "embed_success", auditFields(map[string]string{
-		"email":         email,
-		"mongo_user_id": mongoUserID,
-		"redirect_path": redirectPath,
-		"saas_tokens":   saasOK,
-		"cookie_count":  fmt.Sprintf("%d", len(cookies)),
-		"http_status":   "302",
+		"email":          email,
+		"mongo_user_id":  mongoUserID,
+		"redirect_path":  redirectPath,
+		"cookie_count":   fmt.Sprintf("%d", len(cookies)),
+		"http_status":    "302",
 	}))
 
 	http.Redirect(w, r, redirectPath, http.StatusFound)
-}
-
-// fetchSaasTokens calls the Go Main API's internal endpoint to get saas-api tokens.
-// Returns (accessToken, refreshToken). On failure, returns empty strings.
-func fetchSaasTokens(ctx context.Context, email string) (string, string) {
-	reqBody := fmt.Sprintf(`{"email":"%s"}`, email)
-	loginURL := mainAPIURL + "/api/v1/auth/internal/login-by-email"
-
-	req, err := http.NewRequestWithContext(ctx, http.MethodPost, loginURL, strings.NewReader(reqBody))
-	if err != nil {
-		fylogger.ErrorLog(ctx, "saas_internal_login_request_build_failed", err, map[string]interface{}{
-			"service": "insti-proxy", "email": email,
-		})
-		return "", ""
-	}
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		fylogger.ErrorLog(ctx, "saas_internal_login_request_failed", err, map[string]interface{}{
-			"service": "insti-proxy", "email": email, "main_api": mainAPIURL,
-		})
-		return "", ""
-	}
-	defer resp.Body.Close()
-
-	body, err := io.ReadAll(resp.Body)
-	if err != nil {
-		fylogger.ErrorLog(ctx, "saas_internal_login_read_body_failed", err, map[string]interface{}{
-			"service": "insti-proxy", "email": email,
-		})
-		return "", ""
-	}
-
-	if resp.StatusCode != http.StatusOK {
-		bodySnippet := string(body)
-		if len(bodySnippet) > 512 {
-			bodySnippet = bodySnippet[:512] + "…"
-		}
-		fylogger.WarningLog(ctx, "saas_internal_login_non_200", map[string]interface{}{
-			"service": "insti-proxy", "email": email,
-			"status": resp.StatusCode, "body_snippet": bodySnippet,
-		})
-		return "", ""
-	}
-
-	var result struct {
-		Data struct {
-			AccessToken  string `json:"access_token"`
-			RefreshToken string `json:"refresh_token"`
-		} `json:"data"`
-	}
-	if err := json.Unmarshal(body, &result); err != nil {
-		fylogger.ErrorLog(ctx, "saas_internal_login_parse_failed", err, map[string]interface{}{
-			"service": "insti-proxy", "email": email,
-		})
-		return "", ""
-	}
-
-	fylogger.InfoLog(ctx, "saas_internal_login_ok", map[string]interface{}{
-		"service": "insti-proxy", "email": email,
-	})
-	return result.Data.AccessToken, result.Data.RefreshToken
 }
 
 // verifyToken returns email from token or error

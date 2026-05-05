@@ -69,18 +69,6 @@
         }
       `;
       document.head.appendChild(loadingContainerStyle);
-
-      // Sync saas-api cookies to localStorage (set by /auth/embed flow)
-      (function() {
-        function getCookie(name) {
-          var m = document.cookie.match('(?:^|; )' + name + '=([^;]*)');
-          return m ? decodeURIComponent(m[1]) : null;
-        }
-        var at = getCookie('saas_access_token');
-        var rt = getCookie('saas_refresh_token');
-        if (at) localStorage.setItem('access_token', at);
-        if (rt) localStorage.setItem('refresh_token', rt);
-      })();
     </script>
     <script>
       // Embedded auth: if ?token= is in the URL, call token-exchange to get
@@ -103,8 +91,6 @@
               document.cookie = 'libre_jwt=' + d.proxy_token + '; path=/; max-age=' + maxAge;
               document.cookie = 'lc_access_token=' + d.access_token + '; path=/; max-age=' + maxAge;
               document.cookie = 'embedded=true; path=/; max-age=' + maxAge;
-              document.cookie = 'saas_access_token=' + ssoToken + '; path=/; max-age=' + maxAge;
-              localStorage.setItem('access_token', ssoToken);
             }
           } catch (e) {
             console.error('Token exchange failed:', e);
@@ -113,19 +99,6 @@
           var clean = window.location.pathname + (params.toString() ? '?' + params.toString() : '');
           window.location.replace(clean);
           return;
-        }
-
-        // Normal embedded mode: sync saas-api tokens from cookies to localStorage.
-        var cookies = document.cookie.split('; ').reduce(function (acc, c) {
-          var parts = c.split('=');
-          acc[parts[0]] = decodeURIComponent(parts.slice(1).join('='));
-          return acc;
-        }, {});
-        if (cookies.saas_access_token) {
-          localStorage.setItem('access_token', cookies.saas_access_token);
-        }
-        if (cookies.saas_refresh_token) {
-          localStorage.setItem('refresh_token', cookies.saas_refresh_token);
         }
       })();
     </script>
