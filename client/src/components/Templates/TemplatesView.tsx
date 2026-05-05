@@ -1526,6 +1526,67 @@ function CreateTemplateModal({
   );
 }
 
+type TemplateFrameworkMap = Record<
+  string,
+  { name: string; fields: Record<string, string> }
+>;
+
+/** API may send `framework: "custom"`, unknown keys, string `content`, or omit `is_custom`. */
+function coerceTemplateContentFields(content: unknown): Record<string, string> {
+  if (content == null) {
+    return {};
+  }
+  if (typeof content === 'string') {
+    return { custom: content };
+  }
+  if (typeof content === 'object' && !Array.isArray(content)) {
+    return content as Record<string, string>;
+  }
+  return {};
+}
+
+function initialEditTemplateFormState(template: any, frameworks: TemplateFrameworkMap) {
+  const fields = coerceTemplateContentFields(template?.content);
+  const rawFw = template?.framework != null ? String(template.framework).trim() : '';
+  const treatAsCustom =
+    template?.is_custom === true ||
+    template?.is_custom === 1 ||
+    rawFw.toLowerCase() === 'custom';
+
+  if (treatAsCustom) {
+    return {
+      name: template?.name || '',
+      framework: '',
+      customTemplate: true,
+      fields,
+    };
+  }
+
+  let fwKey = rawFw;
+  if (fwKey && !frameworks[fwKey]) {
+    const found = Object.keys(frameworks).find((k) => k.toLowerCase() === fwKey.toLowerCase());
+    if (found) {
+      fwKey = found;
+    }
+  }
+
+  if (fwKey && frameworks[fwKey]) {
+    return {
+      name: template?.name || '',
+      framework: fwKey,
+      customTemplate: false,
+      fields,
+    };
+  }
+
+  return {
+    name: template?.name || '',
+    framework: '',
+    customTemplate: true,
+    fields,
+  };
+}
+
 // Edit Template Modal
 function EditTemplateModal({
   template,
@@ -1538,17 +1599,7 @@ function EditTemplateModal({
   onSave: (template: any) => Promise<void>;
   readOnly?: boolean;
 }) {
-  const [formData, setFormData] = useState({
-    name: template.name || '',
-    framework: template.framework || '',
-    customTemplate: template.is_custom || false,
-    fields: template.content || ({} as Record<string, string>),
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
-
-  const frameworks = {
+  const frameworks: TemplateFrameworkMap = {
     'R-T-F': {
       name: 'R-T-F Framework',
       fields: {
@@ -1593,6 +1644,13 @@ function EditTemplateModal({
     },
   };
 
+  const [formData, setFormData] = useState(() =>
+    initialEditTemplateFormState(template, frameworks),
+  );
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
+
   const handleFrameworkChange = (framework: string) => {
     if (readOnly) {
       return;
@@ -1604,12 +1662,23 @@ function EditTemplateModal({
         customTemplate: true,
         fields: formData.fields.custom ? { custom: formData.fields.custom } : {},
       });
-    } else {
+    } else if (!framework) {
       setFormData({
         ...formData,
-        framework: framework,
+        framework: '',
         customTemplate: false,
-        fields: (frameworks as any)[framework].fields,
+        fields: {},
+      });
+    } else {
+      const def = frameworks[framework];
+      if (!def) {
+        return;
+      }
+      setFormData({
+        ...formData,
+        framework,
+        customTemplate: false,
+        fields: def.fields,
       });
     }
   };
@@ -1644,7 +1713,7 @@ function EditTemplateModal({
         return;
       }
     } else {
-      const frameworkFields = (frameworks as any)[formData.framework]?.fields || {};
+      const frameworkFields = frameworks[formData.framework]?.fields || {};
       const allFilled = Object.keys(frameworkFields).every((key) => {
         const value = formData.fields[key];
         return value && value.trim() !== '';
@@ -1792,8 +1861,8 @@ function EditTemplateModal({
                         <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
                           {formData.customTemplate
                             ? 'Create Custom Template'
-                            : formData.framework
-                              ? (frameworks as any)[formData.framework].name
+                            : formData.framework && frameworks[formData.framework]
+                              ? frameworks[formData.framework].name
                               : '-- Select Framework --'}
                         </span>
                         <ChevronDown
@@ -1811,7 +1880,7 @@ function EditTemplateModal({
                         },
                       },
                       ...Object.keys(frameworks).map((key) => ({
-                        label: (frameworks as any)[key].name,
+                        label: frameworks[key].name,
                         onClick: () => {
                           handleFrameworkChange(key);
                           setIsFrameworkMenuOpen(false);
@@ -1838,12 +1907,14 @@ function EditTemplateModal({
                 </div>
 
                 {/* Framework-specific fields */}
-                {formData.framework && !formData.customTemplate && (
+                {formData.framework &&
+                  !formData.customTemplate &&
+                  frameworks[formData.framework] && (
                   <div className="flex flex-col gap-[var(--Gap-zero-spacer)]">
                     <p className="fy-typography-label-small text-fig-Subject-neutral">
-                      {(frameworks as any)[formData.framework].name}
+                      {frameworks[formData.framework].name}
                     </p>
-                    {Object.entries((frameworks as any)[formData.framework].fields).map(
+                    {Object.entries(frameworks[formData.framework].fields).map(
                       ([key, label]) => (
                         <div key={key} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
                           <label className="fy-typography-label-small text-fig-Subject-neutral">
