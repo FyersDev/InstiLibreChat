@@ -18,7 +18,12 @@ import { useSearchParams } from 'react-router-dom';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
 import { asset } from '~/utils/assetPath';
-import { isResearchSystemRow, researchOwnerColumnLabel } from '~/utils/researchOwner';
+import {
+  isResearchSystemRow,
+  researchOwnerColumnLabel,
+  researchPersonaId,
+  researchTemplateId,
+} from '~/utils/researchOwner';
 
 /** One-line summary for the templates table (role/task/format or flattened text). */
 function getTemplateShortDescriptionLine(template: {
@@ -166,9 +171,12 @@ export default function TemplatesView() {
   };
 
   const saveTemplate = async (template: any) => {
+    const tid =
+      researchTemplateId(template as object) ??
+      (template?.id != null ? String(template.id) : undefined);
     try {
-      if (template.id) {
-        await saasApi.updateTemplate(template.id, template);
+      if (tid) {
+        await saasApi.updateTemplate(tid, template);
         showToast({
           message: `Template "${template.name}" updated successfully`,
           status: 'success',
@@ -187,7 +195,7 @@ export default function TemplatesView() {
       showToast({
         message:
           error.message ||
-          (template.id ? 'Failed to update Template' : 'Failed to create Template'),
+          (tid ? 'Failed to update Template' : 'Failed to create Template'),
         status: 'error',
       });
       throw error;
@@ -195,9 +203,12 @@ export default function TemplatesView() {
   };
 
   const savePersona = async (persona: any) => {
+    const pid =
+      researchPersonaId(persona as object) ??
+      (persona?.id != null ? String(persona.id) : undefined);
     try {
-      if (persona.id) {
-        await saasApi.updatePersona(persona.id, persona);
+      if (pid) {
+        await saasApi.updatePersona(pid, persona);
         showToast({
           message: `Agent "${persona.name}" updated successfully`,
           status: 'success',
@@ -215,7 +226,7 @@ export default function TemplatesView() {
     } catch (error: any) {
       showToast({
         message:
-          error.message || (persona.id ? 'Failed to update Agent' : 'Failed to create Agent'),
+          error.message || (pid ? 'Failed to update Agent' : 'Failed to create Agent'),
         status: 'error',
       });
       throw error;
@@ -225,7 +236,9 @@ export default function TemplatesView() {
   const deleteTemplate = async (id: string) => {
     try {
       // Find the template being deleted to check if it's currently selected
-      const templateToDelete = templates.find((t) => t.id === id);
+      const templateToDelete = templates.find(
+        (t) => researchTemplateId(t as object) === id,
+      );
 
       await saasApi.deleteTemplate(id);
       showToast({
@@ -278,7 +291,7 @@ export default function TemplatesView() {
   const deletePersona = async (id: string) => {
     try {
       // Find the persona being deleted to check if it's currently selected
-      const personaToDelete = personas.find((p) => p.id === id);
+      const personaToDelete = personas.find((p) => researchPersonaId(p as object) === id);
 
       await saasApi.deletePersona(id);
       showToast({
@@ -364,7 +377,11 @@ export default function TemplatesView() {
     if (window.confirm(`Are you sure you want to delete "${template.name}"?`)) {
       setDeleting(true);
       try {
-        await deleteTemplate(template.id);
+        const tid = researchTemplateId(template as object);
+        if (!tid) {
+          throw new Error('Missing template id');
+        }
+        await deleteTemplate(tid);
       } catch (error: any) {
         console.error('Error deleting template:', error);
         alert(error.message || 'Failed to delete template');
@@ -380,7 +397,11 @@ export default function TemplatesView() {
     if (window.confirm(`Are you sure you want to delete "${persona.name}"?`)) {
       setDeleting(true);
       try {
-        await deletePersona(persona.id);
+        const pid = researchPersonaId(persona as object);
+        if (!pid) {
+          throw new Error('Missing agent id');
+        }
+        await deletePersona(pid);
       } catch (error: any) {
         console.error('Error deleting persona:', error);
         // Error toast is already shown in deletePersona
@@ -607,14 +628,10 @@ export default function TemplatesView() {
               <tbody className="divide-y divide-fig-Stroke-soft">
                 {activeTab === 'templates'
                   ? templates.map((template, rowIndex) => {
-                      const templateKey = String(
-                        template?.id ??
-                          template?.templateId ??
-                          template?.template_id ??
-                          `row-${rowIndex}`,
-                      );
+                      const tid = researchTemplateId(template as object);
+                      const templateKey = String(tid ?? `row-${rowIndex}`);
                       const isSelected =
-                        selectedItem?.type === 'template' && selectedItem.id === template.id;
+                        selectedItem?.type === 'template' && selectedItem.id === templateKey;
                       const shortDescriptionLine = getTemplateShortDescriptionLine(template);
                       const templateRow = template as Record<string, unknown>;
                       const isSystemTemplate = isResearchSystemRow(templateRow);
@@ -697,9 +714,9 @@ export default function TemplatesView() {
                               <button
                                 ref={(el) => {
                                   if (el) {
-                                    buttonRefs.current.set(`template-${template.id}`, el);
+                                    buttonRefs.current.set(`template-${templateKey}`, el);
                                   } else {
-                                    buttonRefs.current.delete(`template-${template.id}`);
+                                    buttonRefs.current.delete(`template-${templateKey}`);
                                   }
                                 }}
                                 type="button"
@@ -708,12 +725,12 @@ export default function TemplatesView() {
                                   e.preventDefault();
                                   const isCurrentlySelected =
                                     selectedItem?.type === 'template' &&
-                                    selectedItem.id === template.id;
+                                    selectedItem.id === templateKey;
                                   if (isCurrentlySelected) {
                                     setSelectedItem(null);
                                     setDropdownPosition(null);
                                   } else {
-                                    const button = buttonRefs.current.get(`template-${template.id}`);
+                                    const button = buttonRefs.current.get(`template-${templateKey}`);
                                     if (button) {
                                       const rect = button.getBoundingClientRect();
                                       setDropdownPosition({
@@ -721,7 +738,7 @@ export default function TemplatesView() {
                                         right: window.innerWidth - rect.right,
                                       });
                                     }
-                                    setSelectedItem({ type: 'template', id: template.id });
+                                    setSelectedItem({ type: 'template', id: templateKey });
                                   }
                                 }}
                                 className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
@@ -796,16 +813,12 @@ export default function TemplatesView() {
                       );
                     })
                   : personas.map((persona, rowIndex) => {
-                      const personaKey = String(
-                        persona?.id ??
-                          persona?.personaId ??
-                          persona?.persona_id ??
-                          `row-${rowIndex}`,
-                      );
+                      const pid = researchPersonaId(persona as object);
+                      const personaKey = String(pid ?? `row-${rowIndex}`);
                       const personaRow = persona as Record<string, unknown>;
                       const isSystemPersona = isResearchSystemRow(personaRow);
                       const isSelected =
-                        selectedItem?.type === 'persona' && selectedItem.id === persona.id;
+                        selectedItem?.type === 'persona' && selectedItem.id === personaKey;
                       return (
                         <tr
                           key={personaKey}
@@ -885,9 +898,9 @@ export default function TemplatesView() {
                               <button
                                 ref={(el) => {
                                   if (el) {
-                                    buttonRefs.current.set(`persona-${persona.id}`, el);
+                                    buttonRefs.current.set(`persona-${personaKey}`, el);
                                   } else {
-                                    buttonRefs.current.delete(`persona-${persona.id}`);
+                                    buttonRefs.current.delete(`persona-${personaKey}`);
                                   }
                                 }}
                                 type="button"
@@ -896,12 +909,12 @@ export default function TemplatesView() {
                                   e.preventDefault();
                                   const isCurrentlySelected =
                                     selectedItem?.type === 'persona' &&
-                                    selectedItem.id === persona.id;
+                                    selectedItem.id === personaKey;
                                   if (isCurrentlySelected) {
                                     setSelectedItem(null);
                                     setDropdownPosition(null);
                                   } else {
-                                    const button = buttonRefs.current.get(`persona-${persona.id}`);
+                                    const button = buttonRefs.current.get(`persona-${personaKey}`);
                                     if (button) {
                                       const rect = button.getBoundingClientRect();
                                       setDropdownPosition({
@@ -909,7 +922,7 @@ export default function TemplatesView() {
                                         right: window.innerWidth - rect.right,
                                       });
                                     }
-                                    setSelectedItem({ type: 'persona', id: persona.id });
+                                    setSelectedItem({ type: 'persona', id: personaKey });
                                   }
                                 }}
                                 className="dropdown-trigger rounded-[2px] p-1 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard"
@@ -1029,7 +1042,8 @@ export default function TemplatesView() {
           }}
           onSave={async (template) => {
             try {
-              await saveTemplate({ ...template, id: selectedTemplate.id });
+              const tid = researchTemplateId(selectedTemplate as object);
+              await saveTemplate({ ...template, ...(tid ? { id: tid } : {}) });
               setShowEditTemplateModal(false);
               setSelectedTemplate(null);
               setTemplateModalReadOnly(false);
@@ -1081,7 +1095,8 @@ export default function TemplatesView() {
           }}
           onSave={async (persona) => {
             try {
-              await savePersona({ ...persona, id: selectedPersona.id });
+              const pid = researchPersonaId(selectedPersona as object);
+              await savePersona({ ...persona, ...(pid ? { id: pid } : {}) });
               setShowEditPersonaModal(false);
               setSelectedPersona(null);
               setPersonaModalReadOnly(false);
