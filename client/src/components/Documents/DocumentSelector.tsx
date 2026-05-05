@@ -13,6 +13,7 @@ import { useLocalize, useMCPServerManager } from '~/hooks';
 import { type DocumentListItem } from '~/data-provider/document-service';
 import { Constants } from 'librechat-data-provider';
 import { cn } from '~/utils';
+import { findResearchReportsFolderInTree } from '~/utils/researchFolders';
 import { researchOwnerColumnLabel } from '~/utils/researchOwner';
 import { saasApi } from '~/services/saasApi';
 
@@ -33,6 +34,7 @@ interface FolderNode {
   created_by?: string;
   created_by_name?: string;
   created_at: string;
+  folder_kind?: string;
 }
 
 interface FileNode {
@@ -98,23 +100,9 @@ export default function DocumentSelector({
     return null;
   };
 
-  // Find Reports folder and exclude it
-  const findReportsFolder = (folders: FolderNode[]): FolderNode | null => {
-    for (const folder of folders) {
-      if (folder.name.toLowerCase() === 'reports') {
-        return folder;
-      }
-      if (folder.children && folder.children.length > 0) {
-        const found = findReportsFolder(folder.children);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
   // Get current folder and its contents
   const currentFolder = useMemo(() => {
-    const reportsFolder = findReportsFolder(allFolders);
+    const reportsFolder = findResearchReportsFolderInTree(allFolders);
     const reportsFolderId = reportsFolder?.id;
 
     // Helper function to recursively filter out Reports folder

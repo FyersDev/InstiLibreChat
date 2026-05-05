@@ -309,6 +309,19 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
         (hasOrgKey && (folderOrgRaw === null || folderOrgRaw === ''));
       const folderOwnerName = pickCreatorDisplayName(f);
       const folderOwnerEmail = pickCreatorEmail(f);
+      const folderKindRaw =
+        f.folderKind ??
+        f.folder_kind ??
+        f.kind ??
+        f.category ??
+        f.purpose ??
+        f.folderType ??
+        f.folder_type;
+      const folder_kind =
+        typeof folderKindRaw === 'string' && folderKindRaw.trim()
+          ? folderKindRaw.trim().toLowerCase()
+          : undefined;
+      const rename_locked = f.renameLocked === true || f.rename_locked === true;
       result.push({
         id,
         name,
@@ -325,6 +338,8 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
         created_by_email: folderOwnerEmail,
         org_id: folder_org_id,
         is_system,
+        folder_kind,
+        rename_locked,
       });
     }
     return result;

@@ -16,6 +16,7 @@ export * from './messages';
 export * from './languages';
 export * from './endpoints';
 export * from './resources';
+export * from './researchFolders';
 export * from './roles';
 export * from './localStorage';
 export * from './promptGroups';

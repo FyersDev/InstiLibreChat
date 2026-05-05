@@ -11,6 +11,11 @@ import { X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
+import {
+  isResearchDefaultUploadFolder,
+  isResearchReportsFolder,
+  researchRenameLocked,
+} from '~/utils/researchFolders';
 
 interface EditFolderModalProps {
   folder: any;
@@ -40,14 +45,12 @@ export default function EditFolderModal({ folder, onClose, onSuccess }: EditFold
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    const folderNameLower = formData.name.trim().toLowerCase();
-    const originalNameLower = folder.name.toLowerCase();
-
     if (
-      (folderNameLower === 'reports' || folderNameLower === 'report') &&
-      originalNameLower !== folderNameLower
+      researchRenameLocked(folder) ||
+      isResearchReportsFolder(folder) ||
+      isResearchDefaultUploadFolder(folder)
     ) {
-      const errorMsg = 'Cannot rename folder to "Reports". Reports folder already exists.';
+      const errorMsg = 'This folder cannot be renamed.';
       setError(errorMsg);
       showToast({ message: errorMsg, status: 'error' });
       return;

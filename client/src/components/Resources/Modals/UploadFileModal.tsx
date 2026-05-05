@@ -3,9 +3,30 @@ import * as Ariakit from '@ariakit/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { useToastContext, DropdownPopup } from '@librechat/client';
+import { useLocalize } from '~/hooks';
 import { saasApi } from '~/services/saasApi';
 import { File as FileIcon, ChevronDown, X } from 'lucide-react';
 import { cn } from '~/utils';
+import {
+  isResearchDefaultUploadFolder,
+  isResearchReportsFolder,
+} from '~/utils/researchFolders';
+import { isResearchSystemRow } from '~/utils/researchOwner';
+
+function findFolderById(nodes: any[], id: string): any | null {
+  for (const n of nodes) {
+    if (String(n.id) === String(id)) {
+      return n;
+    }
+    if (n.children?.length) {
+      const found = findFolderById(n.children, id);
+      if (found) {
+        return found;
+      }
+    }
+  }
+  return null;
+}
 
 interface UploadFileModalProps {
   folderId?: string;
@@ -24,21 +45,27 @@ interface FlatFolder {
   path: string;
   level: number;
   created_by?: string;
+  org_id?: string | null;
+  is_system?: boolean;
+  isSystem?: boolean;
+  folder_kind?: string;
+  rename_locked?: boolean;
 }
 
-// Placeholder ID for Resources folder when it doesn't exist yet
-const RESOURCES_PLACEHOLDER_ID = 'resources-placeholder';
+/** Synthetic id when API has no `default_upload` folder row yet; backend resolves org default on upload. */
+const DEFAULT_UPLOAD_PLACEHOLDER_ID = 'research-default-upload-placeholder';
 
 export default function UploadFileModal({
   folderId,
   orgId,
   folders = [],
-  isSuperAdmin = false,
+  isSuperAdmin: _isSuperAdmin = false,
   isOrgAdmin: isOrgAdminProp,
   currentUserId: currentUserIdProp,
   onClose,
   onSuccess,
 }: UploadFileModalProps) {
+  const localize = useLocalize();
   const { showToast } = useToastContext();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
@@ -54,19 +81,31 @@ export default function UploadFileModal({
   const currentUserId = currentUserIdProp || (userInfo?.user_id || userInfo?.id)?.toString();
   const isOrgAdmin = isOrgAdminProp !== undefined ? isOrgAdminProp : userInfo?.org_role === 'admin';
 
+  const resolvedOrgId =
+    orgId != null && String(orgId).trim() !== ''
+      ? orgId
+      : userInfo?.org_id != null && String(userInfo.org_id).trim() !== ''
+        ? String(userInfo.org_id)
+        : null;
+
   // Flatten folder tree for dropdown
-  const flattenFolders = (folderNodes: any[], level = 0, parentFolder?: any): FlatFolder[] => {
+  const flattenFolders = (folderNodes: any[], level = 0): FlatFolder[] => {
     let result: FlatFolder[] = [];
     folderNodes.forEach((folder) => {
       result.push({
-        id: folder.id,
+        id: String(folder.id),
         name: folder.name,
         path: folder.path || folder.name,
         level,
         created_by: folder.created_by,
+        org_id: folder.org_id ?? folder.orgId,
+        is_system: folder.is_system,
+        isSystem: folder.isSystem,
+        folder_kind: folder.folder_kind ?? folder.folderKind,
+        rename_locked: folder.rename_locked ?? folder.renameLocked,
       });
       if (folder.children && folder.children.length > 0) {
-        result = result.concat(flattenFolders(folder.children, level + 1, folder));
+        result = result.concat(flattenFolders(folder.children, level + 1));
       }
     });
     return result;
@@ -74,88 +113,69 @@ export default function UploadFileModal({
 
   const flatFolders = flattenFolders(folders);
 
-  // Filter folders for upload dropdown:
-  // Backend already filters by user_id, we only need to:
-  // 1. Filter out "Reports" folder
-  // 2. Filter out "FYERS Resources" for non-super-admins
   const filteredFolders = flatFolders.filter((folder: any) => {
-    const nameLower = folder.name.toLowerCase();
-
-    // Always filter out "Reports" folder
-    if (nameLower === 'reports') return false;
-
-    // Show "FYERS Resources" only for super admin
-    if (nameLower === 'fyers resources') {
-      return isSuperAdmin;
+    if (isResearchReportsFolder(folder)) {
+      return false;
     }
-
-    // Show all other folders (backend already filtered by user access)
+    if (isResearchSystemRow(folder)) {
+      return false;
+    }
     return true;
   });
 
-  // Find the "Resources" folder to set as default (NOT "FYERS Resources")
-  const resourcesFolder = filteredFolders.find(
-    (folder) => folder.name.toLowerCase() === 'resources',
+  const defaultUploadFolder = filteredFolders.find((folder) =>
+    isResearchDefaultUploadFolder(folder),
   );
 
-  // Find "FYERS Resources" folder (for superadmins)
-  const fyersResourcesFolder = filteredFolders.find(
-    (folder) => folder.name.toLowerCase() === 'fyers resources',
-  );
+  let foldersWithDefaultOption = [...filteredFolders];
 
-  // Always ensure "Resources" folder appears in the list for non-superadmins, even if it doesn't exist yet
-  // The backend will auto-create it when documents are uploaded
-  let foldersWithResources = [...filteredFolders];
-
-  if (!resourcesFolder && !isSuperAdmin) {
-    // Add Resources placeholder for org admins and regular users if it doesn't exist
-    foldersWithResources.unshift({
-      id: RESOURCES_PLACEHOLDER_ID,
-      name: 'Resources',
-      path: 'Resources',
+  if (!defaultUploadFolder) {
+    foldersWithDefaultOption.unshift({
+      id: DEFAULT_UPLOAD_PLACEHOLDER_ID,
+      name: localize('com_research_default_upload_folder_label'),
+      path: '',
       level: 0,
       created_by: currentUserId,
+      folder_kind: undefined,
+      ...(resolvedOrgId != null
+        ? { org_id: resolvedOrgId, is_system: false as const }
+        : {}),
     });
   }
 
-  // Sort folders to put default folder first based on user role
-  const sortedFolders = [...foldersWithResources].sort((a, b) => {
-    const aNameLower = a.name.toLowerCase();
-    const bNameLower = b.name.toLowerCase();
-
-    if (isSuperAdmin) {
-      // For superadmins, prioritize "FYERS Resources"
-      if (aNameLower === 'fyers resources') return -1;
-      if (bNameLower === 'fyers resources') return 1;
-    } else {
-      // For non-superadmins, prioritize "Resources"
-      if (aNameLower === 'resources') return -1;
-      if (bNameLower === 'resources') return 1;
-    }
-
-    return 0;
+  const sortedFolders = [...foldersWithDefaultOption].sort((a, b) => {
+    const pa = isResearchDefaultUploadFolder(a) ? 0 : 1;
+    const pb = isResearchDefaultUploadFolder(b) ? 0 : 1;
+    return pa - pb;
   });
 
   useEffect(() => {
+    const applyDefaultFolder = () => {
+      const primary = sortedFolders.find((f) => isResearchDefaultUploadFolder(f));
+      if (primary) {
+        setSelectedFolderId(primary.id);
+        setSelectedFolderName(primary.name);
+      } else if (sortedFolders.length > 0) {
+        setSelectedFolderId(sortedFolders[0].id);
+        setSelectedFolderName(sortedFolders[0].name);
+      }
+    };
+
     if (folderId) {
+      const treeNode = findFolderById(folders, folderId);
+      if (treeNode && isResearchSystemRow(treeNode)) {
+        applyDefaultFolder();
+        return;
+      }
       setSelectedFolderId(folderId);
       const folder = sortedFolders.find((f) => f.id === folderId);
       if (folder) {
         setSelectedFolderName(folder.name);
       }
-    } else if (isSuperAdmin && fyersResourcesFolder) {
-      // Superadmins default to "FYERS Resources"
-      setSelectedFolderId(fyersResourcesFolder.id);
-      setSelectedFolderName(fyersResourcesFolder.name);
-    } else if (!isSuperAdmin) {
-      // Non-superadmins default to "Resources" (existing or placeholder)
-      const resourcesOption = sortedFolders.find((f) => f.name.toLowerCase() === 'resources');
-      if (resourcesOption) {
-        setSelectedFolderId(resourcesOption.id);
-        setSelectedFolderName(resourcesOption.name);
-      }
+    } else {
+      applyDefaultFolder();
     }
-  }, [folderId, fyersResourcesFolder?.id, resourcesFolder?.id, sortedFolders.length, isSuperAdmin]);
+  }, [folderId, folders, defaultUploadFolder?.id, sortedFolders.length]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -232,22 +252,17 @@ export default function UploadFileModal({
       return;
     }
 
-    // Validate that non-super-admin users cannot upload to "FYERS Resources" or its subfolders
-    if (!isSuperAdmin && selectedFolderId) {
-      const selectedFolder = flatFolders.find((f) => f.id === selectedFolderId);
-      if (selectedFolder) {
-        const nameLower = selectedFolder.name.toLowerCase();
-        const pathLower = (selectedFolder.path || '').toLowerCase();
-
-        // Check if folder is "FYERS Resources" or inside it
-        if (nameLower === 'fyers resources' || pathLower.includes('fyers resources')) {
-          setError('Cannot upload files to "FYERS Resources" folder or its subfolders');
-          showToast({
-            message: 'Cannot upload files to "FYERS Resources" folder or its subfolders',
-            status: 'error',
-          });
-          return;
-        }
+    if (
+      selectedFolderId &&
+      selectedFolderId !== DEFAULT_UPLOAD_PLACEHOLDER_ID &&
+      folders.length > 0
+    ) {
+      const targetNode = findFolderById(folders, selectedFolderId);
+      if (targetNode && isResearchSystemRow(targetNode)) {
+        const msg = 'Documents can only be uploaded to organization folders, not system folders.';
+        setError(msg);
+        showToast({ message: msg, status: 'error' });
+        return;
       }
     }
 
@@ -255,24 +270,24 @@ export default function UploadFileModal({
     setError(null);
 
     try {
-      // Upload document directly with folder_id using saasApi
-      // This will automatically assign to the specified folder or Resources if no folder
-      // If the placeholder ID is selected, pass undefined to let backend create Resources folder
+      // Upload document directly with folder_id using saasApi.
+      // Placeholder selection passes undefined so the API resolves the org default folder.
       const folderIdToUse =
-        selectedFolderId === RESOURCES_PLACEHOLDER_ID || !selectedFolderId
+        selectedFolderId === DEFAULT_UPLOAD_PLACEHOLDER_ID || !selectedFolderId
           ? undefined
           : selectedFolderId;
 
       const response = await saasApi.uploadFile(
         selectedFile,
-        folderIdToUse, // Pass folder ID if selected (undefined for Resources auto-creation)
-        orgId || undefined,
+        folderIdToUse,
+        resolvedOrgId ?? undefined,
       );
 
       if (response) {
+        const defaultUploadLabel = localize('com_research_default_upload_folder_label');
         const selectedFolderName = selectedFolderId
-          ? sortedFolders.find((f) => f.id === selectedFolderId)?.name || 'folder'
-          : 'Resources';
+          ? sortedFolders.find((f) => f.id === selectedFolderId)?.name || defaultUploadLabel
+          : defaultUploadLabel;
 
         const folderMessage = `uploaded successfully to ${selectedFolderName}`;
 

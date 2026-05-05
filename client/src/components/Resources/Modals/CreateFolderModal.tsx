@@ -11,6 +11,7 @@ import { X } from 'lucide-react';
 import { useState } from 'react';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
+import { isResearchFolderUnderSystemSubtree } from '~/utils/researchFolders';
 
 interface CreateFolderModalProps {
   parentId?: string;
@@ -20,32 +21,6 @@ interface CreateFolderModalProps {
   onClose: () => void;
   onSuccess: () => void;
 }
-
-// Helper function to check if a folder is FYERS Resources or inside it
-const isFolderId_InFyersResources = (folderId: string | undefined, folders: any[]): boolean => {
-  if (!folderId || !folders.length) return false;
-
-  // Recursive function to find folder and check its path
-  const findFolder = (id: string, folderList: any[]): any => {
-    for (const folder of folderList) {
-      if (folder.id === id) return folder;
-      if (folder.children && folder.children.length > 0) {
-        const found = findFolder(id, folder.children);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
-  const folder = findFolder(folderId, folders);
-  if (!folder) return false;
-
-  // Check if folder name is "FYERS Resources" or path contains it
-  const nameLower = folder.name?.toLowerCase() || '';
-  const pathLower = folder.path?.toLowerCase() || '';
-
-  return nameLower === 'fyers resources' || pathLower.includes('fyers resources');
-};
 
 export default function CreateFolderModal({
   parentId,
@@ -65,21 +40,8 @@ export default function CreateFolderModal({
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // Check if trying to create a folder named "Reports" (case-insensitive)
-    const folderNameLower = formData.name.trim().toLowerCase();
-    if (folderNameLower === 'reports' || folderNameLower === 'report') {
-      const errorMsg = 'Cannot create folder named "Reports". Reports folder already exists.';
-      setError(errorMsg);
-      showToast({
-        message: errorMsg,
-        status: 'error',
-      });
-      return;
-    }
-
-    // Check if non-superadmin is trying to create folder inside FYERS Resources
-    if (!isSuperAdmin && isFolderId_InFyersResources(parentId, folders)) {
-      setError('Cannot create folders inside "FYERS Resources"');
+    if (!isSuperAdmin && isResearchFolderUnderSystemSubtree(parentId, folders)) {
+      setError('Cannot create folders inside a system-managed folder location');
       return;
     }
 

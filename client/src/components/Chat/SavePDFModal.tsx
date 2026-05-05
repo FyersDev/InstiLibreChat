@@ -987,7 +987,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         name: pdfFile.name,
       });
 
-      // Save report - always save to Reports folder
+      // Save report via org research save-report endpoint (server resolves storage folder).
       // For super admin, use selectedOrgId; for regular users, use their org_id
       const orgId = userInfo?.is_super_admin ? selectedOrgId : userInfo?.org_id;
       
@@ -1025,7 +1025,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         hasFile: !!pdfFile,
       });
 
-      // FYERS org research save-report upload (Reports folder; no AI processing)
+      // FYERS org research save-report upload (no AI processing)
       const uploadResponse: any = await saasApi.saveReport(pdfFile, orgId, reportMetadata);
       
       console.log('Upload response:', uploadResponse);
@@ -1094,7 +1094,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         console.error('Error downloading PDF:', downloadErr);
         // Still show success since file was uploaded
         showToast({
-          message: `PDF report "${uploadedFileName}" saved to Reports folder!`,
+          message: `PDF report "${uploadedFileName}" saved successfully!`,
           severity: NotificationSeverity.SUCCESS,
           showIcon: true,
           duration: 4000,
@@ -1136,7 +1136,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         <DialogHeader className="mb-4">
           <DialogTitle className="text-xl font-semibold">Save PDF Report</DialogTitle>
           <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
-            Your report will be saved to the Reports folder
+            Your report will be stored in your organization&apos;s report storage.
           </p>
         </DialogHeader>
         {error && (
@@ -1181,7 +1181,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
               disabled={saving}
             />
             <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              The report will be saved to the "Reports" folder
+              The file is saved using your organization&apos;s configured report upload location.
             </p>
           </div>
 

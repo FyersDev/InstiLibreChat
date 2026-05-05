@@ -9,6 +9,11 @@ import UploadFileModal from '~/components/Resources/Modals/UploadFileModal';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
 import { PermissionManager } from '~/utils/permissions';
+import {
+  findResearchReportsFolderInTree,
+  isResearchDefaultUploadFolder,
+  researchRenameLocked,
+} from '~/utils/researchFolders';
 import { isResearchSystemRow, researchOwnerColumnLabel } from '~/utils/researchOwner';
 
 interface FolderNode {
@@ -27,6 +32,9 @@ interface FolderNode {
   /** Present when API sends org scope; `null` means system-managed (org_id null). */
   org_id?: string | null;
   is_system?: boolean;
+  /** From Conflux (`folder_kind` / aliases); see `researchFolders.ts`. */
+  folder_kind?: string;
+  rename_locked?: boolean;
 }
 
 interface FileNode {
@@ -320,20 +328,6 @@ export default function ResourcesRoute() {
     return null;
   };
 
-  // Find Reports folder
-  const findReportsFolder = (folders: FolderNode[]): FolderNode | null => {
-    for (const folder of folders) {
-      if (folder.name.toLowerCase() === 'reports') {
-        return folder;
-      }
-      if (folder.children && folder.children.length > 0) {
-        const found = findReportsFolder(folder.children);
-        if (found) return found;
-      }
-    }
-    return null;
-  };
-
   // Get current folder and its contents
   const currentFolder = useMemo(() => {
     // Backend now filters folders by user_id, so we don't need client-side user filtering
@@ -341,7 +335,7 @@ export default function ResourcesRoute() {
 
     // If Reports tab is active, show Reports folder content
     if (activeTab === 'reports') {
-      const reportsFolder = findReportsFolder(allFolders);
+      const reportsFolder = findResearchReportsFolderInTree(allFolders);
       if (reportsFolder) {
         return {
           folders: reportsFolder.children || [],
@@ -356,7 +350,7 @@ export default function ResourcesRoute() {
 
     // Documents tab - normal behavior
     // Completely exclude Reports folder from Documents tab (recursively)
-    const reportsFolder = findReportsFolder(allFolders);
+    const reportsFolder = findResearchReportsFolderInTree(allFolders);
     const reportsFolderId = reportsFolder?.id;
 
     // Helper function to recursively filter out Reports folder
@@ -634,6 +628,12 @@ export default function ResourcesRoute() {
   const canManageFiles =
     isSuperAdmin || isOrgAdmin || hasFileUpdatePermission || hasFileDeletePermission;
 
+  const currentFolderNodeForUpload =
+    currentFolderId ? findFolder(allFolders, currentFolderId) : null;
+  const uploadBlockedInSystemFolder =
+    Boolean(currentFolderNodeForUpload && isResearchSystemRow(currentFolderNodeForUpload));
+  const canUploadDocuments = canManage && !uploadBlockedInSystemFolder;
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -737,41 +737,43 @@ export default function ResourcesRoute() {
                     <span className="hidden sm:inline">Create folder</span>
                     <span className="sm:hidden">Folder</span>
                   </button>
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowUploadFileModal(true);
-                    }}
-                    className={cn(
-                      'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-[var(--Gap-one-buddy)] rounded-[2px] border border-fig-Stroke-standard',
-                      'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
-                      'font-inter text-xs font-normal leading-4 text-fig-Subject-standard',
-                      'transition-colors',
-                      'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
-                      'sm:flex-none',
-                    )}
-                  >
-                    <svg
-                      width="16"
-                      height="14"
-                      viewBox="0 0 16 14"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                      className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 pr-[var(--Gap-one-buddy)] text-fig-Subject-standard"
-                      aria-hidden="true"
+                  {canUploadDocuments && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setShowUploadFileModal(true);
+                      }}
+                      className={cn(
+                        'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-[var(--Gap-one-buddy)] rounded-[2px] border border-fig-Stroke-standard',
+                        'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
+                        'font-inter text-xs font-normal leading-4 text-fig-Subject-standard',
+                        'transition-colors',
+                        'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
+                        'sm:flex-none',
+                      )}
                     >
-                      <path
-                        d="M1.2 12.2885H14.8V7.78568H16V13.534H0V7.78568H1.2V12.2885Z"
-                        fill="currentColor"
-                      />
-                      <path
-                        d="M11.4688 4.1497L10.6188 5.02869L8.6 2.92365V10.0813H7.4V2.92528L5.38125 5.02869L4.53125 4.1497L8.00078 0.533997L11.4688 4.1497Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                    <span className="hidden sm:inline">Upload document</span>
-                    <span className="sm:hidden">Upload</span>
-                  </button>
+                      <svg
+                        width="16"
+                        height="14"
+                        viewBox="0 0 16 14"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 pr-[var(--Gap-one-buddy)] text-fig-Subject-standard"
+                        aria-hidden="true"
+                      >
+                        <path
+                          d="M1.2 12.2885H14.8V7.78568H16V13.534H0V7.78568H1.2V12.2885Z"
+                          fill="currentColor"
+                        />
+                        <path
+                          d="M11.4688 4.1497L10.6188 5.02869L8.6 2.92365V10.0813H7.4V2.92528L5.38125 5.02869L4.53125 4.1497L8.00078 0.533997L11.4688 4.1497Z"
+                          fill="currentColor"
+                        />
+                      </svg>
+                      <span className="hidden sm:inline">Upload document</span>
+                      <span className="sm:hidden">Upload</span>
+                    </button>
+                  )}
                 </div>
                 {showSearch ? (
                   <div className="relative min-w-0 sm:min-w-[16rem]">
@@ -931,33 +933,19 @@ export default function ResourcesRoute() {
                 {/* Folders */}
                 {filteredContent.folders.map((folder, folderIndex) => {
                   const folderFileCount = folder.files?.length || 0;
-                  const folderNameLower = folder.name.toLowerCase();
-                  const isFyersResources = folderNameLower === 'fyers resources';
-                  const isResources = folderNameLower === 'resources';
                   const currentUserId = userInfo?.user_id || userInfo?.id;
 
                   const isSystemFolder = isResearchSystemRow(folder);
-                  // FYERS Resources folder restrictions:
-                  // - Only super admin can rename/delete FYERS Resources folder
-                  // Resources folder (for user uploads) can be deleted by users when empty
-                  // Other folders follow normal permissions
-                  // System-managed folders (org_id null / is_system): no rename or delete in UI
                   const canModifyFolder =
                     !isSystemFolder &&
-                    (isFyersResources
-                      ? isSuperAdmin // Only super admin can modify FYERS Resources
-                      : isSuperAdmin ||
-                        isOrgAdmin ||
-                        sameCreatorAsCurrentUser(folder.created_by, currentUserId)); // Others follow normal rules
+                    (isSuperAdmin ||
+                      isOrgAdmin ||
+                      sameCreatorAsCurrentUser(folder.created_by, currentUserId));
 
-                  // Check if folder can be renamed
-                  // - FYERS Resources: only superadmin can rename
-                  // - Resources: users cannot rename (it's the default folder)
                   const canRenameFolder =
-                    !isSystemFolder &&
-                    (isFyersResources
-                      ? isSuperAdmin // Only super admin can rename FYERS Resources
-                      : !isResources && canModifyFolder); // Resources folder cannot be renamed by anyone
+                    canModifyFolder &&
+                    !researchRenameLocked(folder) &&
+                    !isResearchDefaultUploadFolder(folder);
                   return (
                     <tr
                       key={folder.id}
@@ -1139,21 +1127,19 @@ export default function ResourcesRoute() {
                   const FileIcon = getFileIcon(file.extension);
                   const currentUserId = userInfo?.user_id || userInfo?.id;
 
-                  // File modification permissions:
-                  // - Files in "FYERS Resources": only super admin can delete
-                  // - Files in other folders: super admin, org admins, or file creator can delete
                   const currentFolderObj = findFolder(allFolders, currentFolderId);
-                  const currentFolderNameLower = currentFolderObj?.name.toLowerCase() || '';
-                  const isInFyersResources = currentFolderNameLower === 'fyers resources';
+                  const inSystemFolder = Boolean(
+                    currentFolderObj && isResearchSystemRow(currentFolderObj),
+                  );
 
                   const isSystemFile = isResearchSystemRow(file);
                   const canModifyFile =
                     !isSystemFile &&
-                    (isInFyersResources
-                      ? isSuperAdmin // Only super admin can delete files in FYERS Resources
+                    (inSystemFolder
+                      ? isSuperAdmin
                       : isSuperAdmin ||
                         isOrgAdmin ||
-                        sameCreatorAsCurrentUser(file.created_by, currentUserId)); // Normal rules for other folders
+                        sameCreatorAsCurrentUser(file.created_by, currentUserId));
                   const rowIndex = filteredContent.folders.length + fileIndex;
                   return (
                     <tr
