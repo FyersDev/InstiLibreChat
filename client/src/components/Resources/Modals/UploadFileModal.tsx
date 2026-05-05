@@ -3,10 +3,13 @@ import * as Ariakit from '@ariakit/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { useToastContext, DropdownPopup } from '@librechat/client';
-import { useLocalize } from '~/hooks';
 import { saasApi } from '~/services/saasApi';
 import { File as FileIcon, ChevronDown, X } from 'lucide-react';
 import { cn } from '~/utils';
+import {
+  isResearchAllowedUploadFile,
+  RESEARCH_ALLOWED_ACCEPT,
+} from '~/utils/researchAllowedExtensions';
 import {
   isResearchDefaultUploadFolder,
   isResearchReportsFolder,
@@ -52,9 +55,6 @@ interface FlatFolder {
   rename_locked?: boolean;
 }
 
-/** Synthetic id when API has no `default_upload` folder row yet; backend resolves org default on upload. */
-const DEFAULT_UPLOAD_PLACEHOLDER_ID = 'research-default-upload-placeholder';
-
 export default function UploadFileModal({
   folderId,
   orgId,
@@ -65,7 +65,6 @@ export default function UploadFileModal({
   onClose,
   onSuccess,
 }: UploadFileModalProps) {
-  const localize = useLocalize();
   const { showToast } = useToastContext();
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
@@ -123,27 +122,7 @@ export default function UploadFileModal({
     return true;
   });
 
-  const defaultUploadFolder = filteredFolders.find((folder) =>
-    isResearchDefaultUploadFolder(folder),
-  );
-
-  let foldersWithDefaultOption = [...filteredFolders];
-
-  if (!defaultUploadFolder) {
-    foldersWithDefaultOption.unshift({
-      id: DEFAULT_UPLOAD_PLACEHOLDER_ID,
-      name: localize('com_research_default_upload_folder_label'),
-      path: '',
-      level: 0,
-      created_by: currentUserId,
-      folder_kind: undefined,
-      ...(resolvedOrgId != null
-        ? { org_id: resolvedOrgId, is_system: false as const }
-        : {}),
-    });
-  }
-
-  const sortedFolders = [...foldersWithDefaultOption].sort((a, b) => {
+  const sortedFolders = [...filteredFolders].sort((a, b) => {
     const pa = isResearchDefaultUploadFolder(a) ? 0 : 1;
     const pb = isResearchDefaultUploadFolder(b) ? 0 : 1;
     return pa - pb;
@@ -158,6 +137,9 @@ export default function UploadFileModal({
       } else if (sortedFolders.length > 0) {
         setSelectedFolderId(sortedFolders[0].id);
         setSelectedFolderName(sortedFolders[0].name);
+      } else {
+        setSelectedFolderId('');
+        setSelectedFolderName('');
       }
     };
 
@@ -175,14 +157,22 @@ export default function UploadFileModal({
     } else {
       applyDefaultFolder();
     }
-  }, [folderId, folders, defaultUploadFolder?.id, sortedFolders.length]);
+  }, [folderId, folders, sortedFolders.length]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      setSelectedFile(file);
-      setError(null);
+    if (!file) {
+      return;
     }
+    if (!isResearchAllowedUploadFile(file)) {
+      const msg = 'This file type is not allowed.';
+      setError(msg);
+      showToast({ message: msg, status: 'error' });
+      e.target.value = '';
+      return;
+    }
+    setSelectedFile(file);
+    setError(null);
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -192,52 +182,10 @@ export default function UploadFileModal({
       return;
     }
 
-    // Validate file type (accept common document formats)
-    const allowedTypes = [
-      // Word documents
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.document', // .docx
-      'application/vnd.openxmlformats-officedocument.wordprocessingml.template', // .dotx
-      'application/vnd.ms-word.document.macroEnabled.12', // .docm
-      'application/vnd.ms-word.template.macroEnabled.12', // .dotm
-      // PowerPoint
-      'application/vnd.openxmlformats-officedocument.presentationml.presentation', // .pptx
-      // PDF
-      'application/pdf',
-      // Markdown
-      'text/markdown',
-      'text/x-markdown',
-      // HTML
-      'text/html',
-      'application/xhtml+xml',
-      // Images
-      'image/jpeg',
-      'image/jpg',
-      'image/png',
-      'image/tiff',
-      'image/bmp',
-      'image/webp',
-      // CSV
-      'text/csv',
-      'application/csv',
-      // Excel
-      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', // .xlsx
-      'application/vnd.ms-excel.sheet.macroEnabled.12', // .xlsm
-      // Text
-      'text/plain',
-      // JSON
-      'application/json',
-      'text/json',
-    ];
-
-    if (!allowedTypes.includes(selectedFile.type)) {
-      setError(
-        'Please select a valid document file (DOCX, DOTX, DOCM, DOTM, PPTX, PDF, MD, HTML, JPG, PNG, TIFF, BMP, WEBP, CSV, XLSX, XLSM, TXT, JSON)',
-      );
-      showToast({
-        message:
-          'Please select a valid document file (DOCX, DOTX, DOCM, DOTM, PPTX, PDF, MD, HTML, JPG, PNG, TIFF, BMP, WEBP, CSV, XLSX, XLSM, TXT, JSON)',
-        status: 'error',
-      });
+    if (!isResearchAllowedUploadFile(selectedFile)) {
+      const msg = 'This file type is not allowed.';
+      setError(msg);
+      showToast({ message: msg, status: 'error' });
       return;
     }
 
@@ -252,11 +200,7 @@ export default function UploadFileModal({
       return;
     }
 
-    if (
-      selectedFolderId &&
-      selectedFolderId !== DEFAULT_UPLOAD_PLACEHOLDER_ID &&
-      folders.length > 0
-    ) {
+    if (selectedFolderId && folders.length > 0) {
       const targetNode = findFolderById(folders, selectedFolderId);
       if (targetNode && isResearchSystemRow(targetNode)) {
         const msg = 'Documents can only be uploaded to organization folders, not system folders.';
@@ -266,16 +210,18 @@ export default function UploadFileModal({
       }
     }
 
+    if (sortedFolders.length > 0 && !selectedFolderId) {
+      const msg = 'Please select a folder.';
+      setError(msg);
+      showToast({ message: msg, status: 'error' });
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
-      // Upload document directly with folder_id using saasApi.
-      // Placeholder selection passes undefined so the API resolves the org default folder.
-      const folderIdToUse =
-        selectedFolderId === DEFAULT_UPLOAD_PLACEHOLDER_ID || !selectedFolderId
-          ? undefined
-          : selectedFolderId;
+      const folderIdToUse = selectedFolderId || undefined;
 
       const response = await saasApi.uploadFile(
         selectedFile,
@@ -284,12 +230,12 @@ export default function UploadFileModal({
       );
 
       if (response) {
-        const defaultUploadLabel = localize('com_research_default_upload_folder_label');
-        const selectedFolderName = selectedFolderId
-          ? sortedFolders.find((f) => f.id === selectedFolderId)?.name || defaultUploadLabel
-          : defaultUploadLabel;
-
-        const folderMessage = `uploaded successfully to ${selectedFolderName}`;
+        const folderLabel = selectedFolderId
+          ? sortedFolders.find((f) => f.id === selectedFolderId)?.name
+          : undefined;
+        const folderMessage = folderLabel
+          ? `uploaded successfully to ${folderLabel}`
+          : 'uploaded successfully';
 
         showToast({
           message: `Document "${selectedFile.name}" ${folderMessage}`,
@@ -365,15 +311,9 @@ export default function UploadFileModal({
                 'p-[var(--Padding-spacer)]',
               )}
             >
-              {/* Upload file row label */}
-              <div className="flex items-center justify-between">
-                <span className="fy-typography-title-tiny text-fig-Subject-standard">
-                  Upload file
-                </span>
-                <span className="fy-typography-body-tiny text-right text-fig-Subject-soft">
-                  {`File format: .txt & .csv`}
-                </span>
-              </div>
+              <span className="fy-typography-title-tiny text-fig-Subject-standard">
+                Upload file
+              </span>
 
               {/* Drop zone */}
               <div
@@ -390,7 +330,7 @@ export default function UploadFileModal({
                   onChange={handleFileSelect}
                   className="hidden"
                   id="file-upload"
-                  accept=".docx,.dotx,.docm,.dotm,.pptx,.pdf,.md,.html,.htm,.xhtml,.jpg,.jpeg,.png,.tiff,.bmp,.webp,.csv,.xlsx,.xlsm,.txt,.json"
+                  accept={RESEARCH_ALLOWED_ACCEPT}
                 />
                 <label
                   htmlFor="file-upload"
@@ -497,7 +437,11 @@ export default function UploadFileModal({
             <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
               <Button
                 type="submit"
-                disabled={loading || !selectedFile}
+                disabled={
+                  loading ||
+                  !selectedFile ||
+                  (sortedFolders.length > 0 && !selectedFolderId)
+                }
                 className={cn(
                   'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
                   'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
