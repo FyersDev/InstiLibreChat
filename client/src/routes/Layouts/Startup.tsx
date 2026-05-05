@@ -6,7 +6,6 @@ import AuthLayout from '~/components/Auth/AuthLayout';
 import { TranslationKeys, useLocalize } from '~/hooks';
 
 const headerMap: Record<string, TranslationKeys> = {
-  '/login': 'com_auth_welcome_back',
   '/register': 'com_auth_create_account',
   '/forgot-password': 'com_auth_reset_password',
   '/reset-password': 'com_auth_reset_password',
@@ -57,13 +56,6 @@ export default function StartupLayout({ isAuthenticated }: { isAuthenticated?: b
     startupConfig,
     isFetching,
   };
-
-  // Skip AuthLayout for custom login/OTP pages (they have their own full-screen design)
-  const isCustomAuthPage = location.pathname === '/login' || location.pathname === '/login/otp';
-
-  if (isCustomAuthPage) {
-    return <Outlet context={contextValue} />;
-  }
 
   return (
     <AuthLayout

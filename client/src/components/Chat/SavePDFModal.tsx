@@ -161,7 +161,6 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
 
   const loadUserInfo = async () => {
     try {
-      // API call: GET /api/v1/auth/me (insti-inquora)
       const user: any = await saasApi.getMe();
       setUserInfo(user);
     } catch (err) {
@@ -172,7 +171,6 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
 
   const loadOrganizations = async () => {
     try {
-      // API call: GET /api/v1/organizations (insti-inquora)
       const data = await saasApi.getOrganizations(true, undefined);
       const orgs = Array.isArray(data) ? data : (data as any).data || [];
       setOrganizations(orgs);
@@ -194,7 +192,6 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
     try {
       setLoading(true);
       setError(null);
-      // API call: GET /api/v1/folders/tree?org_id={orgId} (insti-inquora)
       const data = await saasApi.getFolderTree(orgId);
       setFolders(Array.isArray(data) ? data : []);
     } catch (err: any) {
@@ -1028,8 +1025,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         hasFile: !!pdfFile,
       });
 
-      // API call: POST /api/v1/documents/save-report (insti-inquora)
-      // This endpoint has no size limit and saves directly to Reports folder (no AI processing)
+      // FYERS org research save-report upload (Reports folder; no AI processing)
       const uploadResponse: any = await saasApi.saveReport(pdfFile, orgId, reportMetadata);
       
       console.log('Upload response:', uploadResponse);

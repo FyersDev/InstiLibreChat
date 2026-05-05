@@ -19,7 +19,7 @@ export default function FileViewRoute() {
   useEffect(() => {
     const token = localStorage.getItem('access_token');
     if (!token) {
-      navigate('/login');
+      navigate('/c/new');
     }
   }, [navigate]);
 

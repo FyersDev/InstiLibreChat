@@ -42,7 +42,7 @@ function ResetPassword() {
           <div className="flex flex-col space-y-4">
             <p>{localize('com_auth_login_with_new_password')}</p>
             <Button
-              onClick={() => navigate('/login')}
+              onClick={() => navigate('/c/new')}
               aria-label={localize('com_auth_sign_in')}
               variant="submit"
             >

@@ -84,26 +84,6 @@ export default function TopNavBar() {
           }
         } catch (error: any) {
           console.error('Error loading user data:', error);
-          // If it's a 401, try to refresh token
-          if (error.message?.includes('401') || error.message?.includes('Unauthorized')) {
-            const refreshToken = localStorage.getItem('refresh_token');
-            if (refreshToken) {
-              try {
-                const refreshData: any = await saasApi.refreshToken(refreshToken);
-                if (refreshData.access_token) {
-                  localStorage.setItem('access_token', refreshData.access_token);
-                  if (refreshData.refresh_token) {
-                    localStorage.setItem('refresh_token', refreshData.refresh_token);
-                  }
-                  // Retry loading user data
-                  const retryData = await saasApi.getMe();
-                  setUserInfo(retryData);
-                }
-              } catch (refreshError) {
-                console.error('Token refresh failed:', refreshError);
-              }
-            }
-          }
         }
       } catch (error) {
         console.error('Error in loadUserData:', error);
@@ -115,7 +95,7 @@ export default function TopNavBar() {
     // Determine active menu based on current route
     const path = location.pathname;
     if (path.includes('/admin')) {
-      setActiveMenu('Admin');
+      setActiveMenu('FIA research');
     } else if (path.includes('/resources')) {
       setActiveMenu('Resources');
     } else if (path.includes('/templates')) {
@@ -221,9 +201,6 @@ export default function TopNavBar() {
     const baseHref = document.querySelector('base')?.getAttribute('href') || '/';
 
     switch (menu) {
-      case 'Admin':
-        navigate(`${baseHref}admin`);
-        break;
       case 'FIA research': {
         // Restore last conversation if available, otherwise go to new chat
         const lastConversationId = localStorage.getItem('lastConversationId');
@@ -247,27 +224,6 @@ export default function TopNavBar() {
   };
 
   const handleLogout = async () => {
-    try {
-      const token = localStorage.getItem('access_token');
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (token && refreshToken) {
-        // Call logout endpoint if available
-        try {
-          await fetch('/api/v1/auth/logout', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${token}`,
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          });
-        } catch (error) {
-          // Ignore logout API errors
-        }
-      }
-    } catch (error) {
-      console.error('Logout error:', error);
-    }
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
     localStorage.removeItem('user');
@@ -314,76 +270,7 @@ export default function TopNavBar() {
     setShowSettings(true);
   };
 
-  // State to track admin access - DEFAULT TO FALSE (hide Admin tab by default)
-  const [canAccessAdmin, setCanAccessAdmin] = useState(false);
-
-  // Check admin access whenever userInfo or permissions change
-  useEffect(() => {
-    // DEFAULT: No admin access unless explicitly proven
-    let hasAccess = false;
-    
-    // First check localStorage (set during login for immediate availability)
-    const storedCanAccessAdmin = localStorage.getItem('canAccessAdmin');
-    if (storedCanAccessAdmin !== null) {
-      try {
-        const parsed = JSON.parse(storedCanAccessAdmin);
-        // Only set to true if explicitly true
-        hasAccess = parsed === true;
-      } catch (e) {
-        // If parsing fails, keep false (no admin access)
-        hasAccess = false;
-      }
-    }
-    
-    // If not in localStorage or userInfo is available, re-check from userInfo
-    // Check based on org_role: show admin panel if org_role === 'admin' OR is_super_admin === true
-    if (!hasAccess && userInfo) {
-      // Explicitly check for super admin
-      const isSuperAdmin = userInfo.is_super_admin === true;
-      
-      // Check org_role - admin access if org_role === 'admin'
-      const orgRole = userInfo.org_role || userInfo.orgRole;
-      const isOrgAdmin = orgRole === 'admin';
-
-      // Only super admins or users with org_role === 'admin' can access
-      hasAccess = isSuperAdmin || isOrgAdmin;
-      
-      // Update localStorage with the current check
-      localStorage.setItem('canAccessAdmin', JSON.stringify(hasAccess));
-    }
-    
-    // Update state - this will trigger re-render and hide/show Admin tab
-    setCanAccessAdmin(hasAccess);
-    
-    // Debug log (remove in production)
-    console.log('Admin access check:', {
-      hasAccess,
-      isSuperAdmin: userInfo?.is_super_admin,
-      orgRole: userInfo?.org_role || userInfo?.orgRole,
-      isOrgAdmin: userInfo ? (userInfo.org_role === 'admin' || userInfo.orgRole === 'admin') : false,
-      userInfo: userInfo ? 'loaded' : 'not loaded',
-      storedCanAccessAdmin
-    });
-  }, [userInfo]);
-
-  // Show only 4 tabs for verified users: FIA research, Screeners, Resources, Customise
-  // Admin is only shown for super admins or users with org_role === 'admin'
-  // CRITICAL: Default to hiding Admin tab - only show if explicitly allowed
-  const allMenus = ['Admin', 'FIA research', 'Resources', 'Customise'];//screeners removed
-  const menus = allMenus.filter((menu) => {
-    // STRICT CHECK: Only show Admin if canAccessAdmin is explicitly true
-    // This ensures Admin is hidden by default for ALL users (including when userInfo hasn't loaded)
-    if (menu === 'Admin') {
-      // Triple check: must be explicitly true, not just truthy
-      if (canAccessAdmin === true) {
-        return true;
-      }
-      // Hide Admin tab for all other cases
-      return false;
-    }
-    // Always show Customise, FIA research, Screeners, and Resources
-    return true;
-  });
+  const menus = ['FIA research', 'Resources', 'Customise'];
 
   // Format NIFTY data for display
   // const formatNiftyValue = () => {

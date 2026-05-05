@@ -33,8 +33,8 @@ export default function useAuthRedirect() {
       // 3. No auth cookies exist (not in the middle of authentication)
       // 4. We've checked at least twice (give extra time for slow networks)
       if (!isAuthenticated && user === undefined && !cookiesExist && checkCount >= 2) {
-        console.log('Auth check failed, redirecting to login');
-        navigate('/login', { replace: true });
+        console.log('Auth check failed, redirecting to chat');
+        navigate('/c/new', { replace: true });
       } else if (!isAuthenticated && cookiesExist && checkCount < 5) {
         // If cookies exist but not authenticated yet, wait longer (up to 5 checks = 5 seconds)
         console.log('Auth cookies found, waiting for authentication to complete...');

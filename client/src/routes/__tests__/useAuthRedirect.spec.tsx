@@ -44,8 +44,8 @@ const createTestRouter = (basename = '/') => {
         element: <TestComponent />,
       },
       {
-        path: '/login',
-        element: <div data-testid="login-page">Login Page</div>,
+        path: '/c/new',
+        element: <div data-testid="chat-home-page">Chat home</div>,
       },
     ],
     {
@@ -85,9 +85,9 @@ describe('useAuthRedirect', () => {
     expect(getByTestId('test-component')).toBeInTheDocument();
   });
 
-  it('should redirect to /login when user is not authenticated', async () => {
+  it('should redirect to /c/new when user is not authenticated', async () => {
     (useAuthContext as jest.Mock).mockReturnValue({
-      user: null,
+      user: undefined,
       isAuthenticated: false,
     });
 
@@ -97,52 +97,43 @@ describe('useAuthRedirect', () => {
     expect(router.state.location.pathname).toBe('/');
     expect(getByTestId('test-component')).toBeInTheDocument();
 
-    // Wait for the redirect to happen (300ms timeout + navigation)
     await waitFor(
       () => {
-        expect(router.state.location.pathname).toBe('/login');
-        expect(getByTestId('login-page')).toBeInTheDocument();
+        expect(router.state.location.pathname).toBe('/c/new');
+        expect(getByTestId('chat-home-page')).toBeInTheDocument();
         expect(queryByTestId('test-component')).not.toBeInTheDocument();
       },
       { timeout: 1000 },
     );
 
-    // Verify navigation used replace (history has only 1 entry)
-    // This prevents users from hitting back to return to protected pages
     expect(router.state.historyAction).toBe('REPLACE');
   });
 
   it('should respect router basename when redirecting (subdirectory deployment)', async () => {
     (useAuthContext as jest.Mock).mockReturnValue({
-      user: null,
+      user: undefined,
       isAuthenticated: false,
     });
 
-    // Test with basename="/librechat" (simulates subdirectory deployment)
     const router = createTestRouter('/librechat');
     const { getByTestId } = render(<RouterProvider router={router} />);
 
-    // Full pathname includes basename
     expect(router.state.location.pathname).toBe('/librechat/');
 
-    // Wait for the redirect - router handles basename internally
     await waitFor(
       () => {
-        // Router state pathname includes the full path with basename
-        expect(router.state.location.pathname).toBe('/librechat/login');
-        expect(getByTestId('login-page')).toBeInTheDocument();
+        expect(router.state.location.pathname).toBe('/librechat/c/new');
+        expect(getByTestId('chat-home-page')).toBeInTheDocument();
       },
       { timeout: 1000 },
     );
 
-    // The key point: navigate('/login', { replace: true }) works correctly with basename
-    // The router automatically prepends the basename to create the full URL
     expect(router.state.historyAction).toBe('REPLACE');
   });
 
   it('should use React Router navigate (not window.location) for SPA experience', async () => {
     (useAuthContext as jest.Mock).mockReturnValue({
-      user: null,
+      user: undefined,
       isAuthenticated: false,
     });
 
@@ -151,34 +142,28 @@ describe('useAuthRedirect', () => {
 
     await waitFor(
       () => {
-        expect(router.state.location.pathname).toBe('/librechat/login');
-        expect(getByTestId('login-page')).toBeInTheDocument();
+        expect(router.state.location.pathname).toBe('/librechat/c/new');
+        expect(getByTestId('chat-home-page')).toBeInTheDocument();
       },
       { timeout: 1000 },
     );
 
-    // The fact that navigation worked within the router proves we're using
-    // navigate() and not window.location.href (which would cause a full reload
-    // and break the test entirely). This maintains the SPA experience.
-    expect(router.state.location.pathname).toBe('/librechat/login');
+    expect(router.state.location.pathname).toBe('/librechat/c/new');
   });
 
   it('should clear timeout on unmount', async () => {
     (useAuthContext as jest.Mock).mockReturnValue({
-      user: null,
+      user: undefined,
       isAuthenticated: false,
     });
 
     const router = createTestRouter();
     const { unmount } = render(<RouterProvider router={router} />);
 
-    // Unmount immediately before timeout fires
     unmount();
 
-    // Wait past the timeout period
     await new Promise((resolve) => setTimeout(resolve, 400));
 
-    // Should still be at home, not redirected (timeout was cleared)
     expect(router.state.location.pathname).toBe('/');
   });
 

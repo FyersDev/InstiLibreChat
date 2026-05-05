@@ -36,11 +36,10 @@ export default function Root() {
     return new URLSearchParams(location.search).get('showtopnav') === '1';
   }, [location.search]);
 
-  // Only show chat history sidebar on chat routes (FIA research), not on admin/templates/screener/resources
+  // Only show chat history sidebar on chat routes (FIA research), not on admin/templates/resources
   const shouldShowNav =
     !location.pathname.startsWith('/admin') &&
     !location.pathname.startsWith('/templates') &&
-    !location.pathname.startsWith('/screener') &&
     !location.pathname.startsWith('/resources');
 
   // Global health check - runs once per authenticated session
@@ -69,7 +68,7 @@ export default function Root() {
 
   const handleDeclineTerms = () => {
     setShowTerms(false);
-    logout('/login?redirect=false');
+    logout('/c/new?redirect=false');
   };
 
   if (!isAuthenticated) {

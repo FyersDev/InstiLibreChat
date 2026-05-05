@@ -144,7 +144,7 @@ export function getFyersOrgIdFromJwt(): string | null {
 
 /**
  * Path segment for `/insti/admin/org/{orgId}/research/...`. FYERS only accepts the numeric
- * `org_id` from the `INSTI~` JWT, not org directory UUIDs from `/api/v1`.
+ * `org_id` from the `INSTI~` JWT (numeric), not opaque directory UUIDs from removed directory APIs.
  */
 export function confluxOrgPathId(orgId: number | string): string {
   const s = String(orgId).trim();

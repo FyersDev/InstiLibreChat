@@ -3,7 +3,6 @@ import * as Ariakit from '@ariakit/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { useToastContext, DropdownPopup } from '@librechat/client';
-import { uploadDocument } from '~/data-provider/document-service';
 import { saasApi } from '~/services/saasApi';
 import { File as FileIcon, ChevronDown, X } from 'lucide-react';
 import { cn } from '~/utils';

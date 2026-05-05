@@ -1,19 +1,8 @@
 /**
- * API Service for insti-inquora backend
- * 
- * This service connects to the insti-inquora API (Go backend) through the proxy.
- * All requests are sent to /api/v1/* which routes to:
- *   - insti-inquora backend (port 3001) for most API calls
- *   - Handles authentication, documents, folders, users, organizations, etc.
- * 
- * The service handles both response formats:
- *   - insti-inquora: { code: 200, s: "ok", data: {...}, message: "..." }
- *   - Legacy saas-api: { access_token, refresh_token, user, ... } (flat structure)
+ * Facade over **FYERS api-t2** org research (`researchConfluxApi`) plus `GET /insti/admin/user-details`.
+ * Same-origin `/api/v1/*` (insti-inquora directory, OTP, refresh) was removed from this client.
  *
- * **Document, folder, and org-scoped template** calls use **FYERS api-t2** / insti-conflux-users
- * (`researchConfluxApi`) only — not `/api/v1`. Requires an `INSTI~` JWT and an org id (argument or
- * JWT `org_id` claim). Auth, org directory, users, roles, and permissions still use
- * `GET/POST ${base}/api/v1/...` via the local proxy. Personas and templates use FYERS Conflux.
+ * Requires an `INSTI~` JWT and (for org-scoped calls) a numeric org id from the token or arguments.
  */
 
 import { fyersT2Urls } from '~/constants/api_list';
@@ -23,6 +12,19 @@ import {
   hasFyersResearchAuth,
   researchConfluxApi,
 } from '~/services/researchConfluxApi';
+
+/** Full URL for SPA chat home (respects `<base href>`). Used instead of removed `/login`. */
+function spaChatHomeHref(): string {
+  let base = document.querySelector('base')?.getAttribute('href') || '/';
+  if (base.endsWith('/')) {
+    base = base.slice(0, -1);
+  }
+  return `${base}/c/new`;
+}
+
+/** User-facing copy for FYERS `fetch` failures (avoid leaking server details). */
+const FYERS_REQUEST_FAILED =
+  'Request failed. Please try again, or sign in again if the problem continues.';
 
 function requireConfluxOrg(orgId?: string | null): string {
   if (!hasFyersResearchAuth()) {
@@ -121,28 +123,6 @@ function normalizeConfluxPersonaWrite(data: Record<string, unknown> | null | und
   return out;
 }
 
-const getBaseHref = () => {
-  const base = document.querySelector('base')?.getAttribute('href') || '/';
-  return base.endsWith('/') ? base.slice(0, -1) : base;
-};
-
-const API_BASE_URL = `${getBaseHref()}/api/v1`;
-
-function getAuthToken(): string | null {
-  return localStorage.getItem('access_token');
-}
-
-function getAuthHeaders(): HeadersInit {
-  const token = getAuthToken();
-  const headers: HeadersInit = {
-    'Content-Type': 'application/json',
-  };
-  if (token) {
-    headers['Authorization'] = `Bearer ${token}`;
-  }
-  return headers;
-}
-
 /**
  * Normalize API response structure
  * Handles both response formats:
@@ -160,9 +140,9 @@ function normalizeResponse<T>(data: any): T {
 
 /**
  * Resolves the org id for **FYERS Conflux** URLs (`/insti/admin/org/{orgId}/research/...`).
- * The API accepts the numeric FYERS `org_id` from the `INSTI~` JWT, not the directory UUID from
- * `/api/v1` organizations. Callers often pass `organization.id` (UUID); we only honor an explicit
- * `orgId` when it is all digits; otherwise we use `org_id` from the JWT.
+ * The API accepts the numeric FYERS `org_id` from the `INSTI~` JWT. Callers may pass a synthetic
+ * org id from `getOrganizations`; we only honor an explicit `orgId` when it is all digits;
+ * otherwise we use `org_id` from the JWT.
  */
 function effectiveConfluxOrgId(orgId?: string | null): string | null {
   const fromJwt = getFyersOrgIdFromJwt();
@@ -352,389 +332,60 @@ async function confluxBuildFolderTree(orgId: string): Promise<any[]> {
   return loadLevel(undefined);
 }
 
-async function handleResponse<T>(response: Response, originalRequest?: { url: string; method: string; body?: string }, retry = true): Promise<T> {
+async function handleResponse<T>(response: Response): Promise<T> {
   if (!response.ok) {
-    // Check for "Session invalidated" or user suspension messages from Go backend
-    try {
-      const errorData = await response.clone().json().catch(() => ({}));
-      const errorMessage = errorData.message || errorData.error || '';
-      
-      // Check for session invalidation (including user suspension)
-      const lowerMessage = errorMessage.toLowerCase();
-      if (lowerMessage.includes('session invalidated') || 
-          lowerMessage.includes('invalidated all sessions') ||
-          lowerMessage.includes('suspended user') ||
-          lowerMessage.includes('user is suspended') ||
-          lowerMessage.includes('account suspended') ||
-          lowerMessage.includes('account has been suspended')) {
-        console.log('Session invalidated by backend (user may be suspended), Logging out...');
-        
-        // Clear tokens
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        
-        // Store error message to display on login page
-        sessionStorage.setItem('auth_error', errorMessage);
-        
-        // Redirect to login if not already there
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-        
-        return Promise.reject(new Error(errorMessage));
-      }
-      
-      // Also check for 403 Forbidden with suspension-related messages
-      if (response.status === 403 && (
-          lowerMessage.includes('suspended') ||
-          lowerMessage.includes('banned') ||
-          lowerMessage.includes('disabled'))) {
-        console.log('User account suspended/banned, Logging out...');
-        
-        // Clear tokens
-        localStorage.removeItem('access_token');
-        localStorage.removeItem('refresh_token');
-        
-        // Store error message to display on login page
-        sessionStorage.setItem('auth_error', errorMessage || 'Your account has been suspended. Please contact support.');
-        
-        // Redirect to login if not already there
-        if (!window.location.pathname.includes('/login')) {
-          window.location.href = '/login';
-        }
-        
-        return Promise.reject(new Error(errorMessage));
-      }
-    } catch (e) {
-      // Continue with normal error handling if parsing fails
-    }
-    
-    // Handle 401 Unauthorized - try to refresh token
-    if (response.status === 401 && retry && originalRequest) {
-      const refreshToken = localStorage.getItem('refresh_token');
-      if (refreshToken) {
-        try {
-          const refreshResponse = await fetch(`${API_BASE_URL}/auth/refresh`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({ refresh_token: refreshToken }),
-          });
-
-          if (refreshResponse.ok) {
-            const refreshData: any = await refreshResponse.json();
-            // Handle both response formats for access_token
-            const normalizedRefreshData = normalizeResponse<any>(refreshData);
-            
-            // Check for access_token (can be in different formats)
-            const accessToken = normalizedRefreshData.access_token || normalizedRefreshData.AccessToken;
-            const refreshToken = normalizedRefreshData.refresh_token || normalizedRefreshData.RefreshToken;
-            
-            if (accessToken) {
-              localStorage.setItem('access_token', accessToken);
-              // Always update refresh_token if provided (even if same value)
-              if (refreshToken) {
-                localStorage.setItem('refresh_token', refreshToken);
-              }
-              // Retry the original request with new token
-              const retryResponse = await fetch(originalRequest.url, {
-                method: originalRequest.method as any,
-                headers: {
-                  ...getAuthHeaders(),
-                  'Content-Type': 'application/json',
-                },
-                body: originalRequest.body,
-              });
-              return handleResponse(retryResponse, originalRequest, false); // Don't retry again
-            } else {
-              console.error('Refresh response missing access_token:', normalizedRefreshData);
-            }
-          } else {
-            // Refresh token failed - get error details
-            const errorData = await refreshResponse.json().catch(() => ({}));
-            const errorMessage = errorData.message || errorData.error || 'Session expired. Please login again.';
-            
-            console.error('Token refresh failed:', {
-              status: refreshResponse.status,
-              error: errorMessage,
-              details: errorData
-            });
-            
-            // Clear tokens
-            localStorage.removeItem('access_token');
-            localStorage.removeItem('refresh_token');
-            
-            // Don't redirect if we're already on the login page
-            if (window.location.pathname.includes('/login')) {
-              return Promise.reject(new Error(errorMessage));
-            }
-            
-            // Show user-friendly error message before redirecting
-            // Store error message in sessionStorage to display on login page if needed
-            sessionStorage.setItem('auth_error', errorMessage);
-            
-            // Redirect to login
-            window.location.href = '/login';
-            return Promise.reject(new Error(errorMessage));
-          }
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
-          // Clear tokens on any error
-          localStorage.removeItem('access_token');
-          localStorage.removeItem('refresh_token');
-          
-          const errorMessage = refreshError instanceof Error ? refreshError.message : 'Session expired. Please login again.';
-          
-          // Don't redirect if we're already on the login page
-          if (window.location.pathname.includes('/login')) {
-            return Promise.reject(new Error(errorMessage));
-          }
-          
-          // Store error message to display on login page
-          sessionStorage.setItem('auth_error', errorMessage);
-          
-          // Redirect to login
-          window.location.href = '/login';
-          return Promise.reject(new Error(errorMessage));
-        }
-      }
-    }
-
-    const error = await response.json().catch(() => ({ message: 'Request failed' }));
-    // Handle both 'message' and 'error' fields
-    throw new Error(error.message || error.error || `HTTP error! status: ${response.status}`);
+    await response.text().catch(() => '');
+    throw new Error(FYERS_REQUEST_FAILED);
   }
-  
+
   const data = await response.json();
-  
-  // Check if the response contains a logout flag (user suspended, role changed, etc.)
+
   if (data && (data.logout === true || (data.data && data.data.logout === true))) {
-    console.log('Logout flag detected in response, logging out user...');
-    
-    // Clear tokens
     localStorage.removeItem('access_token');
     localStorage.removeItem('refresh_token');
-    
-    // Store message to display on login page
-    const message = data.message || data.data?.message || 'You have been logged out. Please log in again.';
-    sessionStorage.setItem('auth_error', message);
-    
-    // Redirect to login if not already there
-    if (!window.location.pathname.includes('/login')) {
-      window.location.href = '/login';
+    sessionStorage.setItem('auth_error', FYERS_REQUEST_FAILED);
+    if (!/\/c\/new\/?$/.test(window.location.pathname)) {
+      window.location.href = spaChatHomeHref();
     }
   }
-  
+
   return normalizeResponse<T>(data);
 }
 
 export const saasApi = {
-  // Auth endpoints
-  async refreshToken(refreshToken: string) {
-    const response = await fetch(`${API_BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    return handleResponse(response);
-  },
-
   async getMe() {
-    if (hasFyersResearchAuth()) {
-      const url = fyersT2Urls.instiAdminUserDetails;
-      const headers = new Headers({
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
-      });
-      const auth = getFyersResearchAuthHeaders();
-      if ('Authorization' in auth && auth.Authorization) {
-        headers.set('Authorization', auth.Authorization as string);
-      }
-      const response = await fetch(url, { method: 'GET', headers });
-      const raw = await handleResponse<Record<string, unknown>>(response, {
-        url,
-        method: 'GET',
-      });
-      return mapFyersUserDetailsToMe(raw ?? {});
+    if (!hasFyersResearchAuth()) {
+      throw new Error(
+        'FYERS research auth required (INSTI~ JWT). Complete your institutional sign-in flow.',
+      );
     }
-
-    const url = `${API_BASE_URL}/auth/me`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
+    const url = fyersT2Urls.instiAdminUserDetails;
+    const headers = new Headers({
+      'Content-Type': 'application/json',
+      Accept: 'application/json',
     });
-    return handleResponse(response, { url, method: 'GET' });
-  },
-
-  // Organizations
-  async getOrganizations(isSuperAdmin: boolean, orgId?: string) {
-    // Both super admin and org admin use the same list endpoint
-    // Backend distinguishes based on JWT claims (is_super_admin, org_id)
-    // Super admin sees all orgs, org admin sees only their org
-    const url = `${API_BASE_URL}/organizations?limit=1000`;
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async createOrganization(data: any) {
-    const response = await fetch(`${API_BASE_URL}/organizations`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  async updateOrganization(id: string, data: any) {
-    const response = await fetch(`${API_BASE_URL}/organizations/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  async deleteOrganization(id: string) {
-    const response = await fetch(`${API_BASE_URL}/organizations/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  // Users
-  async getUsers(isSuperAdmin: boolean, orgId?: string) {
-    // Both super admin and org admin use the same endpoint
-    // Backend distinguishes based on JWT claims (is_super_admin, org_id)
-    let url = `${API_BASE_URL}/users?limit=1000`;
-    if (isSuperAdmin && orgId) {
-      url += `&org_id=${orgId}`;
+    const auth = getFyersResearchAuthHeaders();
+    if ('Authorization' in auth && auth.Authorization) {
+      headers.set('Authorization', auth.Authorization as string);
     }
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+    const response = await fetch(url, { method: 'GET', headers });
+    const raw = await handleResponse<Record<string, unknown>>(response);
+    return mapFyersUserDetailsToMe(raw ?? {});
   },
 
-  async createUser(data: any) {
-    const response = await fetch(`${API_BASE_URL}/users`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  async updateUser(id: string, data: any) {
-    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  async deleteUser(id: string) {
-    const response = await fetch(`${API_BASE_URL}/users/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async getUserPermissions(id: string) {
-    const response = await fetch(`${API_BASE_URL}/users/${id}/permissions`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async assignRoleToUser(userId: string, roleId: string) {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/roles`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ role_id: roleId }),
-    });
-    return handleResponse(response);
-  },
-
-  async removeRoleFromUser(userId: string, roleId: string) {
-    const response = await fetch(`${API_BASE_URL}/users/${userId}/roles/${roleId}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  // Roles
-  async getRoles(orgFilterId?: string) {
-    let url = `${API_BASE_URL}/roles`;
-    if (orgFilterId) {
-      url += `?org_id=${orgFilterId}`;
+  /**
+   * Single org derived from FYERS user-details (directory org list API removed).
+   */
+  async getOrganizations(_isSuperAdmin?: boolean, _orgFilter?: string) {
+    const me = (await this.getMe()) as Record<string, unknown>;
+    const id = me.organization_id ?? me.org_id;
+    if (id == null || String(id).trim() === '') {
+      return [];
     }
-    const response = await fetch(url, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async createRole(data: any) {
-    const response = await fetch(`${API_BASE_URL}/roles`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  async updateRole(id: string, data: any) {
-    const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
-      method: 'PUT',
-      headers: getAuthHeaders(),
-      body: JSON.stringify(data),
-    });
-    return handleResponse(response);
-  },
-
-  async deleteRole(id: string) {
-    const response = await fetch(`${API_BASE_URL}/roles/${id}`, {
-      method: 'DELETE',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async getRolePermissions(id: string) {
-    const response = await fetch(`${API_BASE_URL}/roles/${id}/permissions`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
-  },
-
-  async assignPermissionsToRole(roleId: string, permissionIds: string[]) {
-    const response = await fetch(`${API_BASE_URL}/roles/${roleId}/permissions`, {
-      method: 'POST',
-      headers: getAuthHeaders(),
-      body: JSON.stringify({ permission_ids: permissionIds }),
-    });
-    return handleResponse(response);
-  },
-
-  // Permissions
-  async getPermissions() {
-    const response = await fetch(`${API_BASE_URL}/permissions`, {
-      method: 'GET',
-      headers: getAuthHeaders(),
-    });
-    return handleResponse(response);
+    const inst = me.institutionName;
+    const name =
+      typeof inst === 'string' && inst.trim() ? inst.trim() : 'Organization';
+    return [{ id: String(id), name }];
   },
 
   // Templates (FYERS T2 org research list/create + REST by id)

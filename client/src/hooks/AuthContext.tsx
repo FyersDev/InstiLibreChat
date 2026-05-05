@@ -92,7 +92,7 @@ const AuthContextProvider = ({
     onError: (error: TResError | unknown) => {
       const resError = error as TResError;
       doSetError(resError.message);
-      navigate('/login', { replace: true });
+      navigate('/c/new', { replace: true });
     },
   });
   const logoutUser = useLogoutUserMutation({
@@ -101,7 +101,7 @@ const AuthContextProvider = ({
         token: undefined,
         isAuthenticated: false,
         user: undefined,
-        redirect: data.redirect ?? '/login',
+        redirect: data.redirect ?? '/c/new',
       });
     },
     onError: (error) => {
@@ -110,7 +110,7 @@ const AuthContextProvider = ({
         token: undefined,
         isAuthenticated: false,
         user: undefined,
-        redirect: '/login',
+        redirect: '/c/new',
       });
     },
   });
@@ -147,7 +147,7 @@ const AuthContextProvider = ({
           if (authConfig?.test === true || isEmbedded.current) {
             return;
           }
-          navigate('/login');
+          navigate('/c/new');
         }
       },
       onError: (error) => {
@@ -155,7 +155,7 @@ const AuthContextProvider = ({
         if (authConfig?.test === true || isEmbedded.current) {
           return;
         }
-        navigate('/login');
+        navigate('/c/new');
       },
     });
   }, []);
@@ -166,7 +166,7 @@ const AuthContextProvider = ({
     } else if (userQuery.isError) {
       doSetError((userQuery.error as Error).message);
       if (!isEmbedded.current) {
-        navigate('/login', { replace: true });
+        navigate('/c/new', { replace: true });
       }
     }
     if (error != null && error && isAuthenticated) {

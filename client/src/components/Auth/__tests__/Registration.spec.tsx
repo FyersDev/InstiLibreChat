@@ -128,7 +128,7 @@ test('renders registration form', () => {
   expect(getByTestId('confirm_password')).toBeInTheDocument();
   expect(getByRole('button', { name: /Submit registration/i })).toBeInTheDocument();
   expect(getByRole('link', { name: 'Login' })).toBeInTheDocument();
-  expect(getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/login');
+  expect(getByRole('link', { name: 'Login' })).toHaveAttribute('href', '/c/new');
   expect(getByRole('link', { name: /Continue with Google/i })).toBeInTheDocument();
   expect(getByRole('link', { name: /Continue with Google/i })).toHaveAttribute(
     'href',

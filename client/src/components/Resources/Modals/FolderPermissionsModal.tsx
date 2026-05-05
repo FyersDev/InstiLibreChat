@@ -24,12 +24,9 @@ export default function FolderPermissionsModal({ folderId, onClose }: FolderPerm
   const loadData = async () => {
     try {
       setLoading(true);
-      const [permsData, rolesData] = await Promise.all([
-        saasApi.getFolderPermissions(folderId),
-        saasApi.getRoles(),
-      ]);
+      const permsData = await saasApi.getFolderPermissions(folderId);
       setPermissions(Array.isArray(permsData) ? permsData : []);
-      setRoles(Array.isArray(rolesData) ? rolesData : []);
+      setRoles([]);
     } catch (err: any) {
       setError(err.message || 'Failed to load permissions');
     } finally {
@@ -97,6 +94,12 @@ export default function FolderPermissionsModal({ folderId, onClose }: FolderPerm
             <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">
               Assign Permission
             </h3>
+            {availableRoles.length === 0 && !loading && (
+              <p className="text-xs text-amber-800 dark:text-amber-200/90 mb-3">
+                No role list is available without the removed directory API. You can still view or
+                remove existing folder permissions below.
+              </p>
+            )}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">

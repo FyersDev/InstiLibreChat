@@ -1,7 +1,5 @@
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import {
-  Login,
-  OTP,
   VerifyEmail,
   Registration,
   ResetPassword,
@@ -23,7 +21,6 @@ import Search from './Search';
 import Root from './Root';
 import AdminRoute from './AdminRoute';
 import TemplatesRoute from './TemplatesRoute';
-import ScreenerRoute from './ScreenerRoute';
 import ResourcesRoute from './ResourcesRoute';
 import FileViewRoute from './FileViewRoute';
 import ThemeFromQueryParam from '~/components/System/ThemeFromQueryParam';
@@ -116,14 +113,6 @@ export const router = createBrowserRouter(
           element: <LoginLayout />,
           children: [
             {
-              path: 'login',
-              element: <Login />,
-            },
-            {
-              path: 'login/otp',
-              element: <OTP />,
-            },
-            {
               path: 'login/2fa',
               element: <TwoFactorScreen />,
             },
@@ -173,10 +162,6 @@ export const router = createBrowserRouter(
             {
               path: 'templates',
               element: <TemplatesRoute />,
-            },
-            {
-              path: 'screener',
-              element: <ScreenerRoute />,
             },
           ],
         },
