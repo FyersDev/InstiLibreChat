@@ -1165,13 +1165,12 @@ export default function ResourcesRoute() {
                     <tr
                       key={file.id}
                       className={cn(
-                        'group cursor-pointer',
+                        'group',
                         'hover:bg-fig-Surface-neutral',
                         rowIndex % 2 === 0
                           ? 'bg-fig-Surface-standard'
                           : 'bg-fig-Surface-zero-neutral',
                       )}
-                      onDoubleClick={() => handleDownloadFile(file)}
                     >
                       <td
                         className={cn(
@@ -1192,9 +1191,17 @@ export default function ResourcesRoute() {
                           >
                             <FileIcon className="block h-5 w-5 flex-shrink-0 object-contain" />
                           </div>
-                          <div className="font-inter min-w-0 truncate text-sm font-medium leading-4 text-fig-Subject-standard">
+                          <button
+                            type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDownloadFile(file);
+                            }}
+                            className="font-inter min-w-0 max-w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-sm font-medium leading-4 text-blue-600 underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400"
+                            title={`Download ${file.name}`}
+                          >
                             {file.name}
-                          </div>
+                          </button>
                         </div>
                       </td>
                       <td
