@@ -751,8 +751,37 @@ export const saasApi = {
   },
 
   /**
-   * Opens presigned S3 URL in a new tab. Must open a placeholder window *before* any `await`
-   * so the browser still associates `window.open` with the user gesture (otherwise popups are blocked).
+   * Saves the document via the browser download UI (Save / folder picker). Uses a Blob + temporary
+   * `<a download>` — **no `window.open`**, so it works when popups are blocked or the app runs in an iframe.
+   *
+   * Other approaches (when this isn’t suitable):
+   * - **Open in new tab:** `openDocumentDownloadInNewTab` — needs popups allowed and a direct user gesture.
+   * - **Same-tab navigation:** `location.assign(presignedUrl)` — leaves the SPA (only as a last resort).
+   */
+  async downloadDocumentWithBrowser(
+    id: string,
+    orgId?: string | null,
+    filename?: string,
+  ): Promise<void> {
+    const org = requireConfluxOrg(orgId);
+    const blob = await researchConfluxApi.downloadDocument(org, id);
+    const safeName = filename?.trim() ? filename.trim() : `document-${id}`;
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = safeName;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    // Delay revoke so the download isn’t cancelled in Chrome/Safari.
+    setTimeout(() => URL.revokeObjectURL(url), 60_000);
+  },
+
+  /**
+   * Opens the presigned URL in a new tab (often used to view PDFs in-browser).
+   * Opens a placeholder tab synchronously before `await` to reduce popup blocking.
+   * Prefer `downloadDocumentWithBrowser` when you only need a file save and popups are unreliable.
    */
   async openDocumentDownloadInNewTab(id: string, orgId?: string | null): Promise<void> {
     const org = requireConfluxOrg(orgId);

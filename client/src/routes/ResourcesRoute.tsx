@@ -612,7 +612,7 @@ export default function ResourcesRoute() {
     }
   };
 
-  /** Conflux `GET .../documents/{id}/download` returns presigned URL — open S3 link in new tab. */
+  /** Fetch via presigned URL and trigger browser save dialog (avoids `window.open` / popup blockers). */
   const handleDownloadFile = async (file: FileNode) => {
     const docId = file.document_id ?? file.id;
     if (!docId) {
@@ -621,7 +621,7 @@ export default function ResourcesRoute() {
     }
     const orgId = isSuperAdmin ? selectedOrgId : userOrgId;
     try {
-      await saasApi.openDocumentDownloadInNewTab(String(docId), orgId);
+      await saasApi.downloadDocumentWithBrowser(String(docId), orgId, file.name);
     } catch (err: any) {
       showToast({
         message: err?.message || 'Failed to download file',
