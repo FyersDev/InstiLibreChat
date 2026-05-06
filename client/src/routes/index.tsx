@@ -1,3 +1,4 @@
+import { useEffect } from 'react';
 import { createBrowserRouter, Navigate, Outlet } from 'react-router-dom';
 import {
   VerifyEmail,
@@ -33,6 +34,22 @@ const StaticFileRoute = () => {
   return null;
 };
 
+/**
+ * GET /research/auth/embed is handled by insti-proxy (cookies + redirect), not the SPA.
+ * If the iframe revisits this URL via client-side navigation/history, React Router would 404.
+ * Force a full document load so the proxy can run embedHandler again.
+ */
+const EmbedAuthReload = () => {
+  useEffect(() => {
+    window.location.replace(window.location.href);
+  }, []);
+  return (
+    <div className="flex min-h-[40vh] items-center justify-center p-6 text-sm text-gray-600 dark:text-gray-400">
+      Signing you in…
+    </div>
+  );
+};
+
 const AuthLayout = () => (
   <Outlet />
 );
@@ -60,6 +77,10 @@ export const router = createBrowserRouter(
     {
       path: 'static/*',
       element: <StaticFileRoute />,
+    },
+    {
+      path: 'auth/embed',
+      element: <EmbedAuthReload />,
     },
     {
       path: 'share/:shareId',
