@@ -249,6 +249,29 @@ export interface ProcessorSuccessEnvelope {
   data?: Record<string, unknown>;
 }
 
+/** FYERS `GET .../research/predefined-agents` list item / single-agent `data`. */
+export interface PredefinedResearchAgent {
+  agentId: string;
+  name: string;
+  description?: string;
+  template: string;
+  variables: string[];
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
+/** FYERS `GET .../research/predefined-frameworks` list item / single-framework `data`. */
+export interface PredefinedResearchFramework {
+  frameworkId: string;
+  code: string;
+  name: string;
+  fields: Record<string, string>;
+  sortOrder?: number;
+  createdAt?: string;
+  updatedAt?: string;
+}
+
 /** Unwrapped from `GET .../documents/{id}/download` success `data` (same shape as multipart presign). */
 export interface PresignedHTTPRequest {
   url: string;
@@ -576,6 +599,45 @@ export const researchConfluxApi = {
     const url = fyersOrgResearchUrl(orgId, R.personas, personaId);
     const res = await confluxFetch(url, { method: 'DELETE' });
     await parseConfluxResponse(res);
+  },
+
+  async listPredefinedAgents(orgId: number | string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.predefinedAgents);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return parseConfluxResponse(res);
+  },
+
+  async getPredefinedAgent(orgId: number | string, agentId: string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.predefinedAgents, agentId);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return parseConfluxResponse(res);
+  },
+
+  async listPredefinedFrameworks(orgId: number | string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.predefinedFrameworks);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return parseConfluxResponse(res);
+  },
+
+  async getPredefinedFramework(
+    orgId: number | string,
+    frameworkId: string,
+  ): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.predefinedFrameworks, frameworkId);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return parseConfluxResponse(res);
   },
 
   async getFolder(orgId: number | string, folderId: string): Promise<unknown> {

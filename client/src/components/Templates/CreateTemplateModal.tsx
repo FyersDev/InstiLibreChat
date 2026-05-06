@@ -11,6 +11,7 @@ import {
   TextareaAutosize,
 } from '@librechat/client';
 import { ChevronDown, X } from 'lucide-react';
+import { usePredefinedResearchCatalog } from '~/hooks/usePredefinedResearchCatalog';
 import { cn } from '~/utils';
 
 export default function CreateTemplateModal({
@@ -29,61 +30,24 @@ export default function CreateTemplateModal({
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
+  const {
+    frameworksByCode,
+    frameworkList,
+    loading: catalogLoading,
+    error: catalogError,
+  } = usePredefinedResearchCatalog();
 
-  const frameworks = {
-    'R-T-F': {
-      name: 'R-T-F Framework',
-      fields: {
-        R: 'Act as a [ROLE]',
-        T: 'Create a [TASK]',
-        F: 'Show as [FORMAT]',
-      },
-    },
-    'T-A-G': {
-      name: 'T-A-G Framework',
-      fields: {
-        T: 'Define the [TASK]',
-        A: 'State the [ACTION]',
-        G: 'Clarify the [GOAL]',
-      },
-    },
-    'B-A-B': {
-      name: 'B-A-B Framework',
-      fields: {
-        B1: 'Explain the problem [BEFORE]',
-        A: 'State the outcome [AFTER]',
-        B2: 'Ask ChatGPT to be the [BRIDGE] between the two',
-      },
-    },
-    'C-A-R-E': {
-      name: 'C-A-R-E Framework',
-      fields: {
-        C: 'Give the [CONTEXT]',
-        A: 'Describe the [ACTION]',
-        R: 'Clarify the [RESULT]',
-        E: 'Give the [EXAMPLE]',
-      },
-    },
-    'R-I-S-E': {
-      name: 'R-I-S-E Framework',
-      fields: {
-        R: 'Specify the [ROLE]',
-        I: 'Describe the [INPUT]',
-        S: 'Ask for [STEPS]',
-        E: 'Describe the [EXPECTATION]',
-      },
-    },
-  };
-
-  const handleFrameworkChange = (framework: string) => {
-    if (framework === 'custom') {
+  const handleFrameworkChange = (frameworkCode: string) => {
+    if (frameworkCode === 'custom') {
       setFormData({ ...formData, framework: '', customTemplate: true, fields: {} });
+    } else if (!frameworkCode) {
+      setFormData({ ...formData, framework: '', customTemplate: false, fields: {} });
     } else {
       setFormData({
         ...formData,
-        framework,
+        framework: frameworkCode,
         customTemplate: false,
-        fields: (frameworks as any)[framework]?.fields ?? {},
+        fields: frameworksByCode[frameworkCode]?.fields ?? {},
       });
     }
   };
@@ -94,18 +58,20 @@ export default function CreateTemplateModal({
 
   const frameworkLabel = (() => {
     if (formData.customTemplate) return 'Custom template';
-    if (formData.framework) return (frameworks as any)[formData.framework].name as string;
+    if (catalogLoading) return 'Loading frameworks…';
+    if (formData.framework && frameworksByCode[formData.framework]) {
+      return frameworksByCode[formData.framework].name;
+    }
     return 'None';
   })();
 
   const renderBodyFields = () => {
-    if (formData.framework && !formData.customTemplate) {
+    if (formData.framework && !formData.customTemplate && frameworksByCode[formData.framework]) {
+      const fw = frameworksByCode[formData.framework];
       return (
         <div className="flex flex-col gap-[var(--Gap-zero-spacer)]">
-          <p className="fy-typography-label-tiny text-fig-Subject-primary">
-            {(frameworks as any)[formData.framework].name}
-          </p>
-          {Object.entries((frameworks as any)[formData.framework].fields).map(([key, label]) => (
+          <p className="fy-typography-label-tiny text-fig-Subject-primary">{fw.name}</p>
+          {Object.entries(fw.fields).map(([key, label]) => (
             <div key={key} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
               <label className="fy-typography-label-small text-fig-Subject-neutral">
                 {String(label)}
@@ -204,7 +170,7 @@ export default function CreateTemplateModal({
         return;
       }
     } else {
-      const frameworkFields = (frameworks as any)[formData.framework]?.fields || {};
+      const frameworkFields = frameworksByCode[formData.framework]?.fields || {};
       const allFilled = Object.keys(frameworkFields).every((key) => {
         const value = formData.fields[key];
         return value && value.trim() !== '';
@@ -274,7 +240,7 @@ export default function CreateTemplateModal({
 
         {/* Body */}
         <div className="flex max-h-[70vh] flex-col gap-[var(--Gap-parentChild)] overflow-y-auto px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]">
-          {error && (
+          {(error || catalogError) && (
             <div
               className={cn(
                 'fy-typography-body-small',
@@ -283,7 +249,7 @@ export default function CreateTemplateModal({
                 'text-fig-Subject-danger',
               )}
             >
-              {error}
+              {error || catalogError}
             </div>
           )}
 
@@ -356,10 +322,10 @@ export default function CreateTemplateModal({
                         setIsFrameworkMenuOpen(false);
                       },
                     },
-                    ...Object.keys(frameworks).map((key) => ({
-                      label: (frameworks as any)[key].name,
+                    ...frameworkList.map((fw) => ({
+                      label: fw.name,
                       onClick: () => {
-                        handleFrameworkChange(key);
+                        handleFrameworkChange(fw.code);
                         setIsFrameworkMenuOpen(false);
                       },
                     })),

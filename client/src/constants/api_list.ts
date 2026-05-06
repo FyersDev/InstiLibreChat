@@ -33,6 +33,8 @@ export const FYERS_ORG_RESEARCH_SEGMENTS = {
   folders: 'folders',
   templates: 'templates',
   personas: 'personas',
+  predefinedAgents: 'predefined-agents',
+  predefinedFrameworks: 'predefined-frameworks',
   multipart: 'multipart',
   parts: 'parts',
   complete: 'complete',
@@ -63,6 +65,8 @@ export const fyersT2Urls = {
   instiOrgResearchFolders: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/folders`,
   instiOrgResearchTemplates: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/templates`,
   instiOrgResearchPersonas: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/personas`,
+  instiOrgResearchPredefinedAgents: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/predefined-agents`,
+  instiOrgResearchPredefinedFrameworks: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/predefined-frameworks`,
   instiOrgResearchMultipartPart: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/multipart/parts/{partNumber}`,
   instiOrgResearchComplete: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/complete`,
 } as const;
@@ -136,6 +140,19 @@ export const fyersT2ApiList: ReadonlyArray<{
     method: 'GET',
     url: fyersT2Urls.instiOrgResearchPersonas,
     usedIn: 'researchConfluxApi.listPersonas, createPersona, updatePersona, deletePersona',
+  },
+  {
+    key: 'instiOrgResearchPredefinedAgents',
+    method: 'GET',
+    url: fyersT2Urls.instiOrgResearchPredefinedAgents,
+    usedIn: 'researchConfluxApi.listPredefinedAgents, getPredefinedAgent; saasApi.getPredefinedAgents',
+  },
+  {
+    key: 'instiOrgResearchPredefinedFrameworks',
+    method: 'GET',
+    url: fyersT2Urls.instiOrgResearchPredefinedFrameworks,
+    usedIn:
+      'researchConfluxApi.listPredefinedFrameworks, getPredefinedFramework; saasApi.getPredefinedFrameworks',
   },
   {
     key: 'instiOrgResearchMultipartPart',

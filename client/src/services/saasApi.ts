@@ -10,6 +10,8 @@ import {
   getFyersOrgIdFromJwt,
   getFyersResearchAuthHeaders,
   hasFyersResearchAuth,
+  type PredefinedResearchAgent,
+  type PredefinedResearchFramework,
   researchConfluxApi,
 } from '~/services/researchConfluxApi';
 
@@ -155,6 +157,131 @@ function effectiveConfluxOrgId(orgId?: string | null): string | null {
     return fromJwt;
   }
   return null;
+}
+
+function sortBySortOrder<T extends { sortOrder?: number }>(rows: T[]): T[] {
+  return [...rows].sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0));
+}
+
+function normalizePredefinedAgentRow(raw: unknown): PredefinedResearchAgent | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+  const r = raw as Record<string, unknown>;
+  const agentIdRaw = r.agentId ?? r.agent_id;
+  const name = r.name;
+  const template = r.template;
+  if (typeof agentIdRaw !== 'string' || !agentIdRaw.trim()) {
+    return null;
+  }
+  if (typeof name !== 'string' || typeof template !== 'string') {
+    return null;
+  }
+  const variables = Array.isArray(r.variables)
+    ? (r.variables as unknown[]).filter((v): v is string => typeof v === 'string')
+    : [];
+  const sortOrder =
+    typeof r.sortOrder === 'number'
+      ? r.sortOrder
+      : typeof r.sort_order === 'number'
+        ? r.sort_order
+        : undefined;
+  const out: PredefinedResearchAgent = {
+    agentId: agentIdRaw.trim(),
+    name,
+    template,
+    variables,
+  };
+  if (typeof r.description === 'string') {
+    out.description = r.description;
+  }
+  if (sortOrder !== undefined) {
+    out.sortOrder = sortOrder;
+  }
+  if (typeof r.createdAt === 'string') {
+    out.createdAt = r.createdAt;
+  }
+  if (typeof r.updatedAt === 'string') {
+    out.updatedAt = r.updatedAt;
+  }
+  return out;
+}
+
+function normalizePredefinedAgentsPayload(raw: unknown): PredefinedResearchAgent[] {
+  const p = raw as Record<string, unknown> | null;
+  if (!p) {
+    return [];
+  }
+  const list = p.agents;
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  const rows = list
+    .map((row) => normalizePredefinedAgentRow(row))
+    .filter((x): x is PredefinedResearchAgent => x != null);
+  return sortBySortOrder(rows);
+}
+
+function normalizePredefinedFrameworkRow(raw: unknown): PredefinedResearchFramework | null {
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+    return null;
+  }
+  const r = raw as Record<string, unknown>;
+  const frameworkIdRaw = r.frameworkId ?? r.framework_id;
+  const code = r.code;
+  const name = r.name;
+  const fieldsRaw = r.fields;
+  if (typeof frameworkIdRaw !== 'string' || !frameworkIdRaw.trim()) {
+    return null;
+  }
+  if (typeof code !== 'string' || !code.trim() || typeof name !== 'string') {
+    return null;
+  }
+  const fields: Record<string, string> = {};
+  if (fieldsRaw && typeof fieldsRaw === 'object' && !Array.isArray(fieldsRaw)) {
+    for (const [k, v] of Object.entries(fieldsRaw as Record<string, unknown>)) {
+      if (typeof v === 'string') {
+        fields[k] = v;
+      }
+    }
+  }
+  const sortOrder =
+    typeof r.sortOrder === 'number'
+      ? r.sortOrder
+      : typeof r.sort_order === 'number'
+        ? r.sort_order
+        : undefined;
+  const out: PredefinedResearchFramework = {
+    frameworkId: frameworkIdRaw.trim(),
+    code: code.trim(),
+    name,
+    fields,
+  };
+  if (sortOrder !== undefined) {
+    out.sortOrder = sortOrder;
+  }
+  if (typeof r.createdAt === 'string') {
+    out.createdAt = r.createdAt;
+  }
+  if (typeof r.updatedAt === 'string') {
+    out.updatedAt = r.updatedAt;
+  }
+  return out;
+}
+
+function normalizePredefinedFrameworksPayload(raw: unknown): PredefinedResearchFramework[] {
+  const p = raw as Record<string, unknown> | null;
+  if (!p) {
+    return [];
+  }
+  const list = p.frameworks;
+  if (!Array.isArray(list)) {
+    return [];
+  }
+  const rows = list
+    .map((row) => normalizePredefinedFrameworkRow(row))
+    .filter((x): x is PredefinedResearchFramework => x != null);
+  return sortBySortOrder(rows);
 }
 
 /** Maps FYERS `GET /insti/admin/user-details` payload to fields used across InstiLibreChat (`org_id`, `org_role`, …). */
@@ -526,6 +653,40 @@ export const saasApi = {
   async deletePersona(id: string, orgId?: string | null) {
     const org = requireConfluxOrg(orgId);
     await researchConfluxApi.deletePersona(org, id);
+  },
+
+  async getPredefinedAgents(orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.listPredefinedAgents(org);
+    const data = normalizePredefinedAgentsPayload(raw);
+    return { data };
+  },
+
+  async getPredefinedAgent(agentId: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.getPredefinedAgent(org, agentId);
+    const row = normalizePredefinedAgentRow(raw);
+    if (!row) {
+      throw new Error('Invalid predefined agent response');
+    }
+    return row;
+  },
+
+  async getPredefinedFrameworks(orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.listPredefinedFrameworks(org);
+    const data = normalizePredefinedFrameworksPayload(raw);
+    return { data };
+  },
+
+  async getPredefinedFramework(frameworkId: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.getPredefinedFramework(org, frameworkId);
+    const row = normalizePredefinedFrameworkRow(raw);
+    if (!row) {
+      throw new Error('Invalid predefined framework response');
+    }
+    return row;
   },
 
   // Folders (FYERS T2 / insti-conflux-users only)

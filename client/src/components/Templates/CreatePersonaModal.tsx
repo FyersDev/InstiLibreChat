@@ -11,159 +11,9 @@ import {
 } from '@librechat/client';
 import { ChevronDown, X } from 'lucide-react';
 import { useState } from 'react';
+import { usePredefinedResearchCatalog } from '~/hooks/usePredefinedResearchCatalog';
 import { cn } from '~/utils';
 
-// Predefined Personas
-const PREDEFINED_PERSONAS = [
-  {
-    name: 'Financial Advisor',
-    description: 'Provide investment, market, and personal finance guidance.',
-    template: `Act as a financial advisor specializing in {{focus_area}}.
-
-User financial context: {{user_context}}
-
-Provide:
-
-1. Market overview  
-
-2. Recommended actions  
-
-3. Risks involved  
-
-4. Clear reasoning behind each step  
-
-Keep the explanation simple and actionable.`,
-    variables: ['focus_area', 'user_context'],
-  },
-  {
-    name: 'Business Consultant',
-    description: 'Offer strategic, operational, or profitability advice for businesses.',
-    template: `Act as a business consultant focusing on {{business_domain}}.
-
-Problem to analyze: {{problem_statement}}
-
-Provide:
-
-- Root cause analysis  
-
-- Strategic recommendations  
-
-- Impact on revenue/operations  
-
-- Steps to execute`,
-    variables: ['business_domain', 'problem_statement'],
-  },
-  {
-    name: 'Research Assistant',
-    description: 'Gather structured information and present concise findings.',
-    template: `Act as a research assistant.
-
-Research topic: {{topic}}
-
-Provide:
-
-- Short summary  
-
-- Key findings  
-
-- Comparisons (if applicable)  
-
-- Useful insights`,
-    variables: ['topic'],
-  },
-  {
-    name: 'Report Generator',
-    description: 'Convert raw text into a structured professional report.',
-    template: `Generate a structured report from the following input:
-
-{{input_data}}
-
-Format:
-
-- Executive Summary  
-
-- Key Insights  
-
-- Supporting Details  
-
-- Recommendations`,
-    variables: ['input_data'],
-  },
-  {
-    name: 'Risk Analyst',
-    description: 'Identify threats, vulnerabilities, and mitigation strategies.',
-    template: `Act as a risk analyst.
-
-Context: {{context}}
-
-Provide:
-
-- Identified risks  
-
-- Probability & impact  
-
-- Mitigation strategies  
-
-- Priority level`,
-    variables: ['context'],
-  },
-  {
-    name: 'Marketing Strategist',
-    description: 'Develop campaign ideas, positioning, and messaging.',
-    template: `Act as a marketing strategist.
-
-Goal: {{marketing_goal}}
-
-Target audience: {{target_audience}}
-
-Provide:
-
-- Positioning  
-
-- Messaging  
-
-- Campaign ideas  
-
-- CTA suggestions`,
-    variables: ['marketing_goal', 'target_audience'],
-  },
-  {
-    name: 'Technical Explainer',
-    description: 'Explain complex concepts in simple, intuitive ways.',
-    template: `Act as a technical explainer.
-
-Topic: {{topic}}
-
-Explain:
-
-- What it is  
-
-- How it works  
-
-- Why it matters  
-
-- Simple example`,
-    variables: ['topic'],
-  },
-  {
-    name: 'Summarizer',
-    description: 'Produce concise, clear summaries.',
-    template: `Summarize the following text:
-
-{{text}}
-
-Keep it:
-
-- Concise  
-
-- Clear  
-
-- Covering only the essential points`,
-    variables: ['text'],
-  },
-];
-
-// Create Persona Modal
 export default function CreatePersonaModal({
   onClose,
   onSave,
@@ -171,27 +21,34 @@ export default function CreatePersonaModal({
   onClose: () => void;
   onSave: (persona: any) => Promise<void>;
 }) {
+  const { agents: predefinedAgents, loading: catalogLoading, error: catalogError } =
+    usePredefinedResearchCatalog();
   const [formData, setFormData] = useState({
     name: '',
     description: '',
     usePredefined: false,
+    /** FYERS predefined agent UUID, or '' */
     selectedPredefinedId: '',
   });
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
 
-  // Handle predefined persona selection
-  const handlePredefinedSelect = (predefinedId: string) => {
-    const predefined = PREDEFINED_PERSONAS.find((_, idx) => idx.toString() === predefinedId);
-    if (predefined) {
-      setFormData({
-        ...formData,
-        name: predefined.name,
-        description: predefined.template, // Fill description with persona template (with variables like {{focus_area}})
-        selectedPredefinedId: predefinedId,
-        // Template selection remains separate - user can select template or write custom
-      });
+  const selectedAgent = predefinedAgents.find((a) => a.agentId === formData.selectedPredefinedId);
+
+  const handlePredefinedSelect = (agentId: string) => {
+    if (!agentId) {
+      setFormData((prev) => ({ ...prev, selectedPredefinedId: '' }));
+      return;
+    }
+    const agent = predefinedAgents.find((a) => a.agentId === agentId);
+    if (agent) {
+      setFormData((prev) => ({
+        ...prev,
+        name: agent.name,
+        description: agent.template,
+        selectedPredefinedId: agentId,
+      }));
     }
   };
 
@@ -267,7 +124,7 @@ export default function CreatePersonaModal({
 
         {/* Body */}
         <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
-          {error && (
+          {(error || catalogError) && (
             <div
               className={cn(
                 'fy-typography-body-small',
@@ -276,7 +133,7 @@ export default function CreatePersonaModal({
                 'text-fig-Subject-danger',
               )}
             >
-              {error}
+              {error || catalogError}
             </div>
           )}
 
@@ -333,9 +190,11 @@ export default function CreatePersonaModal({
                       )}
                     >
                       <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
-                        {formData.selectedPredefinedId
-                          ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
-                          : 'None'}
+                        {catalogLoading
+                          ? 'Loading agents…'
+                          : selectedAgent
+                            ? selectedAgent.name
+                            : 'None'}
                       </span>
                       <ChevronDown
                         className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
@@ -351,10 +210,10 @@ export default function CreatePersonaModal({
                         setIsPredefinedMenuOpen(false);
                       },
                     },
-                    ...PREDEFINED_PERSONAS.map((persona, idx) => ({
-                      label: persona.name,
+                    ...predefinedAgents.map((agent) => ({
+                      label: agent.name,
                       onClick: () => {
-                        handlePredefinedSelect(idx.toString());
+                        handlePredefinedSelect(agent.agentId);
                         setIsPredefinedMenuOpen(false);
                       },
                     })),
@@ -402,11 +261,11 @@ export default function CreatePersonaModal({
                       : `Example: Conduct a deep research on the company and provide key findings.`
                   }
                 />
-                {formData.selectedPredefinedId && (
+                {formData.selectedPredefinedId && selectedAgent?.variables?.length ? (
                   <p className="fy-typography-label-tiny text-fig-Subject-neutral">
-                    {`Variables to edit: ${PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map((v) => `{{${v}}}`).join(', ')}`}
+                    {`Variables to edit: ${selectedAgent.variables.map((v) => `{{${v}}}`).join(', ')}`}
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
 

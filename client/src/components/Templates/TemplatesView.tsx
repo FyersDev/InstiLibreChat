@@ -15,6 +15,9 @@ import { ChevronDown, Edit, Eye, MoreVertical, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useSearchParams } from 'react-router-dom';
+import CreatePersonaModal from '~/components/Templates/CreatePersonaModal';
+import CreateTemplateModal from '~/components/Templates/CreateTemplateModal';
+import { usePredefinedResearchCatalog } from '~/hooks/usePredefinedResearchCatalog';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
 import { asset } from '~/utils/assetPath';
@@ -1113,433 +1116,6 @@ export default function TemplatesView() {
   );
 }
 
-// Create Template Modal
-function CreateTemplateModal({
-  onClose,
-  onSave,
-}: {
-  onClose: () => void;
-  onSave: (template: any) => Promise<void>;
-}) {
-  const [formData, setFormData] = useState({
-    name: '',
-    framework: '',
-    customTemplate: false,
-    fields: {} as Record<string, string>,
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
-
-  const frameworks = {
-    'R-T-F': {
-      name: 'R-T-F Framework',
-      fields: {
-        R: 'Act as a [ROLE]',
-        T: 'Create a [TASK]',
-        F: 'Show as [FORMAT]',
-      },
-    },
-    'T-A-G': {
-      name: 'T-A-G Framework',
-      fields: {
-        T: 'Define the [TASK]',
-        A: 'State the [ACTION]',
-        G: 'Clarify the [GOAL]',
-      },
-    },
-    'B-A-B': {
-      name: 'B-A-B Framework',
-      fields: {
-        B1: 'Explain the problem [BEFORE]',
-        A: 'State the outcome [AFTER]',
-        B2: 'Ask ChatGPT to be the [BRIDGE] between the two',
-      },
-    },
-    'C-A-R-E': {
-      name: 'C-A-R-E Framework',
-      fields: {
-        C: 'Give the [CONTEXT]',
-        A: 'Describe the [ACTION]',
-        R: 'Clarify the [RESULT]',
-        E: 'Give the [EXAMPLE]',
-      },
-    },
-    'R-I-S-E': {
-      name: 'R-I-S-E Framework',
-      fields: {
-        R: 'Specify the [ROLE]',
-        I: 'Describe the [INPUT]',
-        S: 'Ask for [STEPS]',
-        E: 'Describe the [EXPECTATION]',
-      },
-    },
-  };
-
-  const handleFrameworkChange = (framework: string) => {
-    if (framework === 'custom') {
-      setFormData({
-        ...formData,
-        framework: '',
-        customTemplate: true,
-        fields: {},
-      });
-    } else {
-      setFormData({
-        ...formData,
-        framework: framework,
-        customTemplate: false,
-        fields: (frameworks as any)[framework].fields,
-      });
-    }
-  };
-
-  const handleFieldChange = (key: string, value: string) => {
-    setFormData({
-      ...formData,
-      fields: {
-        ...formData.fields,
-        [key]: value,
-      },
-    });
-  };
-
-  const frameworkLabel = (() => {
-    if (formData.customTemplate) {
-      return 'Custom template';
-    }
-    if (formData.framework) {
-      return (frameworks as any)[formData.framework].name as string;
-    }
-    return 'None';
-  })();
-
-  const renderBodyFields = () => {
-    if (formData.framework && !formData.customTemplate) {
-      return (
-        <div className="flex flex-col gap-[var(--Gap-zero-spacer)]">
-          <p className="fy-typography-label-tiny text-fig-Subject-primary">
-            {(frameworks as any)[formData.framework].name}
-          </p>
-          {Object.entries((frameworks as any)[formData.framework].fields).map(([key, label]) => (
-            <div key={key} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
-              <label className="fy-typography-label-small text-fig-Subject-neutral">
-                {String(label)}
-              </label>
-              <TextareaAutosize
-                value={formData.fields[key] || ''}
-                onChange={(e) => handleFieldChange(key, e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' && !e.shiftKey) {
-                    e.preventDefault();
-                  }
-                }}
-                placeholder={`Enter ${String(label).toLowerCase()}`}
-                required
-                minRows={2}
-                maxRows={6}
-                aria-label={String(label)}
-                className={cn(
-                  'fy-typography-body-small w-full resize-none',
-                  'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                  'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
-                  'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
-                  'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
-                  'transition-colors duration-200',
-                )}
-              />
-            </div>
-          ))}
-        </div>
-      );
-    }
-
-    if (formData.customTemplate) {
-      return (
-        <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
-          <label className="fy-typography-label-small text-fig-Subject-neutral">
-            {'Description'}
-            <span className="text-fig-Subject-danger"> {'*'}</span>
-          </label>
-          <TextareaAutosize
-            value={formData.fields.custom || ''}
-            onChange={(e) => handleFieldChange('custom', e.target.value)}
-            minRows={4}
-            maxRows={10}
-            placeholder="Example: Create custom templates for executive, analytical view."
-            required
-            aria-label="Custom template content"
-            className={cn(
-              'fy-typography-body-small w-full resize-none',
-              'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-              'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
-              'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
-              'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
-              'transition-colors duration-200',
-            )}
-          />
-        </div>
-      );
-    }
-
-    return (
-      <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
-        <label className="fy-typography-label-small text-fig-Subject-neutral">
-          {'Description'}
-        </label>
-        <TextareaAutosize
-          value={formData.fields.custom || ''}
-          onChange={(e) => handleFieldChange('custom', e.target.value)}
-          minRows={3}
-          maxRows={8}
-          placeholder="Example: Create custom templates for executive, analytical view."
-          aria-label="Template description"
-          className={cn(
-            'fy-typography-body-small w-full resize-none',
-            'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-            'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
-            'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
-            'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
-            'transition-colors duration-200',
-          )}
-        />
-      </div>
-    );
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
-    if (!formData.name.trim()) {
-      setError('Template name is required');
-      return;
-    }
-
-    if (formData.customTemplate) {
-      if (!formData.fields.custom || !formData.fields.custom.trim()) {
-        setError('Custom template content is required');
-        return;
-      }
-    } else {
-      const frameworkFields = (frameworks as any)[formData.framework]?.fields || {};
-      const allFilled = Object.keys(frameworkFields).every((key) => {
-        const value = formData.fields[key];
-        return value && value.trim() !== '';
-      });
-      if (!allFilled) {
-        setError('Please fill in all framework fields');
-        return;
-      }
-    }
-
-    const template = {
-      name: formData.name,
-      framework: formData.customTemplate ? 'custom' : formData.framework,
-      is_custom: formData.customTemplate,
-      content: formData.fields,
-    };
-
-    setLoading(true);
-    try {
-      await onSave(template);
-      onClose();
-    } catch (error: any) {
-      setError(error.message || 'Failed to create template');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent
-        showCloseButton={false}
-        className={cn(
-          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
-          'gap-0',
-          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
-          'rounded-[var(--Corner-highlyRounded)]',
-          'shadow-none',
-          'text-fig-Subject-standard',
-          'dark:!bg-fig-Surface-one-standard',
-        )}
-      >
-        {/* Header */}
-        <DialogHeader
-          className={cn(
-            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
-            'px-[var(--Gap-parentChild)] pt-[var(--Padding-sibling)]',
-          )}
-        >
-          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
-            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
-              {'Create template'}
-            </DialogTitle>
-            <button
-              type="button"
-              onClick={onClose}
-              className={cn(
-                'inline-flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] items-center justify-center',
-                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
-                'hover:bg-fig-Surface-neutral',
-                'focus:outline-none focus-visible:ring-fig-Stroke-primary',
-              )}
-              aria-label="Close"
-            >
-              <X className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)]" aria-hidden />
-            </button>
-          </div>
-        </DialogHeader>
-
-        {/* Body */}
-        <div className="flex max-h-[70vh] flex-col gap-[var(--Gap-parentChild)] overflow-y-auto px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]">
-          {error && (
-            <div
-              className={cn(
-                'fy-typography-body-small',
-                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                'bg-fig-Surface-one-danger px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
-                'text-fig-Subject-danger',
-              )}
-            >
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
-            {/* Inner card */}
-            <div
-              className={cn(
-                'flex flex-col gap-[var(--Gap-zero-spacer)]',
-                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
-                'p-[var(--Padding-spacer)]',
-              )}
-            >
-              {/* Template name */}
-              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
-                <label className="fy-typography-label-small text-fig-Subject-neutral">
-                  {'Template name'}
-                </label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  placeholder="Example: Executive summary, detailed company analysis"
-                  className={cn(
-                    'fy-typography-body-small h-[var(--Size-input)] w-full',
-                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                    '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
-                    '!placeholder:text-fig-Subject-soft',
-                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
-                    'transition-colors duration-200',
-                  )}
-                />
-              </div>
-
-              {/* Framework selector */}
-              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
-                <label className="fy-typography-label-small text-fig-Subject-neutral">
-                  {'Select framework'}
-                </label>
-                <DropdownPopup
-                  portal={false}
-                  sameWidth={true}
-                  anchor={{ x: 'start', y: 'bottom' }}
-                  menuId="framework-selector-create"
-                  isOpen={isFrameworkMenuOpen}
-                  setIsOpen={setIsFrameworkMenuOpen}
-                  trigger={
-                    <Ariakit.MenuButton
-                      className={cn(
-                        'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
-                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
-                        'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
-                        'transition-colors hover:border-fig-Stroke-standard',
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
-                        {frameworkLabel}
-                      </span>
-                      <ChevronDown
-                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
-                        aria-hidden
-                      />
-                    </Ariakit.MenuButton>
-                  }
-                  items={[
-                    {
-                      label: 'None',
-                      onClick: () => {
-                        handleFrameworkChange('');
-                        setIsFrameworkMenuOpen(false);
-                      },
-                    },
-                    ...Object.keys(frameworks).map((key) => ({
-                      label: (frameworks as any)[key].name,
-                      onClick: () => {
-                        handleFrameworkChange(key);
-                        setIsFrameworkMenuOpen(false);
-                      },
-                    })),
-                    {
-                      label: 'Custom template',
-                      onClick: () => {
-                        handleFrameworkChange('custom');
-                        setIsFrameworkMenuOpen(false);
-                      },
-                    },
-                  ]}
-                  className={cn(
-                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                    'bg-fig-Surface-standard shadow-sm',
-                  )}
-                  itemClassName={cn(
-                    'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
-                    'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
-                    'cursor-pointer transition-colors',
-                  )}
-                />
-              </div>
-
-              {/* Description / framework fields */}
-              {renderBodyFields()}
-            </div>
-
-            {/* Footer buttons */}
-            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
-              <Button
-                type="submit"
-                disabled={loading}
-                className={cn(
-                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
-                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
-                  'transition-opacity hover:opacity-90',
-                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
-                  'disabled:opacity-50',
-                )}
-              >
-                {loading ? 'Creating...' : 'Create'}
-              </Button>
-              <Button
-                type="button"
-                onClick={onClose}
-                className={cn(
-                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
-                  'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
-                  'transition-colors hover:bg-fig-Surface-neutral',
-                  'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
-                )}
-              >
-                {'Dismiss'}
-              </Button>
-            </div>
-          </form>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 type TemplateFrameworkMap = Record<
   string,
@@ -1614,87 +1190,72 @@ function EditTemplateModal({
   onSave: (template: any) => Promise<void>;
   readOnly?: boolean;
 }) {
-  const frameworks: TemplateFrameworkMap = {
-    'R-T-F': {
-      name: 'R-T-F Framework',
-      fields: {
-        R: 'Act as a [ROLE]',
-        T: 'Create a [TASK]',
-        F: 'Show as [FORMAT]',
-      },
-    },
-    'T-A-G': {
-      name: 'T-A-G Framework',
-      fields: {
-        T: 'Define the [TASK]',
-        A: 'State the [ACTION]',
-        G: 'Clarify the [GOAL]',
-      },
-    },
-    'B-A-B': {
-      name: 'B-A-B Framework',
-      fields: {
-        B1: 'Explain the problem [BEFORE]',
-        A: 'State the outcome [AFTER]',
-        B2: 'Ask ChatGPT to be the [BRIDGE] between the two',
-      },
-    },
-    'C-A-R-E': {
-      name: 'C-A-R-E Framework',
-      fields: {
-        C: 'Give the [CONTEXT]',
-        A: 'Describe the [ACTION]',
-        R: 'Clarify the [RESULT]',
-        E: 'Give the [EXAMPLE]',
-      },
-    },
-    'R-I-S-E': {
-      name: 'R-I-S-E Framework',
-      fields: {
-        R: 'Specify the [ROLE]',
-        I: 'Describe the [INPUT]',
-        S: 'Ask for [STEPS]',
-        E: 'Describe the [EXPECTATION]',
-      },
-    },
-  };
+  const {
+    frameworksByCode,
+    frameworkList,
+    loading: catalogLoading,
+    error: catalogError,
+  } = usePredefinedResearchCatalog();
 
-  const [formData, setFormData] = useState(() =>
-    initialEditTemplateFormState(template, frameworks),
-  );
+  const templateStableKey =
+    researchTemplateId(template as object) ??
+    `${String(template?.name ?? '')}:${String(template?.framework ?? '')}`;
+
+  const [formData, setFormData] = useState<ReturnType<
+    typeof initialEditTemplateFormState
+  > | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [isFrameworkMenuOpen, setIsFrameworkMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (catalogLoading) {
+      return;
+    }
+    setFormData(initialEditTemplateFormState(template, frameworksByCode));
+  }, [catalogLoading, templateStableKey, frameworksByCode]);
 
   const handleFrameworkChange = (framework: string) => {
     if (readOnly) {
       return;
     }
     if (framework === 'custom') {
-      setFormData({
-        ...formData,
-        framework: '',
-        customTemplate: true,
-        fields: formData.fields.custom ? { custom: formData.fields.custom } : {},
-      });
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              framework: '',
+              customTemplate: true,
+              fields: prev.fields.custom ? { custom: prev.fields.custom } : {},
+            }
+          : prev,
+      );
     } else if (!framework) {
-      setFormData({
-        ...formData,
-        framework: '',
-        customTemplate: false,
-        fields: {},
-      });
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              framework: '',
+              customTemplate: false,
+              fields: {},
+            }
+          : prev,
+      );
     } else {
-      const def = frameworks[framework];
+      const def = frameworksByCode[framework];
       if (!def) {
         return;
       }
-      setFormData({
-        ...formData,
-        framework,
-        customTemplate: false,
-        fields: def.fields,
-      });
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              framework,
+              customTemplate: false,
+              fields: def.fields,
+            }
+          : prev,
+      );
     }
   };
 
@@ -1702,13 +1263,17 @@ function EditTemplateModal({
     if (readOnly) {
       return;
     }
-    setFormData({
-      ...formData,
-      fields: {
-        ...formData.fields,
-        [key]: value,
-      },
-    });
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            fields: {
+              ...prev.fields,
+              [key]: value,
+            },
+          }
+        : prev,
+    );
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -1716,21 +1281,25 @@ function EditTemplateModal({
     if (readOnly) {
       return;
     }
+    const fd = formData;
+    if (!fd) {
+      return;
+    }
     setError(null);
-    if (!formData.name.trim()) {
+    if (!fd.name.trim()) {
       setError('Template name is required');
       return;
     }
 
-    if (formData.customTemplate) {
-      if (!formData.fields.custom || !formData.fields.custom.trim()) {
+    if (fd.customTemplate) {
+      if (!fd.fields.custom || !fd.fields.custom.trim()) {
         setError('Custom template content is required');
         return;
       }
     } else {
-      const frameworkFields = frameworks[formData.framework]?.fields || {};
+      const frameworkFields = frameworksByCode[fd.framework]?.fields || {};
       const allFilled = Object.keys(frameworkFields).every((key) => {
-        const value = formData.fields[key];
+        const value = fd.fields[key];
         return value && value.trim() !== '';
       });
       if (!allFilled) {
@@ -1740,10 +1309,10 @@ function EditTemplateModal({
     }
 
     const updatedTemplate = {
-      name: formData.name,
-      framework: formData.customTemplate ? 'custom' : formData.framework,
-      is_custom: formData.customTemplate,
-      content: formData.fields,
+      name: fd.name,
+      framework: fd.customTemplate ? 'custom' : fd.framework,
+      is_custom: fd.customTemplate,
+      content: fd.fields,
     };
 
     setLoading(true);
@@ -1756,6 +1325,29 @@ function EditTemplateModal({
       setLoading(false);
     }
   };
+
+  if (catalogLoading || !formData) {
+    return (
+      <DialogPrimitive.Root open={true} onOpenChange={onClose}>
+        <DialogPrimitive.Portal>
+          <DialogPrimitive.Overlay className="fixed inset-0 z-[999] bg-transparent" />
+          <DialogPrimitive.Content
+            className={cn(
+              'fixed left-1/2 top-1/2 z-[999] flex w-full max-w-[var(--Size-overlay)] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden p-0',
+              'gap-0',
+              'border border-fig-Stroke-soft bg-fig-Surface-one-standard',
+              'rounded-[var(--Corner-highlyRounded)]',
+              'px-[var(--Gap-parentChild)] py-[var(--Padding-sibling)]',
+              'text-fig-Subject-standard shadow-none',
+              'animate-in data-[state=open]:fade-in-90',
+            )}
+          >
+            <p className="fy-typography-body-small text-fig-Subject-neutral">Loading frameworks…</p>
+          </DialogPrimitive.Content>
+        </DialogPrimitive.Portal>
+      </DialogPrimitive.Root>
+    );
+  }
 
   return (
     <DialogPrimitive.Root open={true} onOpenChange={onClose}>
@@ -1800,7 +1392,7 @@ function EditTemplateModal({
 
           {/* Body */}
           <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
-            {error && (
+            {(error || catalogError) && (
               <div
                 className={cn(
                   'fy-typography-body-small',
@@ -1809,7 +1401,7 @@ function EditTemplateModal({
                   'text-fig-Subject-danger',
                 )}
               >
-                {error}
+                {error || catalogError}
               </div>
             )}
 
@@ -1831,7 +1423,9 @@ function EditTemplateModal({
                     type="text"
                     value={formData.name}
                     readOnly={readOnly}
-                    onChange={(e) => setFormData({ ...formData, name: e.target.value })}
+                    onChange={(e) =>
+                      setFormData((prev) => (prev ? { ...prev, name: e.target.value } : prev))
+                    }
                     required
                     placeholder="Example: Research template"
                     className={cn(
@@ -1876,8 +1470,8 @@ function EditTemplateModal({
                         <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
                           {formData.customTemplate
                             ? 'Create Custom Template'
-                            : formData.framework && frameworks[formData.framework]
-                              ? frameworks[formData.framework].name
+                            : formData.framework && frameworksByCode[formData.framework]
+                              ? frameworksByCode[formData.framework].name
                               : '-- Select Framework --'}
                         </span>
                         <ChevronDown
@@ -1894,10 +1488,10 @@ function EditTemplateModal({
                           setIsFrameworkMenuOpen(false);
                         },
                       },
-                      ...Object.keys(frameworks).map((key) => ({
-                        label: frameworks[key].name,
+                      ...frameworkList.map((fw) => ({
+                        label: fw.name,
                         onClick: () => {
-                          handleFrameworkChange(key);
+                          handleFrameworkChange(fw.code);
                           setIsFrameworkMenuOpen(false);
                         },
                       })),
@@ -1924,12 +1518,12 @@ function EditTemplateModal({
                 {/* Framework-specific fields */}
                 {formData.framework &&
                   !formData.customTemplate &&
-                  frameworks[formData.framework] && (
+                  frameworksByCode[formData.framework] && (
                   <div className="flex flex-col gap-[var(--Gap-zero-spacer)]">
                     <p className="fy-typography-label-small text-fig-Subject-neutral">
-                      {frameworks[formData.framework].name}
+                      {frameworksByCode[formData.framework].name}
                     </p>
-                    {Object.entries(frameworks[formData.framework].fields).map(
+                    {Object.entries(frameworksByCode[formData.framework].fields).map(
                       ([key, label]) => (
                         <div key={key} className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
                           <label className="fy-typography-label-small text-fig-Subject-neutral">
@@ -2032,424 +1626,6 @@ function EditTemplateModal({
   );
 }
 
-// Predefined Personas
-const PREDEFINED_PERSONAS = [
-  {
-    name: 'Financial Advisor',
-    description: 'Provide investment, market, and personal finance guidance.',
-    template: `Act as a financial advisor specializing in {{focus_area}}.
-
-User financial context: {{user_context}}
-
-Provide:
-
-1. Market overview  
-
-2. Recommended actions  
-
-3. Risks involved  
-
-4. Clear reasoning behind each step  
-
-Keep the explanation simple and actionable.`,
-    variables: ['focus_area', 'user_context'],
-  },
-  {
-    name: 'Business Consultant',
-    description: 'Offer strategic, operational, or profitability advice for businesses.',
-    template: `Act as a business consultant focusing on {{business_domain}}.
-
-Problem to analyze: {{problem_statement}}
-
-Provide:
-
-- Root cause analysis  
-
-- Strategic recommendations  
-
-- Impact on revenue/operations  
-
-- Steps to execute`,
-    variables: ['business_domain', 'problem_statement'],
-  },
-  {
-    name: 'Research Assistant',
-    description: 'Gather structured information and present concise findings.',
-    template: `Act as a research assistant.
-
-Research topic: {{topic}}
-
-Provide:
-
-- Short summary  
-
-- Key findings  
-
-- Comparisons (if applicable)  
-
-- Useful insights`,
-    variables: ['topic'],
-  },
-  {
-    name: 'Report Generator',
-    description: 'Convert raw text into a structured professional report.',
-    template: `Generate a structured report from the following input:
-
-{{input_data}}
-
-Format:
-
-- Executive Summary  
-
-- Key Insights  
-
-- Supporting Details  
-
-- Recommendations`,
-    variables: ['input_data'],
-  },
-  {
-    name: 'Risk Analyst',
-    description: 'Identify threats, vulnerabilities, and mitigation strategies.',
-    template: `Act as a risk analyst.
-
-Context: {{context}}
-
-Provide:
-
-- Identified risks  
-
-- Probability & impact  
-
-- Mitigation strategies  
-
-- Priority level`,
-    variables: ['context'],
-  },
-  {
-    name: 'Marketing Strategist',
-    description: 'Develop campaign ideas, positioning, and messaging.',
-    template: `Act as a marketing strategist.
-
-Goal: {{marketing_goal}}
-
-Target audience: {{target_audience}}
-
-Provide:
-
-- Positioning  
-
-- Messaging  
-
-- Campaign ideas  
-
-- CTA suggestions`,
-    variables: ['marketing_goal', 'target_audience'],
-  },
-  {
-    name: 'Technical Explainer',
-    description: 'Explain complex concepts in simple, intuitive ways.',
-    template: `Act as a technical explainer.
-
-Topic: {{topic}}
-
-Explain:
-
-- What it is  
-
-- How it works  
-
-- Why it matters  
-
-- Simple example`,
-    variables: ['topic'],
-  },
-  {
-    name: 'Summarizer',
-    description: 'Produce concise, clear summaries.',
-    template: `Summarize the following text:
-
-{{text}}
-
-Keep it:
-
-- Concise  
-
-- Clear  
-
-- Covering only the essential points`,
-    variables: ['text'],
-  },
-];
-
-// Create Persona Modal
-function CreatePersonaModal({
-  onClose,
-  onSave,
-}: {
-  onClose: () => void;
-  onSave: (persona: any) => Promise<void>;
-}) {
-  const [formData, setFormData] = useState({
-    name: '',
-    description: '',
-    usePredefined: false,
-    selectedPredefinedId: '',
-  });
-  const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
-
-  // Handle predefined persona selection
-  const handlePredefinedSelect = (predefinedId: string) => {
-    const predefined = PREDEFINED_PERSONAS.find((_, idx) => idx.toString() === predefinedId);
-    if (predefined) {
-      setFormData({
-        ...formData,
-        name: predefined.name,
-        description: predefined.template, // Fill description with persona template (with variables like {{focus_area}})
-        selectedPredefinedId: predefinedId,
-        // Template selection remains separate - user can select template or write custom
-      });
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.name.trim()) {
-      setError('Persona name is required');
-      return;
-    }
-    // Description is optional when using predefined persona (auto-filled)
-    if (!formData.selectedPredefinedId && !formData.description.trim()) {
-      setError('Description is required');
-      return;
-    }
-    const persona = {
-      name: formData.name,
-      description: formData.description || null,
-      is_custom_template: true,
-      content: {},
-    };
-
-    setLoading(true);
-    try {
-      await onSave(persona);
-      onClose();
-    } catch (error: any) {
-      setError(error.message || 'Failed to create agent');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent
-        showCloseButton={false}
-        className={cn(
-          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
-          'gap-0',
-          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
-          'rounded-[var(--Corner-highlyRounded)]',
-          'shadow-none',
-          'text-fig-Subject-standard',
-          'dark:!bg-fig-Surface-one-standard',
-        )}
-      >
-        {/* Header */}
-        <DialogHeader
-          className={cn(
-            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
-            'px-[var(--Gap-parentChild)] pt-[var(--Padding-zero-parentChild)]',
-          )}
-        >
-          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
-            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
-              Create agent
-            </DialogTitle>
-            <button
-              type="button"
-              onClick={onClose}
-              className={cn(
-                'inline-flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] items-center justify-center',
-                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
-                'hover:bg-fig-Surface-neutral',
-                'focus:outline-none focus-visible:ring-fig-Stroke-primary',
-              )}
-              aria-label="Close"
-            >
-              <X className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)]" aria-hidden />
-            </button>
-          </div>
-        </DialogHeader>
-
-        {/* Body */}
-        <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
-          <form onSubmit={handleSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
-            {/* Inner card */}
-            <div
-              className={cn(
-                'flex flex-col gap-[var(--Gap-zero-spacer)]',
-                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
-                'p-[var(--Padding-spacer)]',
-              )}
-            >
-              {/* Name field */}
-              <div className="flex flex-col gap-[var(--Gap-parentChild)]">
-                <label className="fy-typography-label-small text-fig-Subject-neutral">
-                  Name of the agent
-                </label>
-                <Input
-                  type="text"
-                  value={formData.name}
-                  onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  required
-                  placeholder="Example: Research assistant"
-                  className={cn(
-                    'fy-typography-body-small h-[var(--Size-zero-button)] w-full',
-                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                    '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
-                    'placeholder:!text-fig-Subject-soft',
-                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
-                    'transition-colors duration-200',
-                  )}
-                />
-              </div>
-
-              {/* Predefined agent dropdown */}
-              <div className="flex flex-col gap-[var(--Gap-parentChild)]">
-                <label className="fy-typography-label-small text-fig-Subject-neutral">
-                  Select pre-defined agent (Optional)
-                </label>
-                <DropdownPopup
-                  portal={false}
-                  sameWidth={true}
-                  anchor={{ x: 'start', y: 'bottom' }}
-                  menuId="predefined-agent-selector-create"
-                  isOpen={isPredefinedMenuOpen}
-                  setIsOpen={setIsPredefinedMenuOpen}
-                  trigger={
-                    <Ariakit.MenuButton
-                      className={cn(
-                        'fy-typography-body flex h-[var(--Size-input)] w-full items-center justify-between',
-                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
-                        'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
-                        'transition-colors hover:border-fig-Stroke-standard',
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
-                        {formData.selectedPredefinedId
-                          ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
-                          : 'None'}
-                      </span>
-                      <ChevronDown
-                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
-                        aria-hidden
-                      />
-                    </Ariakit.MenuButton>
-                  }
-                  items={[
-                    {
-                      label: 'None',
-                      onClick: () => {
-                        handlePredefinedSelect('');
-                        setIsPredefinedMenuOpen(false);
-                      },
-                    },
-                    ...PREDEFINED_PERSONAS.map((persona, idx) => ({
-                      label: persona.name,
-                      onClick: () => {
-                        handlePredefinedSelect(idx.toString());
-                        setIsPredefinedMenuOpen(false);
-                      },
-                    })),
-                  ]}
-                  className={cn(
-                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                    'bg-fig-Surface-standard shadow-sm',
-                  )}
-                  itemClassName={cn(
-                    'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
-                    'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
-                    'cursor-pointer transition-colors',
-                  )}
-                />
-                {formData.selectedPredefinedId && (
-                  <p className="fy-typography-label-tiny text-fig-Subject-primary">
-                    {`Agent template auto-filled. Edit variables like {{variable_name}} with your values.`}
-                  </p>
-                )}
-              </div>
-
-              {/* Description field */}
-              <div className="flex flex-col gap-[var(--Gap-parentChild)]">
-                <label className="fy-typography-label-small text-fig-Subject-neutral">
-                  Description
-                </label>
-                <TextareaAutosize
-                  value={formData.description}
-                  onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  minRows={3}
-                  maxRows={8}
-                  required={!formData.selectedPredefinedId}
-                  aria-label="Persona description"
-                  className={cn(
-                    'fy-typography-body-small w-full resize-none',
-                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                    'bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-buddy)]',
-                    'text-fig-Subject-standard placeholder:text-fig-Subject-soft',
-                    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
-                    'transition-colors duration-200',
-                  )}
-                  placeholder={
-                    formData.selectedPredefinedId
-                      ? `Edit variables like {{focus_area}} with your values`
-                      : `Example: Conduct a deep research on the company and provide key findings.`
-                  }
-                />
-                {formData.selectedPredefinedId && (
-                  <p className="fy-typography-label-tiny text-fig-Subject-neutral">
-                    {`Variables to edit: ${PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map((v) => `{{${v}}}`).join(', ')}`}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Footer buttons */}
-            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
-              <Button
-                type="submit"
-                disabled={loading}
-                className={cn(
-                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
-                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
-                  'transition-opacity hover:opacity-90',
-                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
-                  'disabled:opacity-50',
-                )}
-              >
-                {loading ? 'Creating...' : 'Create'}
-              </Button>
-              <Button
-                type="button"
-                onClick={onClose}
-                className={cn(
-                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
-                  'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
-                  'transition-colors hover:bg-fig-Surface-neutral',
-                  'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
-                )}
-              >
-                Dismiss
-              </Button>
-            </div>
-          </form>
-        </div>
-      </DialogContent>
-    </Dialog>
-  );
-}
 
 // Edit Persona Modal
 function EditPersonaModal({
@@ -2463,7 +1639,9 @@ function EditPersonaModal({
   onSave: (persona: any) => Promise<void>;
   readOnly?: boolean;
 }) {
-  // Initialize formData based on persona's current state
+  const { agents: predefinedAgents, loading: catalogLoading, error: catalogError } =
+    usePredefinedResearchCatalog();
+
   const getInitialFormData = () => {
     return {
       name: persona.name || '',
@@ -2478,20 +1656,24 @@ function EditPersonaModal({
   const [loading, setLoading] = useState(false);
   const [isPredefinedMenuOpen, setIsPredefinedMenuOpen] = useState(false);
 
-  // Handle predefined persona selection
-  const handlePredefinedSelect = (predefinedId: string) => {
+  const selectedAgent = predefinedAgents.find((a) => a.agentId === formData.selectedPredefinedId);
+
+  const handlePredefinedSelect = (agentId: string) => {
     if (readOnly) {
       return;
     }
-    const predefined = PREDEFINED_PERSONAS.find((_, idx) => idx.toString() === predefinedId);
-    if (predefined) {
-      setFormData({
-        ...formData,
-        name: predefined.name,
-        description: predefined.template, // Fill description with persona template (with variables like {{focus_area}})
-        selectedPredefinedId: predefinedId,
-        // Template selection remains separate - user can select template or write custom
-      });
+    if (!agentId) {
+      setFormData((prev) => ({ ...prev, selectedPredefinedId: '' }));
+      return;
+    }
+    const agent = predefinedAgents.find((a) => a.agentId === agentId);
+    if (agent) {
+      setFormData((prev) => ({
+        ...prev,
+        name: agent.name,
+        description: agent.template,
+        selectedPredefinedId: agentId,
+      }));
     }
   };
 
@@ -2579,7 +1761,7 @@ function EditPersonaModal({
 
         {/* Body */}
         <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Gap-parentChild)]">
-          {error && (
+          {(error || catalogError) && (
             <div
               className={cn(
                 'fy-typography-body-small',
@@ -2588,7 +1770,7 @@ function EditPersonaModal({
                 'text-fig-Subject-danger',
               )}
             >
-              {error}
+              {error || catalogError}
             </div>
           )}
 
@@ -2653,9 +1835,11 @@ function EditPersonaModal({
                       )}
                     >
                       <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
-                        {formData.selectedPredefinedId
-                          ? PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)].name
-                          : 'None'}
+                        {catalogLoading
+                          ? 'Loading agents…'
+                          : selectedAgent
+                            ? selectedAgent.name
+                            : 'None'}
                       </span>
                       <ChevronDown
                         className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
@@ -2671,10 +1855,10 @@ function EditPersonaModal({
                         setIsPredefinedMenuOpen(false);
                       },
                     },
-                    ...PREDEFINED_PERSONAS.map((p, idx) => ({
-                      label: p.name,
+                    ...predefinedAgents.map((agent) => ({
+                      label: agent.name,
                       onClick: () => {
-                        handlePredefinedSelect(idx.toString());
+                        handlePredefinedSelect(agent.agentId);
                         setIsPredefinedMenuOpen(false);
                       },
                     })),
@@ -2724,11 +1908,11 @@ function EditPersonaModal({
                       : `Example: Conduct a deep research on the company and provide key findings.`
                   }
                 />
-                {formData.selectedPredefinedId && (
+                {formData.selectedPredefinedId && selectedAgent?.variables?.length ? (
                   <p className="fy-typography-label-tiny text-fig-Subject-neutral">
-                    {`Variables to edit: ${PREDEFINED_PERSONAS[parseInt(formData.selectedPredefinedId)]?.variables.map((v) => `{{${v}}}`).join(', ')}`}
+                    {`Variables to edit: ${selectedAgent.variables.map((v) => `{{${v}}}`).join(', ')}`}
                   </p>
-                )}
+                ) : null}
               </div>
             </div>
 
