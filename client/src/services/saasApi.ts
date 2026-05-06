@@ -412,7 +412,13 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
     org_id,
     is_system,
     uploaded_at: String(row.updatedAt ?? row.uploadedAt ?? row.createdAt ?? ''),
-    status: String(row.status ?? 'Completed'),
+    status: String(row.status ?? 'PENDING'),
+    error_message:
+      row.errorMessage != null && String(row.errorMessage).trim() !== ''
+        ? String(row.errorMessage)
+        : row.error_message != null && String(row.error_message).trim() !== ''
+          ? String(row.error_message)
+          : undefined,
   };
 }
 

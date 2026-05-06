@@ -49,6 +49,34 @@ interface FileNode {
   created_by_name?: string;
   uploaded_at?: string;
   status?: string;
+  error_message?: string;
+}
+
+/** Display labels match pipeline: PENDING, UPLOADED, PROCESSING, COMPLETED, FAILED */
+function formatDocumentPipelineStatus(raw: string | undefined | null): string {
+  if (raw == null || String(raw).trim() === '') {
+    return 'PENDING';
+  }
+  return String(raw).trim().toUpperCase();
+}
+
+function isPipelineStatusCompleted(raw: string | undefined | null): boolean {
+  return String(raw ?? '').trim().toLowerCase() === 'completed';
+}
+
+function pipelineStatusBadgeClass(displayUpper: string): string {
+  switch (displayUpper) {
+    case 'COMPLETED':
+      return 'bg-fig-Surface-one-success text-fig-Subject-success';
+    case 'FAILED':
+      return 'bg-fig-Surface-one-danger text-fig-Subject-danger';
+    case 'PENDING':
+    case 'UPLOADED':
+    case 'PROCESSING':
+      return 'bg-fig-Surface-one-warning text-fig-Subject-warning';
+    default:
+      return 'bg-fig-Surface-neutral text-fig-Subject-standard';
+  }
 }
 
 export default function DocumentSelector({
@@ -332,7 +360,7 @@ export default function DocumentSelector({
       document_id: String(file.document_id),
       name: file.name,
       file_path: file.storage_key || file.name,
-      status: file.status || 'Completed',
+      status: file.status?.trim() ? file.status : 'PENDING',
       uploaded_at: file.uploaded_at || file.created_at,
       owner: researchOwnerColumnLabel(file),
     };
@@ -451,32 +479,6 @@ export default function DocumentSelector({
       return 'N/A';
     }
   };
-
-  // Used when Format + Status table columns are enabled (see commented <td> in document table)
-  // const getFileExtension = (filename: string) => {
-  //   const parts = filename.split('.');
-  //   return parts.length > 1 ? parts[parts.length - 1].toUpperCase() : 'PDF';
-  // };
-
-  // const getStatusStyle = (status: string) => {
-  //   if (status === 'Completed' || status === 'completed' || status === 'indexed') {
-  //     return 'bg-fig-Surface-one-success text-fig-Subject-success';
-  //   }
-  //   if (status === 'Failed' || status === 'failed' || status === 'error') {
-  //     return 'bg-fig-Surface-one-danger text-fig-Subject-danger';
-  //   }
-  //   if (
-  //     status === 'Pending' ||
-  //     status === 'pending' ||
-  //     status === 'Processing' ||
-  //     status === 'processing' ||
-  //     status === 'Embedding' ||
-  //     status === 'embedding'
-  //   ) {
-  //     return 'bg-fig-Surface-one-warning text-fig-Subject-warning';
-  //   }
-  //   return 'bg-fig-Surface-neutral text-fig-Subject-standard';
-  // };
 
   // Get all files from current folder view
   const currentFiles = currentFolder.files || [];
@@ -629,9 +631,10 @@ export default function DocumentSelector({
                   >
                     <table className="w-full min-w-[480px] table-fixed border-separate border-spacing-0">
                       <colgroup>
-                        <col style={{ width: '50%' }} />
-                        <col style={{ width: '25%' }} />
-                        <col style={{ width: '25%' }} />
+                        <col style={{ width: '38%' }} />
+                        <col style={{ width: '22%' }} />
+                        <col style={{ width: '18%' }} />
+                        <col style={{ width: '22%' }} />
                         {/*
                         <col style={{ width: '40%' }} />
                         <col style={{ width: currentFiles.length > 0 ? '15%' : '30%' }} />
@@ -658,18 +661,14 @@ export default function DocumentSelector({
                           >
                             {localize('com_ui_table_owner')}
                           </th>
-                          {/*
-                          {currentFiles.length > 0 && (
-                            <th
-                              className={cn(
-                                'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
-                                'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
-                              )}
-                            >
-                              {localize('com_ui_table_format')}
-                            </th>
-                          )}
-                          */}
+                          <th
+                            className={cn(
+                              'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                              'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                            )}
+                          >
+                            {localize('com_ui_table_status')}
+                          </th>
                           <th
                             className={cn(
                               'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
@@ -678,18 +677,6 @@ export default function DocumentSelector({
                           >
                             {localize('com_ui_table_date_created')}
                           </th>
-                          {/*
-                          {currentFiles.length > 0 && (
-                            <th
-                              className={cn(
-                                'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
-                                'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
-                              )}
-                            >
-                              {localize('com_ui_table_status')}
-                            </th>
-                          )}
-                          */}
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-fig-Stroke-soft">
@@ -759,14 +746,14 @@ export default function DocumentSelector({
                                   {researchOwnerColumnLabel(folder)}
                                 </div>
                               </td>
-                              {/*
-                              {currentFiles.length > 0 && (
-                                <td
-                                  className="box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)]"
-                                  aria-hidden
-                                />
-                              )}
-                              */}
+                              <td
+                                className={cn(
+                                  'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
+                                  'fy-typography-body text-fig-Subject-soft',
+                                )}
+                              >
+                                —
+                              </td>
                               <td
                                 className={cn(
                                   'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
@@ -777,11 +764,6 @@ export default function DocumentSelector({
                                   <span>{formatDate(folder.created_at)}</span>
                                 </div>
                               </td>
-                              {/*
-                              {currentFiles.length > 0 && (
-                                <td className="p-[var(--Padding-spacer)]" aria-hidden />
-                              )}
-                              */}
                             </tr>
                           );
                         })}
@@ -791,11 +773,8 @@ export default function DocumentSelector({
                           .map((file, j) => {
                             const rowIndex = currentFolder.folders.length + j;
                             const isSelected = selectedDocuments.has(file.document_id!.toString());
-                            const fileStatus = file.status || 'Completed';
-                            const isCompleted =
-                              fileStatus.toLowerCase() === 'completed' ||
-                              fileStatus.toLowerCase() === 'indexed';
-                            const isDisabled = !isCompleted;
+                            const displayStatus = formatDocumentPipelineStatus(file.status);
+                            const isDisabled = !isPipelineStatusCompleted(file.status);
                             const checkboxClass = (() => {
                               if (isDisabled) {
                                 return 'border-fig-Stroke-standard bg-fig-Surface-neutral';
@@ -880,16 +859,25 @@ export default function DocumentSelector({
                                     {researchOwnerColumnLabel(file)}
                                   </div>
                                 </td>
-                                {/*
                                 <td
                                   className={cn(
                                     'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
-                                    'font-inter text-sm font-normal leading-5 text-fig-Subject-standard',
                                   )}
                                 >
-                                  {getFileExtension(file.name)}
+                                  <span
+                                    className={cn(
+                                      'fy-typography-body-tiny inline-block max-w-full truncate rounded-full px-2 py-0.5',
+                                      pipelineStatusBadgeClass(displayStatus),
+                                    )}
+                                    title={
+                                      displayStatus === 'FAILED' && file.error_message
+                                        ? file.error_message
+                                        : displayStatus
+                                    }
+                                  >
+                                    {displayStatus}
+                                  </span>
                                 </td>
-                                */}
                                 <td
                                   className={cn(
                                     'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)] p-[var(--Padding-spacer)] align-middle',
@@ -900,20 +888,6 @@ export default function DocumentSelector({
                                     <span>{formatDate(file.uploaded_at || file.created_at)}</span>
                                   </div>
                                 </td>
-                                {/*
-                                <td className="p-[var(--Padding-spacer)] text-left align-middle">
-                                  <span
-                                    className={cn(
-                                      'fy-typography-body-tiny inline-block rounded-full px-2 py-0.5',
-                                      getStatusStyle(fileStatus),
-                                    )}
-                                  >
-                                    {`${fileStatus.charAt(0).toUpperCase()}${fileStatus
-                                      .slice(1)
-                                      .toLowerCase()}`}
-                                  </span>
-                                </td>
-                                */}
                               </tr>
                             );
                           })}
