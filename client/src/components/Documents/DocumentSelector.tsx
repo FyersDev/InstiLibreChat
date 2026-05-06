@@ -15,6 +15,10 @@ import { Constants } from 'librechat-data-provider';
 import { cn } from '~/utils';
 import { findResearchReportsFolderInTree } from '~/utils/researchFolders';
 import { researchOwnerColumnLabel } from '~/utils/researchOwner';
+import {
+  formatDocumentPipelineStatus,
+  pipelineStatusBadgeClass,
+} from '~/utils/researchDocumentStatus';
 import { saasApi } from '~/services/saasApi';
 
 interface DocumentSelectorProps {
@@ -52,31 +56,8 @@ interface FileNode {
   error_message?: string;
 }
 
-/** Display labels match pipeline: PENDING, UPLOADED, PROCESSING, COMPLETED, FAILED */
-function formatDocumentPipelineStatus(raw: string | undefined | null): string {
-  if (raw == null || String(raw).trim() === '') {
-    return 'PENDING';
-  }
-  return String(raw).trim().toUpperCase();
-}
-
 function isPipelineStatusCompleted(raw: string | undefined | null): boolean {
   return String(raw ?? '').trim().toLowerCase() === 'completed';
-}
-
-function pipelineStatusBadgeClass(displayUpper: string): string {
-  switch (displayUpper) {
-    case 'COMPLETED':
-      return 'bg-fig-Surface-one-success text-fig-Subject-success';
-    case 'FAILED':
-      return 'bg-fig-Surface-one-danger text-fig-Subject-danger';
-    case 'PENDING':
-    case 'UPLOADED':
-    case 'PROCESSING':
-      return 'bg-fig-Surface-one-warning text-fig-Subject-warning';
-    default:
-      return 'bg-fig-Surface-neutral text-fig-Subject-standard';
-  }
 }
 
 export default function DocumentSelector({

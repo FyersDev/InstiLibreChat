@@ -15,6 +15,10 @@ import {
   researchRenameLocked,
 } from '~/utils/researchFolders';
 import { isResearchSystemRow, researchOwnerColumnLabel } from '~/utils/researchOwner';
+import {
+  formatDocumentPipelineStatus,
+  pipelineStatusBadgeClassName,
+} from '~/utils/researchDocumentStatus';
 
 interface FolderNode {
   id: string;
@@ -35,6 +39,8 @@ interface FolderNode {
   /** From Conflux (`folder_kind` / aliases); see `researchFolders.ts`. */
   folder_kind?: string;
   rename_locked?: boolean;
+  /** Pipeline / API status when present (same vocabulary as documents). */
+  status?: string;
 }
 
 interface FileNode {
@@ -50,6 +56,9 @@ interface FileNode {
   created_by_email?: string;
   org_id?: string | null;
   is_system?: boolean;
+  status?: string;
+  error_message?: string;
+  uploaded_at?: string;
 }
 
 /** API may send numeric `createdBy` / string user id — compare coercively. */
@@ -93,6 +102,30 @@ const formatDate = (dateString: string | undefined | null) => {
     return 'Invalid Date';
   }
 };
+
+function folderResourcesStatusDisplay(folder: FolderNode): {
+  label: string;
+  className: string;
+  title?: string;
+} {
+  if (folder.status != null && String(folder.status).trim() !== '') {
+    const label = formatDocumentPipelineStatus(folder.status);
+    return { label, className: pipelineStatusBadgeClassName(label), title: undefined };
+  }
+  if (isResearchSystemRow(folder)) {
+    return {
+      label: 'SYSTEM',
+      className: cn(
+        'fy-typography-body-tiny inline-block w-fit rounded-full px-2 py-0.5',
+        'bg-fig-Surface-neutral text-fig-Subject-standard',
+      ),
+    };
+  }
+  return {
+    label: '—',
+    className: 'fy-typography-body-tiny text-fig-Subject-soft',
+  };
+}
 
 export default function ResourcesRoute() {
   const { showToast } = useToastContext();
@@ -940,6 +973,7 @@ export default function ResourcesRoute() {
                 {/* Folders */}
                 {filteredContent.folders.map((folder, folderIndex) => {
                   const folderFileCount = folder.files?.length || 0;
+                  const folderStatusUi = folderResourcesStatusDisplay(folder);
                   const currentUserId = userInfo?.user_id || userInfo?.id;
 
                   const isSystemFolder = isResearchSystemRow(folder);
@@ -978,7 +1012,7 @@ export default function ResourcesRoute() {
                           'overflow-hidden',
                         )}
                       >
-                        <div className="flex h-full min-h-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                        <div className="flex h-full min-h-0 items-start gap-2 sm:gap-[var(--Gap-neighbor)]">
                           <div
                             className={cn(
                               'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-none p-1',
@@ -993,13 +1027,19 @@ export default function ResourcesRoute() {
                               className="block h-5 w-5 flex-shrink-0 object-contain dark:invert"
                             />
                           </div>
-                          <div className="flex min-w-0 flex-col gap-0">
+                          <div className="flex min-w-0 flex-col gap-0.5">
                             <div className="fy-typography-title-small truncate text-fig-Subject-standard">
                               {folder.name}
                             </div>
                             <div className="fy-typography-body-tiny text-fig-Subject-neutral">
                               {folderFileCount} Doc{folderFileCount !== 1 ? 's' : ''}
                             </div>
+                            <span
+                              className={folderStatusUi.className}
+                              title={folderStatusUi.title}
+                            >
+                              {folderStatusUi.label}
+                            </span>
                           </div>
                         </div>
                       </td>
@@ -1133,6 +1173,11 @@ export default function ResourcesRoute() {
                 {filteredContent.files.map((file, fileIndex) => {
                   const FileIcon = getFileIcon(file.extension);
                   const currentUserId = userInfo?.user_id || userInfo?.id;
+                  const fileDisplayStatus = formatDocumentPipelineStatus(file.status);
+                  const fileStatusTitle =
+                    fileDisplayStatus === 'FAILED' && file.error_message
+                      ? file.error_message
+                      : fileDisplayStatus;
 
                   const currentFolderObj = findFolder(allFolders, currentFolderId);
                   const inSystemFolder = Boolean(
@@ -1166,7 +1211,7 @@ export default function ResourcesRoute() {
                           'overflow-hidden',
                         )}
                       >
-                        <div className="flex h-full min-w-0 items-center gap-2 sm:gap-[var(--Gap-neighbor)]">
+                        <div className="flex h-full min-w-0 items-start gap-2 sm:gap-[var(--Gap-neighbor)]">
                           <div
                             className={cn(
                               'box-border flex h-[var(--Size-zero-button)] w-[var(--Size-zero-button)] shrink-0 items-center justify-center rounded-[2px] p-1',
@@ -1178,17 +1223,25 @@ export default function ResourcesRoute() {
                           >
                             <FileIcon className="block h-5 w-5 flex-shrink-0 object-contain" />
                           </div>
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleDownloadFile(file);
-                            }}
-                            className="font-inter min-w-0 max-w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-sm font-medium leading-4 text-blue-600 underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400"
-                            title={`Download ${file.name}`}
-                          >
-                            {file.name}
-                          </button>
+                          <div className="flex min-w-0 flex-col gap-0.5">
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleDownloadFile(file);
+                              }}
+                              className="font-inter min-w-0 max-w-full cursor-pointer truncate border-0 bg-transparent p-0 text-left text-sm font-medium leading-4 text-blue-600 underline-offset-2 hover:underline focus-visible:rounded-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-500/40 dark:text-blue-400"
+                              title={`Download ${file.name}`}
+                            >
+                              {file.name}
+                            </button>
+                            <span
+                              className={pipelineStatusBadgeClassName(fileDisplayStatus)}
+                              title={fileStatusTitle}
+                            >
+                              {fileDisplayStatus}
+                            </span>
+                          </div>
                         </div>
                       </td>
                       <td

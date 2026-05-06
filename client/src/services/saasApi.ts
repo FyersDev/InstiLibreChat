@@ -441,6 +441,7 @@ function mapConfluxFolderRecord(f: Record<string, unknown>): {
   is_system: boolean;
   folder_kind?: string;
   rename_locked: boolean;
+  status?: string;
 } {
   const id = String(f.folderId ?? f.id ?? f.folder_id ?? '');
   const name = String(f.name ?? '');
@@ -477,6 +478,9 @@ function mapConfluxFolderRecord(f: Record<string, unknown>): {
       ? folderKindRaw.trim().toLowerCase()
       : undefined;
   const rename_locked = f.renameLocked === true || f.rename_locked === true;
+  const statusRaw = f.status ?? f.folderStatus ?? f.folder_status;
+  const status =
+    statusRaw != null && String(statusRaw).trim() !== '' ? String(statusRaw).trim() : undefined;
   return {
     id,
     name,
@@ -493,6 +497,7 @@ function mapConfluxFolderRecord(f: Record<string, unknown>): {
     is_system,
     folder_kind,
     rename_locked,
+    status,
   };
 }
 
