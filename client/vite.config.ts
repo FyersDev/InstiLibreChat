@@ -65,7 +65,9 @@ export default defineConfig(({ command }) => ({
           'assets/maskable-icon.png',
           'manifest.webmanifest',
         ],
-        globIgnores: ['images/**/*', '**/*.map', 'index.html'],
+        // Do not ignore index.html: Workbox navigateFallback / createHandlerBoundToURL
+        // expects it in the precache manifest.
+        globIgnores: ['images/**/*', '**/*.map'],
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         navigateFallbackDenylist: [/^\/oauth/, /^\/api/],
       },
@@ -129,8 +131,10 @@ export default defineConfig(({ command }) => ({
           const normalizedId = id.replace(/\\/g, '/');
           if (normalizedId.includes('node_modules')) {
             // High-impact chunking for large libraries
+            // Keep Sandpack in vendor to avoid circular chunk init (vendor <-> sandpack)
+            // which can throw minified "t is not a function" at runtime.
             if (normalizedId.includes('@codesandbox/sandpack')) {
-              return 'sandpack';
+              return 'vendor';
             }
             if (normalizedId.includes('react-virtualized')) {
               return 'virtualization';
