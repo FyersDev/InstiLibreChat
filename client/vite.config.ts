@@ -148,7 +148,7 @@ export default defineConfig(({ command }) => ({
               return 'avatars';
             }
             if (normalizedId.includes('react-dnd') || normalizedId.includes('react-flip-toolkit')) {
-              return 'react-interactions';
+              return 'vendor';
             }
             if (normalizedId.includes('react-hook-form')) {
               return 'forms';
@@ -163,17 +163,8 @@ export default defineConfig(({ command }) => ({
               return 'security-ui';
             }
 
-            if (normalizedId.includes('@codemirror/view')) {
-              return 'codemirror-view';
-            }
-            if (normalizedId.includes('@codemirror/state')) {
-              return 'codemirror-state';
-            }
-            if (normalizedId.includes('@codemirror/language')) {
-              return 'codemirror-language';
-            }
             if (normalizedId.includes('@codemirror')) {
-              return 'codemirror-core';
+              return 'vendor';
             }
 
             if (
