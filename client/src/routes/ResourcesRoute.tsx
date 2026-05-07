@@ -103,30 +103,6 @@ const formatDate = (dateString: string | undefined | null) => {
   }
 };
 
-function folderResourcesStatusDisplay(folder: FolderNode): {
-  label: string;
-  className: string;
-  title?: string;
-} {
-  if (folder.status != null && String(folder.status).trim() !== '') {
-    const label = formatDocumentPipelineStatus(folder.status);
-    return { label, className: pipelineStatusBadgeClassName(label), title: undefined };
-  }
-  if (isResearchSystemRow(folder)) {
-    return {
-      label: 'SYSTEM',
-      className: cn(
-        'fy-typography-body-tiny inline-block w-fit rounded-full px-2 py-0.5',
-        'bg-fig-Surface-neutral text-fig-Subject-standard',
-      ),
-    };
-  }
-  return {
-    label: '—',
-    className: 'fy-typography-body-tiny text-fig-Subject-soft',
-  };
-}
-
 export default function ResourcesRoute() {
   const { showToast } = useToastContext();
   const [allFolders, setAllFolders] = useState<FolderNode[]>([]);
@@ -951,6 +927,16 @@ export default function ResourcesRoute() {
                   <th
                     scope="col"
                     className={cn(
+                      'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
+                      'hidden sm:table-cell',
+                      'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
+                    )}
+                  >
+                    Status
+                  </th>
+                  <th
+                    scope="col"
+                    className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-right align-middle',
                       'hidden sm:table-cell',
                       'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
@@ -973,7 +959,6 @@ export default function ResourcesRoute() {
                 {/* Folders */}
                 {filteredContent.folders.map((folder, folderIndex) => {
                   const folderFileCount = folder.files?.length || 0;
-                  const folderStatusUi = folderResourcesStatusDisplay(folder);
                   const currentUserId = userInfo?.user_id || userInfo?.id;
 
                   const isSystemFolder = isResearchSystemRow(folder);
@@ -1034,12 +1019,6 @@ export default function ResourcesRoute() {
                             <div className="fy-typography-body-tiny text-fig-Subject-neutral">
                               {folderFileCount} Doc{folderFileCount !== 1 ? 's' : ''}
                             </div>
-                            <span
-                              className={folderStatusUi.className}
-                              title={folderStatusUi.title}
-                            >
-                              {folderStatusUi.label}
-                            </span>
                           </div>
                         </div>
                       </td>
@@ -1051,6 +1030,14 @@ export default function ResourcesRoute() {
                         )}
                       >
                         {researchOwnerColumnLabel(folder)}
+                      </td>
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
+                        )}
+                      >
+                        <span className="fy-typography-body-tiny text-fig-Subject-soft">—</span>
                       </td>
                       <td
                         className={cn(
@@ -1235,12 +1222,6 @@ export default function ResourcesRoute() {
                             >
                               {file.name}
                             </button>
-                            <span
-                              className={pipelineStatusBadgeClassName(fileDisplayStatus)}
-                              title={fileStatusTitle}
-                            >
-                              {fileDisplayStatus}
-                            </span>
                           </div>
                         </div>
                       </td>
@@ -1252,6 +1233,19 @@ export default function ResourcesRoute() {
                         )}
                       >
                         {researchOwnerColumnLabel(file)}
+                      </td>
+                      <td
+                        className={cn(
+                          'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
+                        )}
+                      >
+                        <span
+                          className={pipelineStatusBadgeClassName(fileDisplayStatus)}
+                          title={fileStatusTitle}
+                        >
+                          {fileDisplayStatus}
+                        </span>
                       </td>
                       <td
                         className={cn(
