@@ -1,0 +1,24 @@
+client/src/utils/researchDocumentStatus.ts
+  7be756b 2,15,17,21,23-25,27-50,56,58
+client/src/style.css
+  7be756b 4430-4435
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "4dc5271f197397ee46ba46230e3f25b17f35f461",
+  "prompts": {
+    "7be756b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "74c544f7-7175-4b7a-8508-76b1dd356707",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 580,
+      "total_deletions": 220,
+      "accepted_lines": 4022,
+      "overriden_lines": 0
+    }
+  }
+}
