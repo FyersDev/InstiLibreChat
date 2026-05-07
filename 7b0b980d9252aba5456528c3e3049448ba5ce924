@@ -1,0 +1,22 @@
+client/src/components/Documents/DocumentSelector.tsx
+  7be756b 20-21,859,861
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "c74bb9970c5fa72fa1071159e6fd91cb7733fe8f",
+  "prompts": {
+    "7be756b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "74c544f7-7175-4b7a-8508-76b1dd356707",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 892,
+      "overriden_lines": 0
+    }
+  }
+}
