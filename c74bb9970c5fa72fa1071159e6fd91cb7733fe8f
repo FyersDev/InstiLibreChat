@@ -1,0 +1,22 @@
+client/src/routes/ResourcesRoute.tsx
+  7be756b 12-16,72-77,153,649,653-658,760-763,1254,1260
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "d85f30c8c2fbd65055da7c96f2cdcc1c8f1ce2e5",
+  "prompts": {
+    "7be756b": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "74c544f7-7175-4b7a-8508-76b1dd356707",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 0,
+      "total_deletions": 0,
+      "accepted_lines": 1395,
+      "overriden_lines": 0
+    }
+  }
+}
