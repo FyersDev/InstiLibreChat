@@ -17,7 +17,8 @@ import { findResearchReportsFolderInTree } from '~/utils/researchFolders';
 import { researchOwnerColumnLabel } from '~/utils/researchOwner';
 import {
   formatDocumentPipelineStatus,
-  pipelineStatusBadgeClass,
+  pipelineStatusBadgeClassName,
+  pipelineStatusBadgeStyle,
 } from '~/utils/researchDocumentStatus';
 import { saasApi } from '~/services/saasApi';
 
@@ -855,9 +856,9 @@ export default function DocumentSelector({
                                 >
                                   <span
                                     className={cn(
-                                      'fy-typography-body-tiny inline-block max-w-full truncate rounded-full px-2 py-0.5',
-                                      pipelineStatusBadgeClass(displayStatus),
+                                      pipelineStatusBadgeClassName(displayStatus),
                                     )}
+                                    style={pipelineStatusBadgeStyle(displayStatus)}
                                     title={
                                       displayStatus === 'FAILED' && file.error_message
                                         ? file.error_message
