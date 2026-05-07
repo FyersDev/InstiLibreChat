@@ -18,6 +18,16 @@ globalThis.__FYERS_T2_API__ = {
   list: fyersT2ApiList,
 };
 
+if ('serviceWorker' in navigator) {
+  // Ensure previously installed service workers are removed while testing no-SW mode.
+  window.addEventListener('load', () => {
+    navigator.serviceWorker
+      .getRegistrations()
+      .then((registrations) => Promise.all(registrations.map((registration) => registration.unregister())))
+      .catch(() => undefined);
+  });
+}
+
 const container = document.getElementById('root');
 const root = createRoot(container);
 

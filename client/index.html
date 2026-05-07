@@ -5,66 +5,66 @@
     <base href="/research/" />
     <!--
       GET /research/auth/embed: first load with ?token=… must reach insti-proxy (sets HttpOnly cookies + 302).
-      If this HTML shell loads again (e.g. history/SPA) and we already have a client-visible session,
-      skip the embed URL and go to chat — same idea as proxy post-login redirect, without sessionStorage hops.
+      If this HTML shell loads again and we already have a client-visible session, redirect to chat.
+      Client-side navigations register route AuthEmbedShell (routes/index.tsx) so React Router does not 404.
     -->
     <script>
-      (function () {
-        try {
-          var path = window.location.pathname || '';
-          if (path.indexOf('auth/embed') === -1) return;
+      // (function () {
+      //   try {
+      //     var path = window.location.pathname || '';
+      //     if (path.indexOf('auth/embed') === -1) return;
 
-          function hasAppSession() {
-            try {
-              if (window.localStorage && window.localStorage.getItem('access_token')) return true;
-              if (window.localStorage && window.localStorage.getItem('refresh_token')) return true;
-            } catch (e) {}
-            return document.cookie.indexOf('embedded=true') !== -1;
-          }
+      //     function hasAppSession() {
+      //       try {
+      //         if (window.localStorage && window.localStorage.getItem('access_token')) return true;
+      //         if (window.localStorage && window.localStorage.getItem('refresh_token')) return true;
+      //       } catch (e) {}
+      //       return document.cookie.indexOf('embedded=true') !== -1;
+      //     }
 
-          function normalizeBasePath(href) {
-            var b = href || '/research/';
-            if (b.charAt(0) !== '/') b = '/' + b;
-            if (b.slice(-1) !== '/') b += '/';
-            return b;
-          }
+      //     function normalizeBasePath(href) {
+      //       var b = href || '/research/';
+      //       if (b.charAt(0) !== '/') b = '/' + b;
+      //       if (b.slice(-1) !== '/') b += '/';
+      //       return b;
+      //     }
 
-          /** Same-origin path under base (default …/c/new). Mirrors proxy sanitizeEmbedRedirect loosely. */
-          function embedRedirectTarget(basePath) {
-            var q = new URLSearchParams(window.location.search);
-            var raw = q.get('redirect') || q.get('next') || q.get('return_to') || '';
-            var defaultRel = basePath + 'c/new';
-            if (!raw || String(raw).length > 2048) return defaultRel;
-            try {
-              raw = decodeURIComponent(String(raw).trim());
-            } catch (e) {
-              raw = String(raw).trim();
-            }
-            if (raw.toLowerCase().indexOf('://') >= 0 || raw.indexOf('@') >= 0) return defaultRel;
-            var pathPart = raw;
-            var queryPart = '';
-            var qi = raw.indexOf('?');
-            if (qi >= 0) {
-              pathPart = raw.slice(0, qi);
-              queryPart = raw.slice(qi);
-            }
-            if (!pathPart || pathPart.charAt(0) !== '/' || pathPart.indexOf('//') === 0) return defaultRel;
-            pathPart = pathPart.split('\\').join('/');
-            var baseNoTrail = basePath.replace(/\/?$/, '');
-            if (pathPart.indexOf(basePath) !== 0 && pathPart !== baseNoTrail) {
-              pathPart = baseNoTrail + pathPart;
-            }
-            return pathPart + queryPart;
-          }
+      //     /** Same-origin path under base (default …/c/new). Mirrors proxy sanitizeEmbedRedirect loosely. */
+      //     function embedRedirectTarget(basePath) {
+      //       var q = new URLSearchParams(window.location.search);
+      //       var raw = q.get('redirect') || q.get('next') || q.get('return_to') || '';
+      //       var defaultRel = basePath + 'c/new';
+      //       if (!raw || String(raw).length > 2048) return defaultRel;
+      //       try {
+      //         raw = decodeURIComponent(String(raw).trim());
+      //       } catch (e) {
+      //         raw = String(raw).trim();
+      //       }
+      //       if (raw.toLowerCase().indexOf('://') >= 0 || raw.indexOf('@') >= 0) return defaultRel;
+      //       var pathPart = raw;
+      //       var queryPart = '';
+      //       var qi = raw.indexOf('?');
+      //       if (qi >= 0) {
+      //         pathPart = raw.slice(0, qi);
+      //         queryPart = raw.slice(qi);
+      //       }
+      //       if (!pathPart || pathPart.charAt(0) !== '/' || pathPart.indexOf('//') === 0) return defaultRel;
+      //       pathPart = pathPart.split('\\').join('/');
+      //       var baseNoTrail = basePath.replace(/\/?$/, '');
+      //       if (pathPart.indexOf(basePath) !== 0 && pathPart !== baseNoTrail) {
+      //         pathPart = baseNoTrail + pathPart;
+      //       }
+      //       return pathPart + queryPart;
+      //     }
 
-          if (!hasAppSession()) return;
+      //     if (!hasAppSession()) return;
 
-          var baseEl = document.querySelector('base');
-          var basePath = normalizeBasePath(baseEl && baseEl.getAttribute('href'));
-          var rel = embedRedirectTarget(basePath);
-          window.location.replace(window.location.origin + rel);
-        } catch (e) {}
-      })();
+      //     var baseEl = document.querySelector('base');
+      //     var basePath = normalizeBasePath(baseEl && baseEl.getAttribute('href'));
+      //     var rel = embedRedirectTarget(basePath);
+      //     window.location.replace(window.location.origin + rel);
+      //   } catch (e) {}
+      // })();
     </script>
     <meta name="theme-color" content="#171717" />
     <meta name="mobile-web-app-capable" content="yes" />

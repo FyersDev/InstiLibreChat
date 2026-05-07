@@ -49,7 +49,9 @@ export default defineConfig(({ command }) => ({
       },
     }),
     VitePWA({
-      injectRegister: 'auto', // 'auto' | 'manual' | 'disabled'
+      // Temporary no-SW mode for production debugging.
+      disable: true,
+      injectRegister: false,
       registerType: 'autoUpdate', // 'prompt' | 'autoUpdate'
       devOptions: {
         enabled: false, // disable service worker registration in development mode
