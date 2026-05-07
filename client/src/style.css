@@ -4426,3 +4426,10 @@ h4.fyers, .h4-fyers {
   line-height: 40px !important;
   font-weight: 600 !important;
 }
+
+/* Preserve pill radius for status badges against global radius reset rules */
+.fy-status-pill,
+.fy-status-pill::before,
+.fy-status-pill::after {
+  border-radius: var(--Corner-fullyrounded) !important;
+}
