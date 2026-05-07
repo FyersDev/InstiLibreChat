@@ -39,6 +39,10 @@ interface FolderNode {
   created_by_name?: string;
   created_at: string;
   folder_kind?: string;
+  document_count?: number;
+  total_document_count?: number;
+  sub_folder_count?: number;
+  total_sub_folder_count?: number;
 }
 
 interface FileNode {
@@ -663,7 +667,11 @@ export default function DocumentSelector({
                       <tbody className="divide-y divide-fig-Stroke-soft">
                         {/* Folders - not selectable, clickable for navigation */}
                         {currentFolder.folders.map((folder, rowIndex) => {
-                          const folderFileCount = folder.files?.length || 0;
+                          const folderFileCount =
+                            folder.total_document_count ??
+                            folder.document_count ??
+                            folder.files?.length ??
+                            0;
                           return (
                             <tr
                               key={folder.id}

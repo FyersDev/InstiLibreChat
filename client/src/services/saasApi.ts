@@ -513,10 +513,43 @@ function mapHierarchyFolderBranch(node: Record<string, unknown>): any | null {
   const children = nested.map((child) => mapHierarchyFolderBranch(child)).filter(Boolean);
   const files = docs.map((d) => mapConfluxDocToFileNode(d));
   const meta = mapConfluxFolderRecord(f);
+  const documentCountRaw = node.documentCount ?? node.document_count;
+  const totalDocumentCountRaw = node.totalDocumentCount ?? node.total_document_count;
+  const subFolderCountRaw = node.subFolderCount ?? node.sub_folder_count;
+  const totalSubFolderCountRaw = node.totalSubFolderCount ?? node.total_sub_folder_count;
+
+  const document_count =
+    typeof documentCountRaw === 'number'
+      ? documentCountRaw
+      : Number.isFinite(Number(documentCountRaw))
+        ? Number(documentCountRaw)
+        : undefined;
+  const total_document_count =
+    typeof totalDocumentCountRaw === 'number'
+      ? totalDocumentCountRaw
+      : Number.isFinite(Number(totalDocumentCountRaw))
+        ? Number(totalDocumentCountRaw)
+        : undefined;
+  const sub_folder_count =
+    typeof subFolderCountRaw === 'number'
+      ? subFolderCountRaw
+      : Number.isFinite(Number(subFolderCountRaw))
+        ? Number(subFolderCountRaw)
+        : undefined;
+  const total_sub_folder_count =
+    typeof totalSubFolderCountRaw === 'number'
+      ? totalSubFolderCountRaw
+      : Number.isFinite(Number(totalSubFolderCountRaw))
+        ? Number(totalSubFolderCountRaw)
+        : undefined;
   return {
     ...meta,
     children,
     files,
+    document_count,
+    total_document_count,
+    sub_folder_count,
+    total_sub_folder_count,
   };
 }
 
