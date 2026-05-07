@@ -10,15 +10,16 @@ import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
 import { PermissionManager } from '~/utils/permissions';
 import {
+  formatDocumentPipelineStatus,
+  pipelineStatusBadgeClassName,
+  pipelineStatusBadgeStyle,
+} from '~/utils/researchDocumentStatus';
+import {
   findResearchReportsFolderInTree,
   isResearchDefaultUploadFolder,
   researchRenameLocked,
 } from '~/utils/researchFolders';
 import { isResearchSystemRow, researchOwnerColumnLabel } from '~/utils/researchOwner';
-import {
-  formatDocumentPipelineStatus,
-  pipelineStatusBadgeClassName,
-} from '~/utils/researchDocumentStatus';
 
 interface FolderNode {
   id: string;
@@ -68,7 +69,12 @@ interface FileNode {
 
 /** API may send numeric `createdBy` / string user id — compare coercively. */
 function sameCreatorAsCurrentUser(actorId: unknown, currentUserId: unknown): boolean {
-  if (actorId === undefined || actorId === null || currentUserId === undefined || currentUserId === null) {
+  if (
+    actorId === undefined ||
+    actorId === null ||
+    currentUserId === undefined ||
+    currentUserId === null
+  ) {
     return false;
   }
   return String(actorId) === String(currentUserId);
@@ -144,8 +150,7 @@ export default function ResourcesRoute() {
   const userOrgId =
     userInfo?.org_id ?? userInfo?.organization_id ?? userInfo?.organizationId ?? null;
   const orgRoleRaw = userInfo?.org_role ?? userInfo?.orgRole;
-  const isOrgAdmin =
-    typeof orgRoleRaw === 'string' && orgRoleRaw.trim().toLowerCase() === 'admin';
+  const isOrgAdmin = typeof orgRoleRaw === 'string' && orgRoleRaw.trim().toLowerCase() === 'admin';
 
   useEffect(() => {
     loadUserInfo();
@@ -641,18 +646,16 @@ export default function ResourcesRoute() {
   const hasFileDeletePermission = permissionManager?.canDelete('files') || false;
   /** Show create/upload when admin, explicit RBAC, or any org membership (API still enforces writes). */
   const canManage =
-    isSuperAdmin ||
-    isOrgAdmin ||
-    hasFolderPermission ||
-    hasFilePermission ||
-    Boolean(userOrgId);
+    isSuperAdmin || isOrgAdmin || hasFolderPermission || hasFilePermission || Boolean(userOrgId);
   const canManageFiles =
     isSuperAdmin || isOrgAdmin || hasFileUpdatePermission || hasFileDeletePermission;
 
-  const currentFolderNodeForUpload =
-    currentFolderId ? findFolder(allFolders, currentFolderId) : null;
-  const uploadBlockedInSystemFolder =
-    Boolean(currentFolderNodeForUpload && isResearchSystemRow(currentFolderNodeForUpload));
+  const currentFolderNodeForUpload = currentFolderId
+    ? findFolder(allFolders, currentFolderId)
+    : null;
+  const uploadBlockedInSystemFolder = Boolean(
+    currentFolderNodeForUpload && isResearchSystemRow(currentFolderNodeForUpload),
+  );
   const canUploadDocuments = canManage && !uploadBlockedInSystemFolder;
 
   if (loading) {
@@ -754,7 +757,10 @@ export default function ResourcesRoute() {
                       'sm:flex-none',
                     )}
                   >
-                    <Plus className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0" aria-hidden />
+                    <Plus
+                      className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0"
+                      aria-hidden
+                    />
                     <span className="hidden sm:inline">Create folder</span>
                     <span className="sm:hidden">Folder</span>
                   </button>
@@ -894,7 +900,6 @@ export default function ResourcesRoute() {
 
       {/* Content View */}
       <div className="flex-1 overflow-auto">
-
         {filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
           <div className="py-12 text-center">
             <img
@@ -1246,11 +1251,13 @@ export default function ResourcesRoute() {
                       <td
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
+                          'font-inter',
                           'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
                         )}
                       >
                         <span
                           className={pipelineStatusBadgeClassName(fileDisplayStatus)}
+                          style={pipelineStatusBadgeStyle(fileDisplayStatus)}
                           title={fileStatusTitle}
                         >
                           {fileDisplayStatus}
