@@ -799,63 +799,67 @@ export default function ResourcesRoute() {
             {canManage && (
               <div className="flex w-full min-w-0 items-center gap-1.5 sm:w-auto sm:flex-nowrap">
                 <div className="flex min-w-0 flex-1 items-center gap-2 sm:flex-none">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setShowCreateFolderModal(true);
-                    }}
-                    className={cn(
-                      'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border border-fig-Stroke-primary',
-                      'bg-fig-Surface-two-primary px-[var(--Dimensions-Size-xs3)] py-px',
-                      'font-inter text-xs font-normal leading-4 text-fig-Subject-two-primary',
-                      'transition-opacity hover:opacity-90',
-                      'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
-                      'sm:flex-none',
-                    )}
-                  >
-                    <Plus
-                      className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0"
-                      aria-hidden
-                    />
-                    <span className="hidden sm:inline">Create folder</span>
-                    <span className="sm:hidden">Folder</span>
-                  </button>
-                  {canUploadDocuments && (
-                    <button
-                      type="button"
-                      onClick={() => {
-                        setShowUploadFileModal(true);
-                      }}
-                      className={cn(
-                        'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-[var(--Gap-one-buddy)] rounded-[2px] border border-fig-Stroke-standard',
-                        'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
-                        'font-inter text-xs font-normal leading-4 text-fig-Subject-standard',
-                        'transition-colors',
-                        'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
-                        'sm:flex-none',
-                      )}
-                    >
-                      <svg
-                        width="16"
-                        height="14"
-                        viewBox="0 0 16 14"
-                        fill="none"
-                        xmlns="http://www.w3.org/2000/svg"
-                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 pr-[var(--Gap-one-buddy)] text-fig-Subject-standard"
-                        aria-hidden="true"
+                  {activeTab === 'documents' && (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setShowCreateFolderModal(true);
+                        }}
+                        className={cn(
+                          'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-0.5 rounded-[2px] border border-fig-Stroke-primary',
+                          'bg-fig-Surface-two-primary px-[var(--Dimensions-Size-xs3)] py-px',
+                          'font-inter text-xs font-normal leading-4 text-fig-Subject-two-primary',
+                          'transition-opacity hover:opacity-90',
+                          'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                          'sm:flex-none',
+                        )}
                       >
-                        <path
-                          d="M1.2 12.2885H14.8V7.78568H16V13.534H0V7.78568H1.2V12.2885Z"
-                          fill="currentColor"
+                        <Plus
+                          className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0"
+                          aria-hidden
                         />
-                        <path
-                          d="M11.4688 4.1497L10.6188 5.02869L8.6 2.92365V10.0813H7.4V2.92528L5.38125 5.02869L4.53125 4.1497L8.00078 0.533997L11.4688 4.1497Z"
-                          fill="currentColor"
-                        />
-                      </svg>
-                      <span className="hidden sm:inline">Upload document</span>
-                      <span className="sm:hidden">Upload</span>
-                    </button>
+                        <span className="hidden sm:inline">Create folder</span>
+                        <span className="sm:hidden">Folder</span>
+                      </button>
+                      {canUploadDocuments && (
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setShowUploadFileModal(true);
+                          }}
+                          className={cn(
+                            'flex h-[var(--Size-zero-button)] flex-1 items-center justify-center gap-[var(--Gap-one-buddy)] rounded-[2px] border border-fig-Stroke-standard',
+                            'bg-transparent px-[var(--Dimensions-Size-xs3)] py-px',
+                            'font-inter text-xs font-normal leading-4 text-fig-Subject-standard',
+                            'transition-colors',
+                            'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-one-standard hover:!text-fig-Subject-standard',
+                            'sm:flex-none',
+                          )}
+                        >
+                          <svg
+                            width="16"
+                            height="14"
+                            viewBox="0 0 16 14"
+                            fill="none"
+                            xmlns="http://www.w3.org/2000/svg"
+                            className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 pr-[var(--Gap-one-buddy)] text-fig-Subject-standard"
+                            aria-hidden="true"
+                          >
+                            <path
+                              d="M1.2 12.2885H14.8V7.78568H16V13.534H0V7.78568H1.2V12.2885Z"
+                              fill="currentColor"
+                            />
+                            <path
+                              d="M11.4688 4.1497L10.6188 5.02869L8.6 2.92365V10.0813H7.4V2.92528L5.38125 5.02869L4.53125 4.1497L8.00078 0.533997L11.4688 4.1497Z"
+                              fill="currentColor"
+                            />
+                          </svg>
+                          <span className="hidden sm:inline">Upload document</span>
+                          <span className="sm:hidden">Upload</span>
+                        </button>
+                      )}
+                    </>
                   )}
                 </div>
                 {showSearch ? (
