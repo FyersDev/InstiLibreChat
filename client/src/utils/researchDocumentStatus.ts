@@ -1,4 +1,5 @@
 import { cn } from '~/utils';
+import type { CSSProperties } from 'react';
 
 /** Pipeline document status: PENDING, UPLOADED, PROCESSING, COMPLETED, FAILED */
 export function formatDocumentPipelineStatus(raw: string | undefined | null): string {
@@ -11,21 +12,50 @@ export function formatDocumentPipelineStatus(raw: string | undefined | null): st
 export function pipelineStatusBadgeClass(displayUpper: string): string {
   switch (displayUpper) {
     case 'COMPLETED':
-      return 'bg-fig-Surface-one-success text-fig-Subject-success';
+      return '!bg-fig-Surface-one-success !text-fig-Subject-one-success';
     case 'FAILED':
-      return 'bg-fig-Surface-one-danger text-fig-Subject-danger';
+      return '!bg-fig-Surface-one-danger !text-fig-Subject-one-danger';
     case 'PENDING':
     case 'UPLOADED':
     case 'PROCESSING':
-      return 'bg-fig-Surface-one-warning text-fig-Subject-warning';
+      return '!bg-fig-Surface-one-warning !text-fig-Subject-one-warning';
     default:
-      return 'bg-fig-Surface-neutral text-fig-Subject-standard';
+      return '!bg-fig-Surface-neutral !text-fig-Subject-one-standard';
+  }
+}
+
+export function pipelineStatusBadgeStyle(displayUpper: string): CSSProperties {
+  switch (displayUpper) {
+    case 'COMPLETED':
+      return {
+        backgroundColor: 'var(--Surface-one-success)',
+        color: 'var(--Subject-one-success)',
+      };
+    case 'FAILED':
+      return {
+        backgroundColor: 'var(--Surface-one-danger)',
+        color: 'var(--Subject-one-danger)',
+      };
+    case 'PENDING':
+    case 'UPLOADED':
+    case 'PROCESSING':
+      return {
+        backgroundColor: 'var(--Surface-one-warning)',
+        color: 'var(--Subject-one-warning)',
+      };
+    default:
+      return {
+        backgroundColor: 'var(--Surface-neutral)',
+        color: 'var(--Subject-one-standard)',
+      };
   }
 }
 
 export function pipelineStatusBadgeClassName(displayUpper: string): string {
   return cn(
-    'fy-typography-body-tiny inline-block max-w-full truncate rounded-full px-2 py-0.5',
+    'fy-status-pill inline-flex max-w-full items-center justify-center truncate',
+    'px-[var(--Padding-zero-spacer)] py-[var(--Padding-zero-boundary)]',
+    'text-[length:var(--Font-Label-tiny)] leading-[var(--Font-Label-Lineheight-tiny)] font-[var(--Font-Weight-medium)]',
     pipelineStatusBadgeClass(displayUpper),
   );
 }
