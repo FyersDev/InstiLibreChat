@@ -999,7 +999,7 @@ export default function ResourcesRoute() {
                     scope="col"
                     className={cn(
                       'box-border h-[var(--Size-tableHeader)] p-[var(--Padding-spacer)] text-left align-middle',
-                      'hidden sm:table-cell',
+                      activeTab === 'reports' ? 'hidden' : 'hidden sm:table-cell',
                       'font-inter text-xs font-medium leading-[14px] text-fig-Subject-standard',
                     )}
                   >
@@ -1109,7 +1109,9 @@ export default function ResourcesRoute() {
                       <td
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
-                          'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
+                          activeTab === 'reports'
+                            ? 'hidden'
+                            : 'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
                         )}
                       >
                         <span className="fy-typography-body-tiny text-fig-Subject-soft">—</span>
@@ -1313,7 +1315,9 @@ export default function ResourcesRoute() {
                         className={cn(
                           'box-border h-[var(--Size-tableBody)] max-h-[var(--Size-tableBody)]',
                           'font-inter',
-                          'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
+                          activeTab === 'reports'
+                            ? 'hidden'
+                            : 'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
                         )}
                       >
                         <span
