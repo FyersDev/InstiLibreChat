@@ -53,6 +53,8 @@ interface FolderNode {
 interface FileNode {
   id: string;
   document_id?: string;
+  /** Reports API `folderId`; hierarchy docs may omit. */
+  folder_id?: string;
   name: string;
   extension?: string;
   size_bytes?: number;
@@ -146,6 +148,9 @@ export default function ResourcesRoute() {
   const [activeTab, setActiveTab] = useState<'documents' | 'reports'>('documents');
   const [searchQuery, setSearchQuery] = useState<string>('');
   const [showSearch, setShowSearch] = useState<boolean>(false);
+  /** Reports tab: `GET .../research/reports` → `saasApi.listResearchReports`. */
+  const [reportsDocuments, setReportsDocuments] = useState<FileNode[]>([]);
+  const [reportsListLoading, setReportsListLoading] = useState(false);
 
   const isSuperAdmin = userInfo?.is_super_admin || false;
   const userOrgId =
@@ -174,6 +179,48 @@ export default function ResourcesRoute() {
       loadFolders(selectedOrgId);
     }
   }, [selectedOrgId]);
+
+  useEffect(() => {
+    if (activeTab !== 'reports') {
+      return;
+    }
+    const orgId = isSuperAdmin ? selectedOrgId : userOrgId;
+    if (!orgId || !userInfo) {
+      setReportsDocuments([]);
+      setReportsListLoading(false);
+      return;
+    }
+
+    let cancelled = false;
+    setReportsListLoading(true);
+
+    saasApi
+      .listResearchReports(orgId)
+      .then((res) => {
+        if (!cancelled) {
+          setReportsDocuments((res.reports || []) as FileNode[]);
+        }
+      })
+      .catch((err: unknown) => {
+        console.error('[ResourcesRoute] GET .../research/reports:', err);
+        if (!cancelled) {
+          showToast({
+            message: err instanceof Error ? err.message : 'Failed to load reports',
+            status: 'error',
+          });
+          setReportsDocuments([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setReportsListLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [activeTab, isSuperAdmin, selectedOrgId, userOrgId, userInfo, showToast]);
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -366,7 +413,7 @@ export default function ResourcesRoute() {
       if (reportsFolder) {
         return {
           folders: reportsFolder.children || [],
-          files: reportsFolder.files || [],
+          files: reportsDocuments,
         };
       }
       return {
@@ -413,7 +460,7 @@ export default function ResourcesRoute() {
       folders: folder.children ? filterReportsFolder(folder.children) : [],
       files: folder.files || [],
     };
-  }, [currentFolderId, allFolders, rootUnfiledFiles, activeTab]);
+  }, [currentFolderId, allFolders, rootUnfiledFiles, activeTab, reportsDocuments]);
 
   // Filter folders and files based on search query
   const filteredContent = useMemo(() => {
@@ -739,6 +786,8 @@ export default function ResourcesRoute() {
                   setActiveTab('reports');
                   setSearchQuery('');
                   setShowSearch(false);
+                  setCurrentFolderId(null);
+                  setBreadcrumbs([{ id: null, name: 'Home' }]);
                 }}
                 className={cn(
                   'font-inter inline-flex items-center border-b-2 px-0 text-sm font-normal leading-5 transition-colors',
@@ -912,10 +961,15 @@ export default function ResourcesRoute() {
 
       {/* Content View */}
       <div className="flex-1 overflow-auto">
-        {filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
+        {activeTab === 'reports' && reportsListLoading ? (
+          <div className="flex flex-col items-center justify-center py-24">
+            <Spinner size={40} className="mb-3" />
+            <p className="text-sm text-fig-Subject-neutral">Loading reports…</p>
+          </div>
+        ) : filteredContent.folders.length === 0 && filteredContent.files.length === 0 ? (
           <div className="py-12 text-center">
             <img
-              src="/research/assets/Folder.svg"
+              src={asset('Folder.svg')}
               alt="Empty Folder"
               className="mx-auto mb-4 h-12 w-12 opacity-40 dark:invert"
             />

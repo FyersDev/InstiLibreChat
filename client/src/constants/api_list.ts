@@ -8,8 +8,8 @@
  * - `client/src/services/saasApi.ts` — wraps FYERS Conflux + user-details
  * - `client/src/services/researchConfluxApi.ts` — `fyersOrgResearchUrl` + `FYERS_ORG_RESEARCH_SEGMENTS`
  *
- * Report PDF (FYERS org research): upload `POST .../save-report-upload`; download presigned
- * `GET .../documents/{documentId}/download`; soft delete `DELETE .../documents/{documentId}` (204).
+ * Reports (FYERS org research): list `GET .../research/reports`; upload `POST .../save-report-upload`;
+ * download presigned `GET .../documents/{documentId}/download`; soft delete `DELETE .../documents/{documentId}` (204).
  */
 
 
@@ -28,6 +28,8 @@ export function getFyersT2ApiBaseNormalized(): string {
 export const FYERS_ORG_RESEARCH_SEGMENTS = {
   /** Single-call folder tree + documents incl. `unfiledDocuments`. */
   hierarchy: 'hierarchy',
+  /** Flat list of saved reports (PDFs); ensures Reports folder exists server-side. */
+  reports: 'reports',
   documentUpload: 'document-upload',
   saveReportUpload: 'save-report-upload',
   documents: 'documents',
@@ -61,6 +63,7 @@ export const fyersT2Urls = {
   instiAdminUserDetails: `${FYERS_T2_API_BASE}/insti/admin/user-details`,
   instiOrgResearchDocumentUpload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/document-upload`,
   instiOrgResearchSaveReportUpload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/save-report-upload`,
+  instiOrgResearchReports: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/reports`,
   instiOrgResearchDocuments: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents`,
   instiOrgResearchDocumentsById: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}`,
   instiOrgResearchDocumentDownload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/download`,
@@ -106,6 +109,12 @@ export const fyersT2ApiList: ReadonlyArray<{
     method: 'POST',
     url: fyersT2Urls.instiOrgResearchSaveReportUpload,
     usedIn: 'researchConfluxApi.saveReportUpload',
+  },
+  {
+    key: 'instiOrgResearchReports',
+    method: 'GET',
+    url: fyersT2Urls.instiOrgResearchReports,
+    usedIn: 'researchConfluxApi.listReports; saasApi.listResearchReports',
   },
   {
     key: 'instiOrgResearchDocuments',

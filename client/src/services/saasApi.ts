@@ -400,6 +400,10 @@ function mapConfluxDocToFileNode(row: Record<string, unknown>): Record<string, u
     document_id: idStr,
     name: nameStr,
     extension,
+    folder_id:
+      row.folderId !== undefined || row.folder_id !== undefined
+        ? String(row.folderId ?? row.folder_id)
+        : undefined,
     size_bytes: typeof row.sizeBytes === 'number' ? row.sizeBytes : row.size_bytes,
     created_at: String(row.createdAt ?? row.created_at ?? ''),
     storage_key: String(row.storagePath ?? row.storage_key ?? ''),
@@ -858,6 +862,20 @@ export const saasApi = {
   },
 
   // Documents / files (FYERS T2 only)
+  /**
+   * FYERS `GET .../research/reports` — flat list of saved report PDFs (`data.reports`).
+   * Download/delete use the same document endpoints as other research files.
+   */
+  async listResearchReports(orgId?: string | null): Promise<{ reports: Record<string, unknown>[] }> {
+    const org = requireConfluxOrg(orgId);
+    const raw = await researchConfluxApi.listReports(org);
+    const payload = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const items = Array.isArray(payload.reports) ? payload.reports : [];
+    return {
+      reports: items.map((row) => mapConfluxDocToFileNode(row as Record<string, unknown>)),
+    };
+  },
+
   async getFiles(folderId?: string, page = 1, limit = 1000, orgId?: string | null) {
     const org = requireConfluxOrg(orgId);
     const raw = await researchConfluxApi.listDocuments(org, {

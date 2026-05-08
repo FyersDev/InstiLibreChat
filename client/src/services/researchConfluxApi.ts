@@ -367,6 +367,16 @@ export const researchConfluxApi = {
     return parseConfluxResponse<ProcessorSuccessEnvelope>(res) as Promise<ProcessorSuccessEnvelope>;
   },
 
+  /** `GET .../research/reports` — `{ data: { reports: [...] } }` per FYERS org research contract. */
+  async listReports(orgId: number | string): Promise<unknown> {
+    const url = fyersOrgResearchUrl(orgId, R.reports);
+    const res = await confluxFetch(url, {
+      method: 'GET',
+      headers: { Accept: 'application/json' },
+    });
+    return parseConfluxResponse(res);
+  },
+
   async listDocuments(
     orgId: number | string,
     query?: { scope?: 'all'; folderId?: string | number; forSelection?: boolean | string },
