@@ -7,6 +7,7 @@ import { useParams } from 'react-router-dom';
 import CreateTemplateModal from '~/components/Templates/CreateTemplateModal';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
 
 interface SavedTemplate {
   name: string;
@@ -270,7 +271,7 @@ export default function TemplateSelector() {
       <Ariakit.MenuProvider store={menu}>
         <Ariakit.MenuButton className="flex h-[var(--Size-input)] items-center gap-[var(--Gap-zero-group)] rounded-[2px] border border-fig-Stroke-soft bg-transparent px-[var(--Padding-zero-spacer)] text-sm font-normal leading-5 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard">
           <img
-            src="/research/assets/documents.svg"
+            src={asset('documents.svg')}
             alt="Template"
             className="h-3.5 w-3.5 dark:invert"
           />

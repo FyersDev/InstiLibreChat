@@ -8,6 +8,7 @@ import EditFolderModal from '~/components/Resources/Modals/EditFolderModal';
 import UploadFileModal from '~/components/Resources/Modals/UploadFileModal';
 import { saasApi } from '~/services/saasApi';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
 import { PermissionManager } from '~/utils/permissions';
 import {
   formatDocumentPipelineStatus,
@@ -83,7 +84,7 @@ function sameCreatorAsCurrentUser(actorId: unknown, currentUserId: unknown): boo
 // Custom document icon component for list view
 const DocumentIcon = ({ className }: { className?: string }) => (
   <img
-    src="/research/assets/documents.svg"
+    src={asset('documents.svg')}
     alt="Document"
     className={`${className || 'h-3 w-3'} opacity-70 dark:opacity-70 dark:brightness-0 dark:invert`}
   />

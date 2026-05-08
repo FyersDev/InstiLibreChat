@@ -22,6 +22,7 @@ import {
   pipelineStatusBadgeStyle,
 } from '~/utils/researchDocumentStatus';
 import { saasApi } from '~/services/saasApi';
+import { asset } from '~/utils/assetPath';
 
 interface DocumentSelectorProps {
   isOpen: boolean;
@@ -571,7 +572,7 @@ export default function DocumentSelector({
                             )}
                           >
                             <img
-                              src="/research/assets/documents.svg"
+                              src={asset('documents.svg')}
                               alt=""
                               className="h-3 w-3 flex-shrink-0 opacity-80 dark:invert"
                             />
@@ -828,7 +829,7 @@ export default function DocumentSelector({
                                       )}
                                     >
                                       <img
-                                        src="/research/assets/documents.svg"
+                                        src={asset('documents.svg')}
                                         alt=""
                                         className="block h-3.5 w-3.5 flex-shrink-0 object-contain opacity-80 dark:invert"
                                       />

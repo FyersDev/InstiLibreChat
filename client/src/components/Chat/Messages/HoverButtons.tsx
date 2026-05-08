@@ -9,6 +9,7 @@ import { useFileMapContext } from '~/Providers';
 import Feedback from './Feedback';
 import SavePDFModal from '../SavePDFModal';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
 
 type THoverButtons = {
   isEditing: boolean;
@@ -367,7 +368,7 @@ const HoverButtons = ({
           title="Generate PDF Report"
           icon={
             <img 
-              src="/research/assets/documents.svg" 
+              src={asset('documents.svg')} 
               alt="Generate PDF" 
               className="opacity-70 dark:invert dark:opacity-70" 
               style={{ width: '16px', height: '16px' }}

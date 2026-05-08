@@ -6,6 +6,7 @@ import { useLocalize } from '~/hooks';
 import { useChatContext } from '~/Providers';
 import { Constants } from 'librechat-data-provider';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
 import DocumentSelector from '~/components/Documents/DocumentSelector';
 import type { DocumentListItem } from '~/data-provider/document-service';
 
@@ -349,7 +350,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
               >
                 <div className="flex items-center gap-2 min-w-0 flex-1">
                   <img 
-                    src="/assets/documents.svg" 
+                    src={asset('documents.svg')} 
                     alt="Document" 
                     className="h-3 w-3 flex-shrink-0 opacity-70 dark:invert" 
                   />

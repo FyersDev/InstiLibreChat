@@ -3,6 +3,7 @@ import { X, Check } from 'lucide-react';
 import { useParams } from 'react-router-dom';
 import { Constants } from 'librechat-data-provider';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
 
 export default function SelectedTemplate() {
   const { conversationId } = useParams<{ conversationId?: string }>();
@@ -130,7 +131,7 @@ export default function SelectedTemplate() {
     >
       <Check className="h-3.5 w-3.5 text-text-secondary flex-shrink-0" />
       <img 
-        src="/research/assets/documents.svg" 
+        src={asset('documents.svg')} 
         alt="Template" 
         className="h-3.5 w-3.5 text-text-secondary flex-shrink-0 opacity-70 dark:brightness-0 dark:invert dark:opacity-70" 
       />
