@@ -1,6 +1,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import { useState } from 'react';
 import { useOutletContext } from 'react-router-dom';
+import type { TStartupConfig } from 'librechat-data-provider';
 import type { ContextType } from '~/common';
 import Settings from '~/components/Nav/Settings';
 import { useGetStartupConfig } from '~/data-provider';
@@ -9,11 +10,27 @@ import { asset } from '~/utils/assetPath';
 import ModelSelector from '~/components/Chat/Menus/Endpoints/ModelSelector';
 import { HeaderNewChat } from './Menus';
 
+/** When model selection is disabled in config, show the configured label only (no dropdown). */
+function FixedModelLabel({ startupConfig }: { startupConfig: TStartupConfig | undefined }) {
+  const list = startupConfig?.modelSpecs?.list ?? [];
+  const spec = list.find((s) => s.default) ?? list[0];
+  const label = spec?.label ?? spec?.preset?.model ?? '';
+  if (!label) {
+    return null;
+  }
+  return (
+    <div className="border-border-light bg-surface-secondary text-text-primary my-1 flex h-10 max-w-[70vw] items-center justify-center gap-2 rounded-xl border px-3 py-2 text-sm">
+      <span className="flex-grow truncate text-left">{label}</span>
+    </div>
+  );
+}
+
 export default function Header() {
   const { navVisible } = useOutletContext<ContextType>();
   const { data: startupConfig } = useGetStartupConfig();
   const localize = useLocalize();
   const [showSettings, setShowSettings] = useState(false);
+  const modelSelectionDisabled = startupConfig?.interface?.modelSelect === false;
 
   return (
     <div className="bg-fig-Surface-standard text-fig-Text-heading sticky top-0 z-10 flex h-14 w-full items-center justify-between p-2 font-semibold">
@@ -47,7 +64,11 @@ export default function Header() {
         <div className="mx-1 flex items-center">
           <div className="flex flex-row items-center gap-2 scale-75 origin-right">
             <div className="min-w-0 max-w-md flex-1">
-              <ModelSelector startupConfig={startupConfig} />
+              {modelSelectionDisabled ? (
+                <FixedModelLabel startupConfig={startupConfig} />
+              ) : (
+                <ModelSelector startupConfig={startupConfig} />
+              )}
             </div>
             <button
               type="button"
@@ -56,7 +77,7 @@ export default function Header() {
               aria-label={localize('com_nav_settings')}
             >
               <img
-                src="/assets/settings.svg"
+                src={asset('settings.svg')}
                 alt=""
                 className="h-5 w-5 dark:brightness-0 dark:invert"
               />
