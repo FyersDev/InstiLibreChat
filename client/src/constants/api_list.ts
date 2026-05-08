@@ -7,6 +7,9 @@
  *   default string should match `fyersT2Urls.instiAdminUserDetails`)
  * - `client/src/services/saasApi.ts` — wraps FYERS Conflux + user-details
  * - `client/src/services/researchConfluxApi.ts` — `fyersOrgResearchUrl` + `FYERS_ORG_RESEARCH_SEGMENTS`
+ *
+ * Report PDF (FYERS org research): upload `POST .../save-report-upload`; download presigned
+ * `GET .../documents/{documentId}/download`; soft delete `DELETE .../documents/{documentId}` (204).
  */
 
 

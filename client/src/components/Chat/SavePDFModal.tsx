@@ -1025,7 +1025,7 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         hasFile: !!pdfFile,
       });
 
-      // FYERS org research save-report upload (no AI processing)
+      // POST .../research/save-report-upload — multipart file + optional metadata JSON; use data.id for download/delete
       const uploadResponse: any = await saasApi.saveReport(pdfFile, orgId, reportMetadata);
       
       console.log('Upload response:', uploadResponse);
@@ -1062,45 +1062,49 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
         console.warn('Failed to store file ID in localStorage:', storageError);
       }
 
-      // Download the PDF directly from the blob we created (before uploading)
-      // This ensures the user gets the exact PDF we generated
+      // Same as Resources documents: GET .../documents/{documentId}/download (presigned) → browser save
       try {
-        const url = window.URL.createObjectURL(pdfBlob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = pdfFileName;
-        link.style.display = 'none';
-        document.body.appendChild(link);
-        link.click();
-        
-        // Clean up
-        setTimeout(() => {
-          if (document.body.contains(link)) {
-            document.body.removeChild(link);
-          }
-          window.URL.revokeObjectURL(url);
-        }, 100);
-        
-        console.log('PDF downloaded successfully:', pdfFileName);
-        
-        // Show success toast
+        await saasApi.downloadDocumentWithBrowser(uploadedFileId, orgId, uploadedFileName);
+        console.log('PDF downloaded via presigned URL:', uploadedFileId);
         showToast({
           message: `PDF report "${uploadedFileName}" saved and downloaded successfully!`,
           severity: NotificationSeverity.SUCCESS,
           showIcon: true,
           duration: 4000,
         });
-      } catch (downloadErr: any) {
-        console.error('Error downloading PDF:', downloadErr);
-        // Still show success since file was uploaded
-        showToast({
-          message: `PDF report "${uploadedFileName}" saved successfully!`,
-          severity: NotificationSeverity.SUCCESS,
-          showIcon: true,
-          duration: 4000,
-        });
+      } catch (presignErr: any) {
+        console.warn('[SavePDFModal] Presigned download failed, falling back to local blob:', presignErr);
+        try {
+          const url = window.URL.createObjectURL(pdfBlob);
+          const link = document.createElement('a');
+          link.href = url;
+          link.download = pdfFileName;
+          link.style.display = 'none';
+          document.body.appendChild(link);
+          link.click();
+          setTimeout(() => {
+            if (document.body.contains(link)) {
+              document.body.removeChild(link);
+            }
+            window.URL.revokeObjectURL(url);
+          }, 100);
+          showToast({
+            message: `PDF report "${uploadedFileName}" saved and downloaded successfully!`,
+            severity: NotificationSeverity.SUCCESS,
+            showIcon: true,
+            duration: 4000,
+          });
+        } catch (downloadErr: any) {
+          console.error('Error downloading PDF:', downloadErr);
+          showToast({
+            message: `PDF report "${uploadedFileName}" saved successfully!`,
+            severity: NotificationSeverity.SUCCESS,
+            showIcon: true,
+            duration: 4000,
+          });
+        }
       }
-      
+
       onClose();
     } catch (err: any) {
       setError(err.message || 'Failed to save report');

@@ -554,7 +554,18 @@ export default function ResourcesRoute() {
     }
   };
 
-  const handlePreviewFile = (file: FileNode) => {
+  const handlePreviewFile = async (file: FileNode) => {
+    const docIdForPreview = file.document_id ?? file.id;
+    const orgForPreview = isSuperAdmin ? selectedOrgId : userOrgId;
+    if (docIdForPreview && orgForPreview) {
+      try {
+        await saasApi.openDocumentDownloadInNewTab(String(docIdForPreview), orgForPreview);
+        return;
+      } catch (presignErr: unknown) {
+        console.warn('[Resources] Presigned preview failed, falling back to legacy URL:', presignErr);
+      }
+    }
+
     try {
       // Get base path from meta tag or default to /research/
       const basePath = import.meta.env.BASE_URL || '/research/';

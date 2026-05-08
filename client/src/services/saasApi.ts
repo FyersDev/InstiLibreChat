@@ -894,6 +894,10 @@ export const saasApi = {
     });
   },
 
+  /**
+   * PDF report upload — `POST /insti/admin/org/:orgId/research/save-report-upload` (multipart: `file`, optional `metadata` JSON).
+   * Response `data.id` is `documentId` for {@link downloadDocumentWithBrowser} / {@link deleteFile}.
+   */
   async saveReport(file: File, orgId?: string | null, metadata?: any) {
     if (!file) {
       throw new Error('File is required for saveReport');
@@ -910,6 +914,7 @@ export const saasApi = {
     return researchConfluxApi.updateDocument(org, id, data);
   },
 
+  /** Soft-delete — `DELETE /insti/admin/org/:orgId/research/documents/:documentId` (204). */
   async deleteFile(id: string, orgId?: string | null) {
     const org = requireConfluxOrg(orgId);
     await researchConfluxApi.deleteDocument(org, id);
