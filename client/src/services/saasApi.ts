@@ -870,7 +870,18 @@ export const saasApi = {
     const org = requireConfluxOrg(orgId);
     const raw = await researchConfluxApi.listReports(org);
     const payload = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-    const items = Array.isArray(payload.reports) ? payload.reports : [];
+    let items: unknown[] = [];
+    if (Array.isArray(payload.reports)) {
+      items = payload.reports;
+    } else {
+      const nested = payload.data;
+      if (nested && typeof nested === 'object' && !Array.isArray(nested)) {
+        const dr = (nested as Record<string, unknown>).reports;
+        if (Array.isArray(dr)) {
+          items = dr;
+        }
+      }
+    }
     return {
       reports: items.map((row) => mapConfluxDocToFileNode(row as Record<string, unknown>)),
     };

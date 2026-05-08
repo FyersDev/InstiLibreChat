@@ -407,18 +407,13 @@ export default function ResourcesRoute() {
     // Backend now filters folders by user_id, so we don't need client-side user filtering
     // We only need to filter out the Reports folder from the Documents tab
 
-    // If Reports tab is active, show Reports folder content
+    // Reports tab: files always come from GET .../research/reports (`reportsDocuments`).
+    // Subfolders only if hierarchy marks a `folder_kind=reports` folder (often absent until API sync).
     if (activeTab === 'reports') {
       const reportsFolder = findResearchReportsFolderInTree(allFolders);
-      if (reportsFolder) {
-        return {
-          folders: reportsFolder.children || [],
-          files: reportsDocuments,
-        };
-      }
       return {
-        folders: [],
-        files: [],
+        folders: reportsFolder?.children || [],
+        files: reportsDocuments,
       };
     }
 
