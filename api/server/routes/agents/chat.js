@@ -1,4 +1,5 @@
 const express = require('express');
+const { logger } = require('@librechat/data-schemas');
 const { generateCheckAccess, skipAgentCheck } = require('@librechat/api');
 const { PermissionTypes, Permissions, PermissionBits } = require('librechat-data-provider');
 const {
@@ -35,6 +36,12 @@ router.use(buildEndpointOption);
 router.use(setHeaders);
 
 const controller = async (req, res, next) => {
+  logger.info('[agents/chat] inbound request payload', {
+    userId: req.user?.id,
+    endpointParam: req.params?.endpoint ?? null,
+    conversationId: req.body?.conversationId ?? req.body?.message?.conversationId ?? null,
+    body: req.body,
+  });
   await AgentController(req, res, next, initializeClient, addTitle);
 };
 

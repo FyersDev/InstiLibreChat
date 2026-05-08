@@ -118,6 +118,13 @@ export default function useSSE(
     let { payload } = payloadData;
     payload = removeNullishValues(payload) as TPayload;
 
+    // Debug: full outbound chat payload for troubleshooting MCP/document requests.
+    console.groupCollapsed('[chat-request] outbound payload');
+    console.info('submissionKey:', submissionKey);
+    console.info('server:', payloadData.server);
+    console.info('payload:', payload);
+    console.groupEnd();
+
     let textIndex = null;
     clearStepMaps();
 

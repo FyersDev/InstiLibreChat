@@ -379,24 +379,24 @@ function createToolInstance({ res, toolName, serverName, toolDefinition, provide
       ) {
         const normalized = { ...toolArguments };
 
-        // Backward compatibility: accept `collection` and map to `collection_name`.
-        if (
-          (normalized.collection_name == null || normalized.collection_name === '') &&
-          normalized.collection != null &&
-          normalized.collection !== ''
-        ) {
-          normalized.collection_name = normalized.collection;
-        }
+        // // Backward compatibility: accept `collection` and map to `collection_name`.
+        // if (
+        //   (normalized.collection_name == null || normalized.collection_name === '') &&
+        //   normalized.collection != null &&
+        //   normalized.collection !== ''
+        // ) {
+        //   normalized.collection_name = normalized.collection;
+        // }
 
-        if (normalized.source == null || normalized.source === '') {
-          normalized.source = 'research';
-        }
-        if (normalized.score == null || normalized.score === '') {
-          normalized.score = 0.3;
-        }
-        if (normalized.alpha == null || normalized.alpha === '') {
-          normalized.alpha = 0.6;
-        }
+        // if (normalized.source == null || normalized.source === '') {
+        //   normalized.source = 'research';
+        // }
+        // if (normalized.score == null || normalized.score === '') {
+        //   normalized.score = 0.3;
+        // }
+        // if (normalized.alpha == null || normalized.alpha === '') {
+        //   normalized.alpha = 0.6;
+        // }
 
         finalToolArguments = normalized;
       }
