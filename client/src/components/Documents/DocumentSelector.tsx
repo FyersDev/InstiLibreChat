@@ -12,6 +12,7 @@ import {
 import { useLocalize, useMCPServerManager } from '~/hooks';
 import { type DocumentListItem } from '~/data-provider/document-service';
 import { Constants } from 'librechat-data-provider';
+import { DOCUMENT_SEARCH_MCP_SERVER_NAME } from '~/constants/mcpServers';
 import { cn } from '~/utils';
 import { findResearchReportsFolderInTree } from '~/utils/researchFolders';
 import { researchOwnerColumnLabel } from '~/utils/researchOwner';
@@ -416,15 +417,18 @@ export default function DocumentSelector({
       // Auto-select document-search MCP when documents are selected
       if (selected.length > 0) {
         const currentMCPValues = mcpServerManager.mcpValues || [];
-        if (!currentMCPValues.includes('document_search')) {
-          mcpServerManager.batchToggleServers([...currentMCPValues, 'document_search']);
+        if (!currentMCPValues.includes(DOCUMENT_SEARCH_MCP_SERVER_NAME)) {
+          mcpServerManager.batchToggleServers([
+            ...currentMCPValues,
+            DOCUMENT_SEARCH_MCP_SERVER_NAME,
+          ]);
         }
       } else {
         // Deselect document-search MCP if no documents are selected
         const currentMCPValues = mcpServerManager.mcpValues || [];
-        if (currentMCPValues.includes('document_search')) {
+        if (currentMCPValues.includes(DOCUMENT_SEARCH_MCP_SERVER_NAME)) {
           mcpServerManager.batchToggleServers(
-            currentMCPValues.filter((s) => s !== 'document_search'),
+            currentMCPValues.filter((s) => s !== DOCUMENT_SEARCH_MCP_SERVER_NAME),
           );
         }
       }

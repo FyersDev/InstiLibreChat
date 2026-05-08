@@ -27,6 +27,8 @@ const { getAppConfig } = require('./Config');
 const { getLogStores } = require('~/cache');
 const { mcpServersRegistry } = require('@librechat/api');
 
+const DOCUMENT_SEARCH_MCP_SERVER_NAME = 'document_search';
+
 /**
  * @param {object} params
  * @param {ServerResponse} params.res - The Express response object for sending events.
@@ -366,8 +368,38 @@ function createToolInstance({ res, toolName, serverName, toolDefinition, provide
       const customUserVars =
         config?.configurable?.userMCPAuthMap?.[`${Constants.mcp_prefix}${serverName}`];
 
-      // Use toolArguments as-is - collection IDs are now provided by LLM from the prompt
-      const finalToolArguments = toolArguments;
+      // Normalize document_search arguments and apply safe defaults expected by the SSE service.
+      // Keep behavior unchanged for all other MCP servers/tools.
+      let finalToolArguments = toolArguments;
+      if (
+        serverName === DOCUMENT_SEARCH_MCP_SERVER_NAME &&
+        toolArguments != null &&
+        typeof toolArguments === 'object' &&
+        !Array.isArray(toolArguments)
+      ) {
+        const normalized = { ...toolArguments };
+
+        // Backward compatibility: accept `collection` and map to `collection_name`.
+        if (
+          (normalized.collection_name == null || normalized.collection_name === '') &&
+          normalized.collection != null &&
+          normalized.collection !== ''
+        ) {
+          normalized.collection_name = normalized.collection;
+        }
+
+        if (normalized.source == null || normalized.source === '') {
+          normalized.source = 'research';
+        }
+        if (normalized.score == null || normalized.score === '') {
+          normalized.score = 0.3;
+        }
+        if (normalized.alpha == null || normalized.alpha === '') {
+          normalized.alpha = 0.6;
+        }
+
+        finalToolArguments = normalized;
+      }
 
       const result = await mcpManager.callTool({
         serverName,
@@ -429,8 +461,8 @@ function createToolInstance({ res, toolName, serverName, toolDefinition, provide
 
   // Enhance description for document_search to include instructions about document IDs
   let enhancedDescription = description || '';
-  if (serverName === 'document_search') {
-    enhancedDescription = `${enhancedDescription}\n\nIMPORTANT: When using this tool, the 'collection' parameter should be set to one of the available document IDs provided in the context. The system will automatically handle multiple documents by making separate calls for each document ID. Do not use arbitrary numbers for the collection parameter - use the specific document IDs that are available.`;
+  if (serverName === DOCUMENT_SEARCH_MCP_SERVER_NAME) {
+    enhancedDescription = `${enhancedDescription}\n\nIMPORTANT: For document_search, pass selected document UUIDs in 'collection_name' (not 'collection'). Use arguments in this shape when relevant: { query, source: "research", collection_name, mode: "text"|"table", score, alpha }. Use only provided document IDs; do not invent collection names.`;
   }
 
   const toolInstance = tool(_call, {

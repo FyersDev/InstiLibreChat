@@ -29,6 +29,7 @@ import store, { useGetEphemeralAgent } from '~/store';
 import useUserKey from '~/hooks/Input/useUserKey';
 import { useNavigate } from 'react-router-dom';
 import { useAuthContext } from '~/hooks';
+import { DOCUMENT_SEARCH_MCP_SERVER_NAME } from '~/constants/mcpServers';
 import { logger } from '~/utils';
 
 const logChatRequest = (request: Record<string, unknown>) => {
@@ -368,7 +369,9 @@ export default function useChatFunctions({
             const existingMCPServers = ephemeralAgent?.mcp || [];
             
             // Add document_search to the list if not already present
-            const allMCPServers = [...existingMCPServers, 'document_search'].filter((v, i, a) => a.indexOf(v) === i);
+            const allMCPServers = [...existingMCPServers, DOCUMENT_SEARCH_MCP_SERVER_NAME].filter(
+              (v, i, a) => a.indexOf(v) === i,
+            );
             
             enhancedEphemeralAgent = {
               ...(ephemeralAgent || {}),
@@ -660,8 +663,9 @@ export default function useChatFunctions({
     let structuredPrompt = '';
     
     // Build documents array - only include if documents are selected AND document_search MCP is enabled
-    const hasDocumentSearchMCP = enhancedEphemeralAgent?.mcp?.includes('document_search') || 
-                                  ephemeralAgent?.mcp?.includes('document_search');
+    const hasDocumentSearchMCP =
+      enhancedEphemeralAgent?.mcp?.includes(DOCUMENT_SEARCH_MCP_SERVER_NAME) ||
+      ephemeralAgent?.mcp?.includes(DOCUMENT_SEARCH_MCP_SERVER_NAME);
     
     if (documentsList.length > 0 && hasDocumentSearchMCP) {
       const validDocuments = documentsList
@@ -672,10 +676,10 @@ export default function useChatFunctions({
               : '';
           return {
             name: doc.filename,
-            collection: docId || null,
+            collection_name: docId || null,
           };
         })
-        .filter((doc: any) => doc.collection != null && doc.collection !== '');
+        .filter((doc: any) => doc.collection_name != null && doc.collection_name !== '');
       
       // Only include documents array if there are valid documents
       if (validDocuments.length > 0) {
