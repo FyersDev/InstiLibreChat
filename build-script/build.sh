@@ -5,6 +5,10 @@
 
 set -e
 
+if [ -z "${BASH_VERSION:-}" ]; then
+    exec bash "$0" "$@"
+fi
+
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -32,7 +36,26 @@ print_step()    { echo -e "${CYAN}[→]${NC} $1"; }
 print_info()    { echo -e "${BLUE}[ℹ]${NC} $1"; }
 print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 
-port_listening() { ss -tln 2>/dev/null | grep -q ":$1 "; }
+port_listening() { ss -tln 2>/dev/null | grep -qE ":$1([[:space:]]|$)"; }
+
+wait_for_port() {
+    local port="$1"
+    local label="$2"
+    local timeout="${3:-60}"
+    local elapsed=0
+
+    while [ "$elapsed" -lt "$timeout" ]; do
+        if port_listening "$port"; then
+            print_status "$label is listening on port $port"
+            return 0
+        fi
+        sleep 2
+        elapsed=$((elapsed + 2))
+    done
+
+    print_warning "$label not yet on port $port after ${timeout}s"
+    return 1
+}
 
 ensure_repo_dir() {
     local repo_dir="$1"
@@ -240,7 +263,7 @@ ensure_ports_free() {
 }
 
 print_deploy_status() {
-    local spec service_name port friendly_name pid_file pid port_state
+    local spec service_name port friendly_name pid_file pid port_state proc_state
 
     echo "================================================"
     echo "  Service status"
@@ -255,70 +278,28 @@ print_deploy_status() {
         IFS=: read -r service_name port friendly_name <<< "$spec"
         pid_file="$RUN_DIR/${service_name}.pid"
         pid="—"
+        proc_state="stopped"
         if [ -f "$pid_file" ]; then
             pid="$(tr -d '[:space:]' <"$pid_file" 2>/dev/null || true)"
             [ -z "$pid" ] && pid="—"
+            if [ "$pid" != "—" ] && kill -0 "$pid" 2>/dev/null; then
+                proc_state="running"
+            fi
         fi
         if port_listening "$port"; then
-            port_state="Listening"
+            port_state="listening"
         else
-            port_state="Not listening"
+            port_state="not listening"
         fi
-        echo "  $friendly_name ($port): $port_state | PID file: $pid_file | PID: $pid"
+        echo "  $friendly_name ($port): $port_state | process $proc_state | PID file: $pid_file | PID: $pid"
     done
     echo ""
 }
 
-# ----- Frontend -----
+# ----- Prepare repo & build -----
 
 echo "================================================"
-echo "  Restart: LibreChat Frontend (Dev Server)"
-echo "================================================"
-echo ""
-
-ensure_insti_root_layout || exit 1
-
-print_step "Pulling latest ($LIBRECHAT_BRANCH)..."
-cd "$LIBRECHAT_DIR"
-git fetch origin
-git pull origin "$LIBRECHAT_BRANCH"
-print_status "$(git log -1 --format='%h %s')"
-echo ""
-
-if ! ensure_npm_on_path; then
-    print_error "Node.js / npm is not installed or not on PATH."
-    print_info "Install: sudo dnf install -y nodejs npm"
-    exit 1
-fi
-if ! librechat_node_version_ok; then
-    print_error "Node.js is too old for InstiLibreChat (need 20.19+, 22.12+, or 23+)."
-    print_info "NodeSource on OL9: sudo dnf remove -y nodejs-full-i18n && sudo dnf install -y nodejs --allowerasing (after setup_22.x)."
-    exit 1
-fi
-
-bg_stop_service "librechat-frontend" "3090" "LibreChat Frontend"
-
-NPM_BIN="$(command -v npm)"
-if [ -z "$NPM_BIN" ]; then
-    print_error "npm not on PATH."
-    exit 1
-fi
-FRONTEND_CMD="\"$NPM_BIN\" run frontend:dev"
-bg_start_service "librechat-frontend" "$LIBRECHAT_DIR" "$FRONTEND_CMD" "LibreChat Frontend (Dev, Port 3090)"
-
-echo ""
-print_info "Vite HMR is active — frontend changes auto-reload."
-echo ""
-echo "================================================"
-echo "  Frontend dev restart complete"
-echo "  PID file: $RUN_DIR/librechat-frontend.pid"
-echo "================================================"
-echo ""
-
-# ----- Backend -----
-
-echo "================================================"
-echo "  Restart: LibreChat Backend"
+echo "  InstiLibreChat deploy"
 echo "================================================"
 echo ""
 
@@ -327,6 +308,7 @@ ensure_insti_root_layout || exit 1
 print_step "Pulling latest ($LIBRECHAT_BRANCH)..."
 cd "$LIBRECHAT_DIR"
 git fetch origin
+git checkout "$LIBRECHAT_BRANCH"
 git pull origin "$LIBRECHAT_BRANCH"
 print_status "$(git log -1 --format='%h %s')"
 echo ""
@@ -359,6 +341,49 @@ print_status "All packages built"
 set +o pipefail
 echo ""
 
+NPM_BIN="$(command -v npm)"
+if [ -z "$NPM_BIN" ]; then
+    print_error "npm not on PATH."
+    exit 1
+fi
+
+# ----- Frontend -----
+
+echo "================================================"
+echo "  Restart: LibreChat Frontend (Dev Server)"
+echo "================================================"
+echo ""
+
+bg_stop_service "librechat-frontend" "3090" "LibreChat Frontend"
+
+mkdir -p "$LIBRECHAT_FRONTEND_LOG_DIR"
+LIBRECHAT_FRONTEND_LOG_FILE="$LIBRECHAT_FRONTEND_LOG_DIR/$(date +%Y-%m-%d).log"
+touch "$LIBRECHAT_FRONTEND_LOG_FILE"
+print_info "Logging to: $LIBRECHAT_FRONTEND_LOG_FILE"
+
+FRONTEND_CMD="touch $LIBRECHAT_FRONTEND_LOG_FILE; echo \"=== LibreChat frontend start \$(date -Is) ===\" | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; if command -v stdbuf >/dev/null 2>&1; then stdbuf -oL -eL \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; else \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; fi"
+bg_start_service "librechat-frontend" "$LIBRECHAT_DIR" "$FRONTEND_CMD" "LibreChat Frontend (Dev, Port 3090)"
+
+if ! wait_for_port 3090 "LibreChat Frontend" 90; then
+    print_info "Check: tail -f $LIBRECHAT_FRONTEND_LOG_FILE"
+fi
+
+echo ""
+print_info "Vite HMR is active — frontend changes auto-reload."
+echo ""
+echo "================================================"
+echo "  Frontend dev restart complete"
+echo "  PID file: $RUN_DIR/librechat-frontend.pid"
+echo "================================================"
+echo ""
+
+# ----- Backend -----
+
+echo "================================================"
+echo "  Restart: LibreChat Backend"
+echo "================================================"
+echo ""
+
 bg_stop_service "librechat-backend" "3080" "LibreChat Backend"
 
 print_step "Checking for any process still on port $LIBRECHAT_BACKEND_PORT..."
@@ -381,28 +406,11 @@ touch "$LIBRECHAT_BACKEND_LOG_FILE"
 print_info "Logging to: $LIBRECHAT_BACKEND_LOG_FILE"
 print_info "MONGO_URI — use InstiLibreChat/.env only (this script does not set or override it)"
 
-NPM_BIN="$(command -v npm)"
-if [ -z "$NPM_BIN" ]; then
-    print_error "npm not on PATH."
-    exit 1
-fi
-
 LIBRECHAT_BACKEND_CMD="touch $LIBRECHAT_BACKEND_LOG_FILE; echo \"=== LibreChat backend start \$(date -Is) ===\" | tee -a $LIBRECHAT_BACKEND_LOG_FILE; if command -v stdbuf >/dev/null 2>&1;then stdbuf -oL -eL env PORT=$LIBRECHAT_BACKEND_PORT HOST=0.0.0.0 \"$NPM_BIN\" run backend 2>&1 | tee -a $LIBRECHAT_BACKEND_LOG_FILE; else env PORT=$LIBRECHAT_BACKEND_PORT HOST=0.0.0.0 \"$NPM_BIN\" run backend 2>&1 | tee -a $LIBRECHAT_BACKEND_LOG_FILE; fi"
 
 bg_start_service "librechat-backend" "$LIBRECHAT_DIR" "$LIBRECHAT_BACKEND_CMD" "LibreChat Backend (Port 3080)"
 
-elapsed=0
-while [ $elapsed -lt 30 ]; do
-    if port_listening 3080; then
-        print_status "Backend is listening on port 3080"
-        break
-    fi
-    sleep 2
-    elapsed=$((elapsed + 2))
-done
-
-if ! port_listening 3080; then
-    print_info "Backend not yet on port 3080 (may still be starting)"
+if ! wait_for_port 3080 "LibreChat Backend" 90; then
     print_info "Check: tail -f $LIBRECHAT_BACKEND_LOG_FILE"
 fi
 
@@ -423,19 +431,10 @@ echo "  Restart: insti-proxy"
 echo "================================================"
 echo ""
 
-ensure_insti_root_layout || exit 1
 if [ ! -d "$LIBRECHAT_PROXY_DIR" ]; then
     print_error "Proxy directory missing: $LIBRECHAT_PROXY_DIR"
     exit 1
 fi
-
-print_step "Pulling InstiLibreChat ($LIBRECHAT_BRANCH)..."
-cd "$LIBRECHAT_DIR"
-git fetch origin
-git checkout "$LIBRECHAT_BRANCH"
-git pull origin "$LIBRECHAT_BRANCH"
-print_status "$(git log -1 --format='%h %s')"
-echo ""
 
 if ! ensure_go_on_path; then
     print_error "Go is not installed or not on PATH."
@@ -474,13 +473,8 @@ bg_start_service "insti-proxy" \
 
 echo ""
 
-print_info "Waiting for service to start..."
-sleep 10
-
-if port_listening "7080"; then
-    print_status "Proxy is listening on port 7080"
-else
-    print_warning "Proxy not yet on port 7080 (check: tail -f $INSTI_PROXY_LOG_FILE)"
+if ! wait_for_port 7080 "Proxy" 60; then
+    print_info "Check: tail -f $INSTI_PROXY_LOG_FILE"
 fi
 
 echo ""
@@ -499,7 +493,7 @@ INSTI_PROXY_LOG_FILE="$INSTI_PROXY_LOG_DIR/${INSTI_DEPLOY_LOG_DATE}.log"
 
 print_deploy_status
 
-echo "  Status all: for s in librechat-frontend:3090 librechat-backend:3080 insti-proxy:7080; do IFS=: read -r n p <<< \"\$s\"; st=not\\ listening; ss -tln 2>/dev/null | grep -q \":\$p \" && st=listening; pid=—; [ -f $RUN_DIR/\${n}.pid ] && pid=\$(tr -d '[:space:]' < $RUN_DIR/\${n}.pid); printf '%s (%s): %s PID=%s\\n' \"\$n\" \"\$p\" \"\$st\" \"\$pid\"; done"
+echo "  Status all: for s in librechat-frontend:3090 librechat-backend:3080 insti-proxy:7080; do IFS=: read -r n p <<< \"\$s\"; st=not\\ listening; ss -tln 2>/dev/null | grep -qE \":\$p([[:space:]]|\$)\" && st=listening; pid=—; proc=stopped; [ -f $RUN_DIR/\${n}.pid ] && pid=\$(tr -d '[:space:]' < $RUN_DIR/\${n}.pid); [ \"\$pid\" != \"—\" ] && kill -0 \"\$pid\" 2>/dev/null && proc=running; printf '%s (%s): %s process=%s PID=%s\\n' \"\$n\" \"\$p\" \"\$st\" \"\$proc\" \"\$pid\"; done"
 echo ""
 
 echo "================================================"
