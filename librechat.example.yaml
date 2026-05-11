@@ -19,7 +19,9 @@ modelSpecs:
   enforce: true
   prioritize: true
   list:
-    - name: claude-sonnet-4-5      label: Claude Sonnet 4.5      default: true
+    - name: claude-sonnet-4-5
+      label: Claude Sonnet 4.5
+      default: true
       preset:
         endpoint: bedrock
         model: 'us.anthropic.claude-sonnet-4-5-20250929-v1:0'

@@ -297,6 +297,17 @@ apply_librechat_config() {
     print_status "Wrote $target"
 }
 
+validate_librechat_config() {
+    local target="$LIBRECHAT_DIR/librechat.yaml"
+
+    print_step "Validating librechat.yaml..."
+    if ! (cd "$LIBRECHAT_DIR/api" && node -e "const fs=require('fs'); const yaml=require('js-yaml'); yaml.load(fs.readFileSync(process.argv[1],'utf8'));" "$target"); then
+        print_error "Invalid librechat.yaml (check librechat.example.yaml)"
+        return 1
+    fi
+    print_status "librechat.yaml is valid YAML"
+}
+
 ensure_ports_free() {
     local port
     for port in "$@"; do
@@ -399,9 +410,20 @@ set -o pipefail
 npm install --silent 2>&1 | tail -1
 print_status "npm dependencies ready"
 
+validate_librechat_config || exit 1
+echo ""
+
 print_step "Building packages..."
 npm run build:packages 2>&1 | tail -3
 print_status "All packages built"
+
+print_step "Building client production bundle (required by backend)..."
+npm run build:client 2>&1 | tail -5
+if [ ! -f "$LIBRECHAT_DIR/client/dist/index.html" ]; then
+    print_error "Missing $LIBRECHAT_DIR/client/dist/index.html after build:client"
+    exit 1
+fi
+print_status "Client production bundle ready"
 set +o pipefail
 echo ""
 
