@@ -9,7 +9,8 @@
  * - `client/src/services/researchConfluxApi.ts` — `fyersOrgResearchUrl` + `FYERS_ORG_RESEARCH_SEGMENTS`
  *
  * Reports (FYERS org research): list `GET .../research/reports`; upload `POST .../save-report-upload`;
- * download presigned `GET .../documents/{documentId}/download`; soft delete `DELETE .../documents/{documentId}` (204).
+ * download presigned `GET .../documents/{documentId}/download`; soft delete `DELETE .../documents/{documentId}` (204);
+ * retry processor notify `POST .../documents/{documentId}/doc-processor-notify` (no body).
  */
 
 
@@ -35,6 +36,8 @@ export const FYERS_ORG_RESEARCH_SEGMENTS = {
   documents: 'documents',
   /** `GET .../documents/{documentId}/download` returns JSON `data`: presigned S3 `PresignedHTTPRequest` */
   download: 'download',
+  /** `POST .../documents/{documentId}/doc-processor-notify` — re-send async upload job to doc processor. */
+  docProcessorNotify: 'doc-processor-notify',
   folders: 'folders',
   templates: 'templates',
   personas: 'personas',
@@ -67,6 +70,7 @@ export const fyersT2Urls = {
   instiOrgResearchDocuments: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents`,
   instiOrgResearchDocumentsById: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}`,
   instiOrgResearchDocumentDownload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/download`,
+  instiOrgResearchDocProcessorNotify: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents/{documentId}/doc-processor-notify`,
   instiOrgResearchHierarchy: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/hierarchy`,
   instiOrgResearchFolders: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/folders`,
   instiOrgResearchTemplates: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/templates`,
@@ -134,6 +138,12 @@ export const fyersT2ApiList: ReadonlyArray<{
     url: fyersT2Urls.instiOrgResearchDocumentDownload,
     usedIn:
       'JSON presigned request in data; researchConfluxApi.getDocumentDownloadPresigned, downloadDocument; saasApi',
+  },
+  {
+    key: 'instiOrgResearchDocProcessorNotify',
+    method: 'POST',
+    url: fyersT2Urls.instiOrgResearchDocProcessorNotify,
+    usedIn: 'researchConfluxApi.docProcessorNotify; saasApi.retryDocumentProcessor',
   },
   {
     key: 'instiOrgResearchFolders',

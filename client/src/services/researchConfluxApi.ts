@@ -448,6 +448,17 @@ export const researchConfluxApi = {
     await parseConfluxResponse(res);
   },
 
+  /** `POST .../documents/{documentId}/doc-processor-notify` — synchronous re-notify of upload job. */
+  async docProcessorNotify(
+    orgId: number | string,
+    documentId: string,
+  ): Promise<{ notified?: boolean } | undefined> {
+    const url = fyersOrgResearchUrl(orgId, R.documents, documentId, R.docProcessorNotify);
+    const res = await confluxFetch(url, { method: 'POST' });
+    const payload = await parseConfluxResponse<{ notified?: boolean }>(res);
+    return payload ?? undefined;
+  },
+
   async listFolders(orgId: number | string, parentFolderId?: string | number): Promise<unknown> {
     const params = new URLSearchParams();
     if (parentFolderId !== undefined && parentFolderId !== '') {

@@ -1,5 +1,5 @@
 import { Spinner, useToastContext } from '@librechat/client';
-import { ChevronRight, Home, MoreVertical, Plus, Search, X } from 'lucide-react';
+import { ChevronRight, Home, MoreVertical, Plus, RotateCw, Search, X } from 'lucide-react';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import CreateFolderModal from '~/components/Resources/Modals/CreateFolderModal';
@@ -151,6 +151,7 @@ export default function ResourcesRoute() {
   /** Reports tab: `GET .../research/reports` → `saasApi.listResearchReports`. */
   const [reportsDocuments, setReportsDocuments] = useState<FileNode[]>([]);
   const [reportsListLoading, setReportsListLoading] = useState(false);
+  const [retryingDocumentId, setRetryingDocumentId] = useState<string | null>(null);
 
   const isSuperAdmin = userInfo?.is_super_admin || false;
   const userOrgId =
@@ -528,6 +529,35 @@ export default function ResourcesRoute() {
         message: `Failed to delete folder: ${errorMessage}`,
         status: 'error',
       });
+    }
+  };
+
+  const handleRetryDocumentProcessor = async (file: FileNode) => {
+    if (isResearchSystemRow(file)) {
+      return;
+    }
+    const fileIdRaw = file.document_id ?? file.id;
+    if (fileIdRaw === undefined || fileIdRaw === null || String(fileIdRaw).trim() === '') {
+      showToast({ message: 'Missing document id', status: 'error' });
+      return;
+    }
+    const docId = String(fileIdRaw);
+    const orgId = isSuperAdmin ? selectedOrgId : userOrgId;
+    setRetryingDocumentId(docId);
+    try {
+      await saasApi.retryDocumentProcessor(docId, orgId);
+      showToast({
+        message: 'Document processing retry submitted',
+        status: 'success',
+      });
+      await loadFolders(orgId);
+    } catch (err: unknown) {
+      showToast({
+        message: err instanceof Error ? err.message : 'Failed to retry document processing',
+        status: 'error',
+      });
+    } finally {
+      setRetryingDocumentId(null);
     }
   };
 
@@ -1324,13 +1354,40 @@ export default function ResourcesRoute() {
                             : 'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
                         )}
                       >
-                        <span
-                          className={pipelineStatusBadgeClassName(fileDisplayStatus)}
-                          style={pipelineStatusBadgeStyle(fileDisplayStatus)}
-                          title={fileStatusTitle}
-                        >
-                          {fileDisplayStatus}
-                        </span>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={pipelineStatusBadgeClassName(fileDisplayStatus)}
+                            style={pipelineStatusBadgeStyle(fileDisplayStatus)}
+                            title={fileStatusTitle}
+                          >
+                            {fileDisplayStatus}
+                          </span>
+                          {activeTab === 'documents' &&
+                            fileDisplayStatus === 'FAILED' &&
+                            !isSystemFile &&
+                            canModifyFile && (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleRetryDocumentProcessor(file);
+                                }}
+                                disabled={retryingDocumentId === String(file.document_id ?? file.id)}
+                                className="rounded-[2px] p-0.5 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard disabled:cursor-not-allowed disabled:opacity-50"
+                                title="Retry document processing"
+                                aria-label="Retry document processing"
+                              >
+                                <RotateCw
+                                  className={cn(
+                                    'h-3.5 w-3.5',
+                                    retryingDocumentId === String(file.document_id ?? file.id) &&
+                                      'animate-spin',
+                                  )}
+                                  aria-hidden
+                                />
+                              </button>
+                            )}
+                        </motion.div>
                       </td>
                       <td
                         className={cn(

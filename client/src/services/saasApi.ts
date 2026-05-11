@@ -948,5 +948,11 @@ export const saasApi = {
     const org = requireConfluxOrg(orgId);
     await researchConfluxApi.deleteDocument(org, id);
   },
+
+  /** `POST .../documents/:documentId/doc-processor-notify` — retry failed doc processor upload notify. */
+  async retryDocumentProcessor(documentId: string, orgId?: string | null) {
+    const org = requireConfluxOrg(orgId);
+    return researchConfluxApi.docProcessorNotify(org, documentId);
+  },
 };
 
