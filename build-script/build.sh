@@ -198,6 +198,18 @@ fetch_insti_env_from_ssm() {
     print_status "Wrote $target from SSM $parameter_name"
 }
 
+apply_librechat_config() {
+    local example="$LIBRECHAT_DIR/librechat.example.yaml"
+    local target="$LIBRECHAT_DIR/librechat.yaml"
+    if [ ! -f "$example" ]; then
+        print_error "Missing $example"
+        return 1
+    fi
+    print_step "Applying librechat.example.yaml → librechat.yaml..."
+    cp -f "$example" "$target"
+    print_status "Wrote $target"
+}
+
 ensure_ports_free() {
     local port
     for port in "$@"; do
@@ -319,6 +331,7 @@ git pull origin "$LIBRECHAT_BRANCH"
 print_status "$(git log -1 --format='%h %s')"
 echo ""
 
+apply_librechat_config || exit 1
 fetch_insti_env_from_ssm || exit 1
 echo ""
 
@@ -485,6 +498,9 @@ LIBRECHAT_BACKEND_LOG_FILE="$LIBRECHAT_BACKEND_LOG_DIR/${INSTI_DEPLOY_LOG_DATE}.
 INSTI_PROXY_LOG_FILE="$INSTI_PROXY_LOG_DIR/${INSTI_DEPLOY_LOG_DATE}.log"
 
 print_deploy_status
+
+echo "  Status all: for s in librechat-frontend:3090 librechat-backend:3080 insti-proxy:7080; do IFS=: read -r n p <<< \"\$s\"; st=not\\ listening; ss -tln 2>/dev/null | grep -q \":\$p \" && st=listening; pid=—; [ -f $RUN_DIR/\${n}.pid ] && pid=\$(tr -d '[:space:]' < $RUN_DIR/\${n}.pid); printf '%s (%s): %s PID=%s\\n' \"\$n\" \"\$p\" \"\$st\" \"\$pid\"; done"
+echo ""
 
 echo "================================================"
 echo "  Tail logs (all services)"
