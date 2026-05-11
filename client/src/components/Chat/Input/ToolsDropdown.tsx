@@ -32,7 +32,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
   const [selectedDocuments, setSelectedDocuments] = useState<StoredDocument[]>([]);
   const [popoverPosition, setPopoverPosition] = useState({ top: 0, left: 0 });
   const popoverRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+  const anchorRef = useRef<HTMLElement>(null);
   const hoverTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const loadSelectedDocuments = useCallback(() => {
@@ -143,8 +143,8 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
   }, [conversationId, selectedDocuments]);
 
   const updatePopoverPosition = useCallback(() => {
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect();
+    if (anchorRef.current) {
+      const rect = anchorRef.current.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
       const viewportWidth = window.innerWidth;
       const gap = 8;
@@ -224,8 +224,8 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
         showDocumentPopover &&
         popoverRef.current &&
         !popoverRef.current.contains(event.target as Node) &&
-        buttonRef.current &&
-        !buttonRef.current.contains(event.target as Node)
+        anchorRef.current &&
+        !anchorRef.current.contains(event.target as Node)
       ) {
         setShowDocumentPopover(false);
       }
@@ -273,7 +273,7 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
           <TooltipAnchor
             render={
               <button
-                ref={buttonRef}
+                ref={anchorRef}
                 disabled={isDisabled}
                 onClick={handleClick}
                 id="tools-dropdown-button"
@@ -293,14 +293,10 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
             disabled={isDisabled}
           />
         ) : (
-          <button
-            ref={buttonRef}
-            disabled={isDisabled}
-            onClick={handleClick}
+          <div
+            ref={anchorRef}
             onMouseEnter={handleMouseEnter}
             onMouseLeave={handleMouseLeave}
-            id="tools-dropdown-button"
-            aria-label="Select Documents"
             className={cn(
               'flex h-8 items-center gap-1.5 rounded-[2px] border border-fig-Stroke-standard',
               'bg-transparent px-[9px] text-sm font-normal leading-5 text-fig-Subject-standard',
@@ -308,18 +304,34 @@ const ToolsDropdown = ({ disabled }: ToolsDropdownProps) => {
               isDisabled && 'cursor-not-allowed opacity-50',
             )}
           >
-            {buttonText}
             <button
+              type="button"
+              disabled={isDisabled}
+              onClick={handleClick}
+              id="tools-dropdown-button"
+              aria-label="Select Documents"
+              className={cn(
+                'min-w-0 flex-1 border-0 bg-transparent p-0 text-left text-sm font-normal leading-5 text-fig-Subject-standard',
+                isDisabled && 'cursor-not-allowed',
+              )}
+            >
+              {buttonText}
+            </button>
+            <button
+              type="button"
+              disabled={isDisabled}
               onClick={(e) => {
                 e.stopPropagation();
                 handleClearDocuments();
               }}
-              className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-fig-Surface-one-standard"
+              className="ml-1 flex-shrink-0 rounded p-0.5 hover:bg-fig-Surface-one-standard disabled:cursor-not-allowed disabled:opacity-50"
               aria-label="Clear all documents"
             >
-              <span className="text-xs">✕</span>
+              <span className="text-xs" aria-hidden>
+                ✕
+              </span>
             </button>
-          </button>
+          </div>
         )}
       </div>
 
