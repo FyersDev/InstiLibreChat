@@ -1387,7 +1387,7 @@ export default function ResourcesRoute() {
                                 />
                               </button>
                             )}
-                        </motion.div>
+                        </div>
                       </td>
                       <td
                         className={cn(
