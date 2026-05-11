@@ -38,13 +38,38 @@ print_warning() { echo -e "${YELLOW}[!]${NC} $1"; }
 
 port_listening() { ss -tln 2>/dev/null | grep -qE ":$1([[:space:]]|$)"; }
 
-wait_for_port() {
+print_log_tail() {
+    local log_file="$1"
+    local lines="${2:-40}"
+
+    if [ ! -s "$log_file" ]; then
+        return 0
+    fi
+
+    echo ""
+    print_info "Last $lines lines of $log_file:"
+    tail -n "$lines" "$log_file"
+    echo ""
+}
+
+wait_for_service() {
     local port="$1"
     local label="$2"
     local timeout="${3:-60}"
+    local service_name="${4:-}"
+    local log_file="${5:-}"
     local elapsed=0
+    local pid
 
     while [ "$elapsed" -lt "$timeout" ]; do
+        if [ -n "$service_name" ] && [ -f "$RUN_DIR/${service_name}.pid" ]; then
+            pid="$(tr -d '[:space:]' <"$RUN_DIR/${service_name}.pid" 2>/dev/null || true)"
+            if [ -n "$pid" ] && ! kill -0 "$pid" 2>/dev/null; then
+                print_error "$label exited before port $port was ready"
+                print_log_tail "$log_file"
+                return 1
+            fi
+        fi
         if port_listening "$port"; then
             print_status "$label is listening on port $port"
             return 0
@@ -54,7 +79,46 @@ wait_for_port() {
     done
 
     print_warning "$label not yet on port $port after ${timeout}s"
+    print_log_tail "$log_file"
     return 1
+}
+
+ensure_local_mongo_if_needed() {
+    local env_file="$LIBRECHAT_DIR/.env"
+
+    if [ ! -f "$env_file" ]; then
+        return 0
+    fi
+    if ! grep -Eq '^MONGO_URI=.*(localhost|127\.0\.0\.1):27017' "$env_file"; then
+        print_info "MONGO_URI does not target localhost:27017 — skipping local MongoDB port check"
+        return 0
+    fi
+
+    print_step "Checking local MongoDB on port 27017..."
+    if port_listening 27017; then
+        print_status "MongoDB is listening on port 27017"
+        return 0
+    fi
+
+    if command -v docker >/dev/null 2>&1; then
+        if docker ps --format '{{.Names}}' | grep -qx 'chat-mongodb'; then
+            print_warning "chat-mongodb is running but port 27017 is not reachable on this host; confirm MONGO_URI"
+            return 0
+        fi
+        if [ -f "$LIBRECHAT_DIR/docker-compose.yml" ]; then
+            print_step "Starting MongoDB (docker compose mongodb)..."
+            if (cd "$LIBRECHAT_DIR" && docker compose up -d mongodb); then
+                sleep 3
+                if port_listening 27017; then
+                    print_status "MongoDB is listening on port 27017"
+                    return 0
+                fi
+            fi
+        fi
+    fi
+
+    print_warning "Local MongoDB is not reachable on port 27017; backend may exit until Mongo is available"
+    return 0
 }
 
 ensure_repo_dir() {
@@ -364,7 +428,7 @@ print_info "Logging to: $LIBRECHAT_FRONTEND_LOG_FILE"
 FRONTEND_CMD="touch $LIBRECHAT_FRONTEND_LOG_FILE; echo \"=== LibreChat frontend start \$(date -Is) ===\" | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; if command -v stdbuf >/dev/null 2>&1; then stdbuf -oL -eL \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; else \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; fi"
 bg_start_service "librechat-frontend" "$LIBRECHAT_DIR" "$FRONTEND_CMD" "LibreChat Frontend (Dev, Port 3090)"
 
-if ! wait_for_port 3090 "LibreChat Frontend" 90; then
+if ! wait_for_service 3090 "LibreChat Frontend" 90 "librechat-frontend" "$LIBRECHAT_FRONTEND_LOG_FILE"; then
     print_info "Check: tail -f $LIBRECHAT_FRONTEND_LOG_FILE"
 fi
 
@@ -385,6 +449,9 @@ echo "================================================"
 echo ""
 
 bg_stop_service "librechat-backend" "3080" "LibreChat Backend"
+
+ensure_local_mongo_if_needed
+echo ""
 
 print_step "Checking for any process still on port $LIBRECHAT_BACKEND_PORT..."
 PORT_PID=$(ss -tlnp 2>/dev/null | awk -v port=":$LIBRECHAT_BACKEND_PORT " '$0 ~ port {
@@ -410,7 +477,7 @@ LIBRECHAT_BACKEND_CMD="touch $LIBRECHAT_BACKEND_LOG_FILE; echo \"=== LibreChat b
 
 bg_start_service "librechat-backend" "$LIBRECHAT_DIR" "$LIBRECHAT_BACKEND_CMD" "LibreChat Backend (Port 3080)"
 
-if ! wait_for_port 3080 "LibreChat Backend" 90; then
+if ! wait_for_service 3080 "LibreChat Backend" 120 "librechat-backend" "$LIBRECHAT_BACKEND_LOG_FILE"; then
     print_info "Check: tail -f $LIBRECHAT_BACKEND_LOG_FILE"
 fi
 
@@ -473,7 +540,7 @@ bg_start_service "insti-proxy" \
 
 echo ""
 
-if ! wait_for_port 7080 "Proxy" 60; then
+if ! wait_for_service 7080 "Proxy" 60 "insti-proxy" "$INSTI_PROXY_LOG_FILE"; then
     print_info "Check: tail -f $INSTI_PROXY_LOG_FILE"
 fi
 
