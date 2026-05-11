@@ -9,6 +9,14 @@ export function formatDocumentPipelineStatus(raw: string | undefined | null): st
   return String(raw).trim().toUpperCase();
 }
 
+export function isPipelineStatusCompleted(raw: string | undefined | null): boolean {
+  return formatDocumentPipelineStatus(raw) === 'COMPLETED';
+}
+
+export function isPipelineStatusFailed(raw: string | undefined | null): boolean {
+  return formatDocumentPipelineStatus(raw) === 'FAILED';
+}
+
 export function pipelineStatusBadgeClass(displayUpper: string): string {
   switch (displayUpper) {
     case 'COMPLETED':

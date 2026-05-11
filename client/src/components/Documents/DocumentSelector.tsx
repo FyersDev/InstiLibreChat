@@ -18,6 +18,8 @@ import { findResearchReportsFolderInTree } from '~/utils/researchFolders';
 import { researchOwnerColumnLabel } from '~/utils/researchOwner';
 import {
   formatDocumentPipelineStatus,
+  isPipelineStatusCompleted,
+  isPipelineStatusFailed,
   pipelineStatusBadgeClassName,
   pipelineStatusBadgeStyle,
 } from '~/utils/researchDocumentStatus';
@@ -61,10 +63,6 @@ interface FileNode {
   uploaded_at?: string;
   status?: string;
   error_message?: string;
-}
-
-function isPipelineStatusCompleted(raw: string | undefined | null): boolean {
-  return String(raw ?? '').trim().toLowerCase() === 'completed';
 }
 
 export default function DocumentSelector({
@@ -361,6 +359,9 @@ export default function DocumentSelector({
       const collectDocuments = (folder: FolderNode) => {
         if (folder.files) {
           folder.files.forEach((file) => {
+            if (isPipelineStatusFailed(file.status)) {
+              return;
+            }
             const doc = convertFileToDocument(file);
             if (doc) {
               documents.push(doc);
@@ -471,8 +472,14 @@ export default function DocumentSelector({
     }
   };
 
-  // Get all files from current folder view
-  const currentFiles = currentFolder.files || [];
+  // Chat picker: hide failed pipeline rows (retry from Resources documents tab).
+  const currentFiles = useMemo(
+    () =>
+      (currentFolder.files || []).filter(
+        (file) => file.document_id && !isPipelineStatusFailed(file.status),
+      ),
+    [currentFolder.files],
+  );
 
   // Get selected documents with their names
   const selectedDocumentsList = useMemo(() => {

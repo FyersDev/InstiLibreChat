@@ -1354,40 +1354,13 @@ export default function ResourcesRoute() {
                             : 'hidden p-[var(--Padding-spacer)] text-left align-middle sm:table-cell',
                         )}
                       >
-                        <div className="flex items-center gap-1.5">
-                          <span
-                            className={pipelineStatusBadgeClassName(fileDisplayStatus)}
-                            style={pipelineStatusBadgeStyle(fileDisplayStatus)}
-                            title={fileStatusTitle}
-                          >
-                            {fileDisplayStatus}
-                          </span>
-                          {activeTab === 'documents' &&
-                            fileDisplayStatus === 'FAILED' &&
-                            !isSystemFile &&
-                            canModifyFile && (
-                              <button
-                                type="button"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  void handleRetryDocumentProcessor(file);
-                                }}
-                                disabled={retryingDocumentId === String(file.document_id ?? file.id)}
-                                className="rounded-[2px] p-0.5 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard disabled:cursor-not-allowed disabled:opacity-50"
-                                title="Retry document processing"
-                                aria-label="Retry document processing"
-                              >
-                                <RotateCw
-                                  className={cn(
-                                    'h-3.5 w-3.5',
-                                    retryingDocumentId === String(file.document_id ?? file.id) &&
-                                      'animate-spin',
-                                  )}
-                                  aria-hidden
-                                />
-                              </button>
-                            )}
-                        </div>
+                        <span
+                          className={pipelineStatusBadgeClassName(fileDisplayStatus)}
+                          style={pipelineStatusBadgeStyle(fileDisplayStatus)}
+                          title={fileStatusTitle}
+                        >
+                          {fileDisplayStatus}
+                        </span>
                       </td>
                       <td
                         className={cn(
@@ -1464,7 +1437,37 @@ export default function ResourcesRoute() {
                                     onClick={(e) => e.stopPropagation()}
                                   >
                                     <div className="py-1">
-                                      {/* Rename option removed - users cannot rename documents */}
+                                      {activeTab === 'documents' &&
+                                        fileDisplayStatus === 'FAILED' &&
+                                        !isSystemFile &&
+                                        canModifyFile && (
+                                          <button
+                                            type="button"
+                                            disabled={
+                                              retryingDocumentId ===
+                                              String(file.document_id ?? file.id)
+                                            }
+                                            onClick={(e) => {
+                                              e.stopPropagation();
+                                              e.preventDefault();
+                                              void handleRetryDocumentProcessor(file);
+                                              setSelectedItem(null);
+                                              setDropdownPosition(null);
+                                            }}
+                                            className="flex w-full items-center gap-2 px-4 py-2 text-left text-sm font-normal leading-5 text-fig-Subject-standard hover:bg-fig-Surface-one-standard disabled:cursor-not-allowed disabled:opacity-50"
+                                          >
+                                            <RotateCw
+                                              className={cn(
+                                                'h-4 w-4 shrink-0 opacity-70',
+                                                retryingDocumentId ===
+                                                  String(file.document_id ?? file.id) &&
+                                                  'animate-spin',
+                                              )}
+                                              aria-hidden
+                                            />
+                                            Retry processing
+                                          </button>
+                                        )}
                                       {canModifyFile && (
                                         <button
                                           type="button"
