@@ -545,8 +545,8 @@ export default function TemplatePersonaSelector() {
           </Ariakit.MenuButton>
         }
         items={menuItems}
-        className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2"
-        itemClassName="px-4 py-3 text-base hover:bg-gray-100 dark:hover:bg-gray-700"
+        className="w-auto max-w-[280px] max-h-[400px] overflow-y-auto rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 py-2 text-left"
+        itemClassName="px-4 py-3 text-left text-base justify-start hover:bg-gray-100 dark:hover:bg-gray-700"
       />
     </div>
   );

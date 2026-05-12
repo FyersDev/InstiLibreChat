@@ -269,14 +269,14 @@ export default function TemplateSelector() {
   return (
     <>
       <Ariakit.MenuProvider store={menu}>
-        <Ariakit.MenuButton className="flex h-[var(--Size-input)] items-center gap-[var(--Gap-zero-group)] rounded-[2px] border border-fig-Stroke-soft bg-transparent px-[var(--Padding-zero-spacer)] text-sm font-normal leading-5 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard">
+        <Ariakit.MenuButton className="flex h-[var(--Size-input)] min-w-0 max-w-[min(280px,calc(100vw-2rem))] items-center justify-start gap-[var(--Gap-zero-group)] rounded-[2px] border border-fig-Stroke-soft bg-transparent px-[var(--Padding-zero-spacer)] text-left text-sm font-normal leading-5 text-fig-Subject-standard transition-colors hover:bg-fig-Surface-one-standard">
           <img
             src={asset('documents.svg')}
             alt="Template"
-            className="h-3.5 w-3.5 dark:invert"
+            className="h-3.5 w-3.5 shrink-0 dark:invert"
           />
-          <span>{buttonText}</span>
-          <ChevronDown className="h-4 w-4" />
+          <span className="min-w-0 flex-1 truncate text-left">{buttonText}</span>
+          <ChevronDown className="h-4 w-4 shrink-0" />
         </Ariakit.MenuButton>
 
         <Ariakit.Menu
@@ -286,15 +286,15 @@ export default function TemplateSelector() {
           modal={true}
           unmountOnHide={true}
           className={cn(
-            'z-50 flex flex-col overflow-hidden',
-            'w-[198px]',
+            'z-50 flex flex-col overflow-hidden text-left',
+            'w-[min(280px,calc(100vw-2rem))] min-w-[198px]',
             'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
             'shadow-[0px_var(--Effects-Shadow-one-y,2px)_var(--Effects-one-blur,8px)_0px_var(--Shadow-standard,#ededed)]',
           )}
         >
           {/* "Select a template" section header */}
           <div className="shrink-0 bg-fig-Surface-one-standard p-[var(--Padding-zero-parentChild)]">
-            <p className="fy-typography-title-tiny text-fig-Subject-standard">
+            <p className="fy-typography-title-tiny text-left text-fig-Subject-standard">
               {'Select a template'}
             </p>
           </div>
@@ -306,7 +306,7 @@ export default function TemplateSelector() {
                 key={`template-${template.name}`}
                 type="button"
                 className={cn(
-                  'fy-typography-label-small flex w-full cursor-pointer items-center',
+                  'fy-typography-label-small flex w-full cursor-pointer items-start justify-start text-left',
                   'bg-fig-Surface-standard px-[var(--Padding-spacer)] py-[var(--Padding-boundary)]',
                   '!text-fig-Subject-standard outline-none',
                   'transition-colors hover:bg-fig-Surface-one-standard focus:bg-fig-Surface-one-standard',
@@ -316,12 +316,14 @@ export default function TemplateSelector() {
                   handleSelectTemplate(template);
                 }}
               >
-                {template.name}
+                <span className="min-w-0 flex-1 whitespace-normal break-words text-left">
+                  {template.name}
+                </span>
               </button>
             ))}
 
             {uniqueTemplates.length === 0 && (
-              <div className="fy-typography-body-small px-[var(--Padding-spacer)] py-[var(--Padding-boundary)] text-fig-Subject-soft">
+              <div className="fy-typography-body-small px-[var(--Padding-spacer)] py-[var(--Padding-boundary)] text-left text-fig-Subject-soft">
                 {'No templates found'}
               </div>
             )}
@@ -330,7 +332,7 @@ export default function TemplateSelector() {
             <button
               type="button"
               className={cn(
-                'fy-typography-label-small flex w-full cursor-pointer items-center gap-[var(--Gap-zero-neighbor)]',
+                'fy-typography-label-small flex w-full cursor-pointer items-center justify-start gap-[var(--Gap-zero-neighbor)] text-left',
                 'bg-fig-Surface-standard p-[var(--Padding-spacer)]',
                 '!text-fig-Subject-standard outline-none',
                 'transition-colors hover:bg-fig-Surface-one-standard focus:bg-fig-Surface-one-standard',
@@ -354,7 +356,7 @@ export default function TemplateSelector() {
                 <button
                   type="button"
                   className={cn(
-                    'fy-typography-label-small flex w-full cursor-pointer items-center',
+                    'fy-typography-label-small flex w-full cursor-pointer items-center justify-start text-left',
                     'bg-fig-Surface-standard px-[var(--Padding-spacer)] py-[var(--Padding-boundary)]',
                     '!text-fig-Subject-standard outline-none',
                     'transition-colors hover:bg-fig-Surface-one-standard focus:bg-fig-Surface-one-standard',
