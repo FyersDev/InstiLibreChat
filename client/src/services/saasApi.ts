@@ -432,7 +432,10 @@ export type ResearchFolderTreeResult = {
   rootFiles: any[];
 };
 
-function mapConfluxFolderRecord(f: Record<string, unknown>): {
+function mapConfluxFolderRecord(
+  f: Record<string, unknown>,
+  scopeOrgId?: string,
+): {
   id: string;
   name: string;
   path: string;
@@ -457,7 +460,8 @@ function mapConfluxFolderRecord(f: Record<string, unknown>): {
   const folderOrgRaw = f.orgId ?? f.org_id;
   let folder_org_id: string | null | undefined;
   if (!hasOrgKey) {
-    folder_org_id = undefined;
+    folder_org_id =
+      scopeOrgId != null && String(scopeOrgId).trim() !== '' ? String(scopeOrgId) : undefined;
   } else if (folderOrgRaw === null || folderOrgRaw === '') {
     folder_org_id = null;
   } else {
@@ -506,7 +510,7 @@ function mapConfluxFolderRecord(f: Record<string, unknown>): {
 }
 
 /** Maps one hierarchy branch `{ folder, documents, folders }` to a client folder node. */
-function mapHierarchyFolderBranch(node: Record<string, unknown>): any | null {
+function mapHierarchyFolderBranch(node: Record<string, unknown>, scopeOrgId?: string): any | null {
   const folderRaw = node.folder;
   if (!folderRaw || typeof folderRaw !== 'object') {
     return null;
@@ -514,9 +518,11 @@ function mapHierarchyFolderBranch(node: Record<string, unknown>): any | null {
   const f = folderRaw as Record<string, unknown>;
   const nested = (Array.isArray(node.folders) ? node.folders : []) as Record<string, unknown>[];
   const docs = (Array.isArray(node.documents) ? node.documents : []) as Record<string, unknown>[];
-  const children = nested.map((child) => mapHierarchyFolderBranch(child)).filter(Boolean);
+  const children = nested
+    .map((child) => mapHierarchyFolderBranch(child, scopeOrgId))
+    .filter(Boolean);
   const files = docs.map((d) => mapConfluxDocToFileNode(d));
-  const meta = mapConfluxFolderRecord(f);
+  const meta = mapConfluxFolderRecord(f, scopeOrgId);
   const documentCountRaw = node.documentCount ?? node.document_count;
   const totalDocumentCountRaw = node.totalDocumentCount ?? node.total_document_count;
   const subFolderCountRaw = node.subFolderCount ?? node.sub_folder_count;
@@ -567,7 +573,7 @@ async function confluxBuildFolderTree(orgId: string): Promise<ResearchFolderTree
   >[];
   const roots = (Array.isArray(payload.folders) ? payload.folders : []) as Record<string, unknown>[];
   const rootFiles = unfiled.map((d) => mapConfluxDocToFileNode(d));
-  const folders = roots.map((n) => mapHierarchyFolderBranch(n)).filter(Boolean);
+  const folders = roots.map((n) => mapHierarchyFolderBranch(n, orgId)).filter(Boolean);
   return { folders, rootFiles };
 }
 

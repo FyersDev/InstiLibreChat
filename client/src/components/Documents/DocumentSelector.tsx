@@ -136,9 +136,7 @@ export default function DocumentSelector({
     // Show current folder contents only
     if (!currentFolderId) {
       // Root level - return all root folders except Reports
-      const filteredRootFolders = allFolders.filter(
-        (f) => !f.parent_id && f.id !== reportsFolderId,
-      );
+      const filteredRootFolders = allFolders.filter((f) => f.id !== reportsFolderId);
       folders = filterReportsFolder(filteredRootFolders);
       files = rootUnfiledFiles;
     } else {

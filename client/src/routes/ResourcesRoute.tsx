@@ -436,7 +436,7 @@ export default function ResourcesRoute() {
     if (!currentFolderId) {
       // Root level - return all root folders except Reports
       // Backend already filters by user_id, so we only show what the user has access to
-      const rootFolders = allFolders.filter((f) => !f.parent_id && f.id !== reportsFolderId);
+      const rootFolders = allFolders.filter((f) => f.id !== reportsFolderId);
       return {
         folders: rootFolders,
         files: rootUnfiledFiles,

@@ -69,6 +69,9 @@ export default function UploadFileModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
   const [selectedFolderName, setSelectedFolderName] = useState<string>('');
+  const [folderTree, setFolderTree] = useState<any[]>(folders);
+  const [foldersLoading, setFoldersLoading] = useState(false);
+  const [foldersError, setFoldersError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
@@ -86,6 +89,53 @@ export default function UploadFileModal({
       : userInfo?.org_id != null && String(userInfo.org_id).trim() !== ''
         ? String(userInfo.org_id)
         : null;
+
+  useEffect(() => {
+    setFolderTree(folders);
+  }, [folders]);
+
+  useEffect(() => {
+    if (folders.length > 0) {
+      return;
+    }
+
+    let cancelled = false;
+
+    const loadFolders = async () => {
+      if (!resolvedOrgId) {
+        if (!cancelled) {
+          setFoldersError('Organization ID is required.');
+          setFolderTree([]);
+        }
+        return;
+      }
+
+      setFoldersLoading(true);
+      setFoldersError(null);
+      try {
+        const data = await saasApi.getFolderTree(resolvedOrgId);
+        if (!cancelled) {
+          setFolderTree(data.folders ?? []);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : 'Failed to load folders';
+          setFoldersError(message);
+          setFolderTree([]);
+        }
+      } finally {
+        if (!cancelled) {
+          setFoldersLoading(false);
+        }
+      }
+    };
+
+    void loadFolders();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [folders, resolvedOrgId]);
 
   // Flatten folder tree for dropdown
   const flattenFolders = (folderNodes: any[], level = 0): FlatFolder[] => {
@@ -110,13 +160,16 @@ export default function UploadFileModal({
     return result;
   };
 
-  const flatFolders = flattenFolders(folders);
+  const flatFolders = flattenFolders(folderTree);
 
   const filteredFolders = flatFolders.filter((folder: any) => {
     if (isResearchReportsFolder(folder)) {
       return false;
     }
-    if (isResearchSystemRow(folder)) {
+    if (isResearchDefaultUploadFolder(folder)) {
+      return true;
+    }
+    if (folder.is_system === true || folder.isSystem === true) {
       return false;
     }
     return true;
@@ -144,8 +197,8 @@ export default function UploadFileModal({
     };
 
     if (folderId) {
-      const treeNode = findFolderById(folders, folderId);
-      if (treeNode && isResearchSystemRow(treeNode)) {
+      const treeNode = findFolderById(folderTree, folderId);
+      if (treeNode && isResearchSystemRow(treeNode) && !isResearchDefaultUploadFolder(treeNode)) {
         applyDefaultFolder();
         return;
       }
@@ -157,7 +210,7 @@ export default function UploadFileModal({
     } else {
       applyDefaultFolder();
     }
-  }, [folderId, folders, sortedFolders.length]);
+  }, [folderId, folderTree, sortedFolders.length]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -200,9 +253,13 @@ export default function UploadFileModal({
       return;
     }
 
-    if (selectedFolderId && folders.length > 0) {
-      const targetNode = findFolderById(folders, selectedFolderId);
-      if (targetNode && isResearchSystemRow(targetNode)) {
+    if (selectedFolderId && folderTree.length > 0) {
+      const targetNode = findFolderById(folderTree, selectedFolderId);
+      if (
+        targetNode &&
+        isResearchSystemRow(targetNode) &&
+        !isResearchDefaultUploadFolder(targetNode)
+      ) {
         const msg = 'Documents can only be uploaded to organization folders, not system folders.';
         setError(msg);
         showToast({ message: msg, status: 'error' });
@@ -387,6 +444,17 @@ export default function UploadFileModal({
                 <label className="fy-typography-label-small text-fig-Subject-neutral">
                   Select folder to save the file
                 </label>
+                {foldersLoading ? (
+                  <p className="fy-typography-body-tiny text-fig-Subject-soft">Loading folders...</p>
+                ) : null}
+                {foldersError ? (
+                  <p className="fy-typography-body-tiny text-fig-Subject-danger">{foldersError}</p>
+                ) : null}
+                {!foldersLoading && sortedFolders.length === 0 ? (
+                  <p className="fy-typography-body-tiny text-fig-Subject-soft">
+                    No upload folders are available.
+                  </p>
+                ) : null}
                 <DropdownPopup
                   portal={false}
                   sameWidth={true}
@@ -439,6 +507,7 @@ export default function UploadFileModal({
                 type="submit"
                 disabled={
                   loading ||
+                  foldersLoading ||
                   !selectedFile ||
                   (sortedFolders.length > 0 && !selectedFolderId)
                 }
