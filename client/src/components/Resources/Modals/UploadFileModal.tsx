@@ -70,6 +70,8 @@ export default function UploadFileModal({
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
   const [selectedFolderName, setSelectedFolderName] = useState<string>('');
   const [folderTree, setFolderTree] = useState<any[]>(folders);
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfoLoaded, setUserInfoLoaded] = useState(false);
   const [foldersLoading, setFoldersLoading] = useState(false);
   const [foldersError, setFoldersError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -77,9 +79,6 @@ export default function UploadFileModal({
   const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  // Use props if provided, otherwise get from localStorage
-  const userInfoStr = localStorage.getItem('userInfo');
-  const userInfo = userInfoStr ? JSON.parse(userInfoStr) : null;
   const currentUserId = currentUserIdProp || (userInfo?.user_id || userInfo?.id)?.toString();
   const isOrgAdmin = isOrgAdminProp !== undefined ? isOrgAdminProp : userInfo?.org_role === 'admin';
 
@@ -88,28 +87,53 @@ export default function UploadFileModal({
       ? orgId
       : userInfo?.org_id != null && String(userInfo.org_id).trim() !== ''
         ? String(userInfo.org_id)
-        : null;
+        : userInfo?.organization_id != null && String(userInfo.organization_id).trim() !== ''
+          ? String(userInfo.organization_id)
+          : null;
 
   useEffect(() => {
     setFolderTree(folders);
   }, [folders]);
 
   useEffect(() => {
+    let cancelled = false;
+
+    const loadUserInfo = async () => {
+      try {
+        const me = await saasApi.getMe();
+        if (!cancelled) {
+          setUserInfo(me);
+        }
+      } catch (err) {
+        if (!cancelled) {
+          const message = err instanceof Error ? err.message : 'Failed to load user info';
+          setFoldersError(message);
+        }
+      } finally {
+        if (!cancelled) {
+          setUserInfoLoaded(true);
+        }
+      }
+    };
+
+    void loadUserInfo();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
     if (folders.length > 0) {
+      return;
+    }
+    if (!userInfoLoaded) {
       return;
     }
 
     let cancelled = false;
 
     const loadFolders = async () => {
-      if (!resolvedOrgId) {
-        if (!cancelled) {
-          setFoldersError('Organization ID is required.');
-          setFolderTree([]);
-        }
-        return;
-      }
-
       setFoldersLoading(true);
       setFoldersError(null);
       try {
@@ -135,7 +159,7 @@ export default function UploadFileModal({
     return () => {
       cancelled = true;
     };
-  }, [folders, resolvedOrgId]);
+  }, [folders, resolvedOrgId, userInfoLoaded]);
 
   // Flatten folder tree for dropdown
   const flattenFolders = (folderNodes: any[], level = 0): FlatFolder[] => {
@@ -317,7 +341,14 @@ export default function UploadFileModal({
   };
 
   return (
-    <Dialog open={true} onOpenChange={onClose}>
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
       <DialogContent
         showCloseButton={false}
         className={cn(
@@ -385,12 +416,13 @@ export default function UploadFileModal({
                   ref={fileInputRef}
                   type="file"
                   onChange={handleFileSelect}
-                  className="hidden"
+                  className="sr-only"
                   id="file-upload"
                   accept={RESEARCH_ALLOWED_ACCEPT}
                 />
-                <label
-                  htmlFor="file-upload"
+                <button
+                  type="button"
+                  onClick={() => fileInputRef.current?.click()}
                   className="flex cursor-pointer flex-col items-center gap-[var(--Gap-parentChild)]"
                 >
                   {selectedFile ? (
@@ -422,7 +454,7 @@ export default function UploadFileModal({
                       </div>
                     </>
                   )}
-                </label>
+                </button>
                 {selectedFile && (
                   <button
                     type="button"
