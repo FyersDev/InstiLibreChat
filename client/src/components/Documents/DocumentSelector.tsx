@@ -19,7 +19,6 @@ import { researchOwnerColumnLabel } from '~/utils/researchOwner';
 import {
   formatDocumentPipelineStatus,
   isPipelineStatusCompleted,
-  isPipelineStatusFailed,
   pipelineStatusBadgeClassName,
   pipelineStatusBadgeStyle,
 } from '~/utils/researchDocumentStatus';
@@ -357,9 +356,6 @@ export default function DocumentSelector({
       const collectDocuments = (folder: FolderNode) => {
         if (folder.files) {
           folder.files.forEach((file) => {
-            if (isPipelineStatusFailed(file.status)) {
-              return;
-            }
             const doc = convertFileToDocument(file);
             if (doc) {
               documents.push(doc);
@@ -378,7 +374,11 @@ export default function DocumentSelector({
 
   const handleConfirm = useCallback(() => {
     const allDocs = getAllDocuments(allFolders);
-    const selected = allDocs.filter((doc) => selectedDocuments.has(doc.document_id.toString()));
+    const selected = allDocs.filter(
+      (doc) =>
+        selectedDocuments.has(doc.document_id.toString()) &&
+        isPipelineStatusCompleted(doc.status),
+    );
 
     // Store selected documents in localStorage for document_search MCP
     if (conversationId) {
@@ -470,12 +470,8 @@ export default function DocumentSelector({
     }
   };
 
-  // Chat picker: hide failed pipeline rows (retry from Resources documents tab).
   const currentFiles = useMemo(
-    () =>
-      (currentFolder.files || []).filter(
-        (file) => file.document_id && !isPipelineStatusFailed(file.status),
-      ),
+    () => (currentFolder.files || []).filter((file) => file.document_id),
     [currentFolder.files],
   );
 
