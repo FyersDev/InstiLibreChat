@@ -564,17 +564,36 @@ function mapHierarchyFolderBranch(node: Record<string, unknown>, scopeOrgId?: st
 }
 
 /** Single GET `/research/hierarchy` → nested folders + root-level unfiled documents. */
+const folderTreeInflight = new Map<string, Promise<ResearchFolderTreeResult>>();
+
 async function confluxBuildFolderTree(orgId: string): Promise<ResearchFolderTreeResult> {
-  const raw = await researchConfluxApi.getResearchHierarchy(orgId);
-  const payload = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
-  const unfiled = (Array.isArray(payload.unfiledDocuments) ? payload.unfiledDocuments : []) as Record<
-    string,
-    unknown
-  >[];
-  const roots = (Array.isArray(payload.folders) ? payload.folders : []) as Record<string, unknown>[];
-  const rootFiles = unfiled.map((d) => mapConfluxDocToFileNode(d));
-  const folders = roots.map((n) => mapHierarchyFolderBranch(n, orgId)).filter(Boolean);
-  return { folders, rootFiles };
+  const inflight = folderTreeInflight.get(orgId);
+  if (inflight) {
+    return inflight;
+  }
+
+  const promise = (async () => {
+    const raw = await researchConfluxApi.getResearchHierarchy(orgId);
+    const payload = (raw && typeof raw === 'object' ? raw : {}) as Record<string, unknown>;
+    const unfiled = (Array.isArray(payload.unfiledDocuments) ? payload.unfiledDocuments : []) as Record<
+      string,
+      unknown
+    >[];
+    const roots = (Array.isArray(payload.folders) ? payload.folders : []) as Record<string, unknown>[];
+    const rootFiles = unfiled.map((d) => mapConfluxDocToFileNode(d));
+    const folders = roots.map((n) => mapHierarchyFolderBranch(n, orgId)).filter(Boolean);
+    return { folders, rootFiles };
+  })();
+
+  folderTreeInflight.set(orgId, promise);
+
+  try {
+    return await promise;
+  } finally {
+    if (folderTreeInflight.get(orgId) === promise) {
+      folderTreeInflight.delete(orgId);
+    }
+  }
 }
 
 async function handleResponse<T>(response: Response): Promise<T> {

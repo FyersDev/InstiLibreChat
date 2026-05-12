@@ -55,10 +55,12 @@ interface FlatFolder {
   rename_locked?: boolean;
 }
 
+const EMPTY_FOLDER_LIST: any[] = [];
+
 export default function UploadFileModal({
   folderId,
   orgId,
-  folders = [],
+  folders,
   isSuperAdmin: _isSuperAdmin = false,
   isOrgAdmin: isOrgAdminProp,
   currentUserId: currentUserIdProp,
@@ -69,7 +71,7 @@ export default function UploadFileModal({
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedFolderId, setSelectedFolderId] = useState<string>(folderId || '');
   const [selectedFolderName, setSelectedFolderName] = useState<string>('');
-  const [folderTree, setFolderTree] = useState<any[]>(folders);
+  const [folderTree, setFolderTree] = useState<any[]>(folders ?? EMPTY_FOLDER_LIST);
   const [userInfo, setUserInfo] = useState<any>(null);
   const [userInfoLoaded, setUserInfoLoaded] = useState(false);
   const [foldersLoading, setFoldersLoading] = useState(false);
@@ -90,10 +92,13 @@ export default function UploadFileModal({
         : userInfo?.organization_id != null && String(userInfo.organization_id).trim() !== ''
           ? String(userInfo.organization_id)
           : null;
+  const hasFoldersFromProps = (folders?.length ?? 0) > 0;
 
   useEffect(() => {
-    setFolderTree(folders);
-  }, [folders]);
+    if (hasFoldersFromProps && folders) {
+      setFolderTree(folders);
+    }
+  }, [folders, hasFoldersFromProps]);
 
   useEffect(() => {
     let cancelled = false;
@@ -124,7 +129,7 @@ export default function UploadFileModal({
   }, []);
 
   useEffect(() => {
-    if (folders.length > 0) {
+    if (hasFoldersFromProps) {
       return;
     }
     if (!userInfoLoaded) {
@@ -159,7 +164,7 @@ export default function UploadFileModal({
     return () => {
       cancelled = true;
     };
-  }, [folders, resolvedOrgId, userInfoLoaded]);
+  }, [hasFoldersFromProps, resolvedOrgId, userInfoLoaded]);
 
   // Flatten folder tree for dropdown
   const flattenFolders = (folderNodes: any[], level = 0): FlatFolder[] => {
