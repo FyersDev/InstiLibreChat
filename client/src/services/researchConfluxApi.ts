@@ -11,6 +11,7 @@
 import {
   FYERS_ORG_RESEARCH_SEGMENTS as R,
   fyersOrgResearchUrl as fyersOrgResearchUrlBase,
+  fyersResearchDocumentUploadUrl,
   getFyersT2ApiBaseNormalized,
 } from '~/constants/api_list';
 
@@ -346,7 +347,7 @@ export const researchConfluxApi = {
     if (options?.metadata) {
       formData.append('metadata', JSON.stringify(options.metadata));
     }
-    const url = fyersOrgResearchUrl(orgId, R.documentUpload);
+    const url = fyersResearchDocumentUploadUrl(confluxOrgPathId(orgId));
     const res = await confluxFetch(url, { method: 'POST', body: formData });
     return parseConfluxResponse<ProcessorSuccessEnvelope>(res) as Promise<ProcessorSuccessEnvelope>;
   },

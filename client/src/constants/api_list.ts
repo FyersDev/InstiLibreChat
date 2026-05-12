@@ -61,10 +61,17 @@ export function fyersOrgResearchUrl(
   return `${base}/insti/admin/org/${orgId}/research/${tail}`;
 }
 
+/** `POST .../insti/admin/research/document-upload/org?orgId={orgId}` (multipart). */
+export function fyersResearchDocumentUploadUrl(orgId: number | string): string {
+  const base = getFyersT2ApiBaseNormalized();
+  const query = new URLSearchParams({ orgId: String(orgId).trim() }).toString();
+  return `${base}/insti/admin/research/document-upload/org?${query}`;
+}
+
 /** Concrete FYERS URLs (append-only). Org-research rows use `{orgId}` as a documentation placeholder. */
 export const fyersT2Urls = {
   instiAdminUserDetails: `${FYERS_T2_API_BASE}/insti/admin/user-details`,
-  instiOrgResearchDocumentUpload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/document-upload`,
+  instiOrgResearchDocumentUpload: `${FYERS_T2_API_BASE}/insti/admin/research/document-upload/org?orgId={orgId}`,
   instiOrgResearchSaveReportUpload: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/save-report-upload`,
   instiOrgResearchReports: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/reports`,
   instiOrgResearchDocuments: `${FYERS_T2_API_BASE}/insti/admin/org/{orgId}/research/documents`,
