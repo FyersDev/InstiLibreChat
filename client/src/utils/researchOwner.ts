@@ -50,7 +50,7 @@ export function researchPersonaId(row: object): string | undefined {
 export function researchOwnerColumnLabel(row: object): string {
   const r = asRow(row);
   if (isResearchSystemRow(row)) {
-    return 'SYSTEM';
+    return 'Fyers';
   }
   const name = r.createdByName ?? r.created_by_name;
   if (typeof name === 'string' && name.trim()) {
