@@ -169,6 +169,18 @@ pull_librechat_branch() {
     echo ""
 }
 
+ensure_npm_on_path() {
+    command -v npm >/dev/null 2>&1 && command -v node >/dev/null 2>&1
+}
+
+install_nodejs_npm_via_dnf() {
+    if ! command -v dnf >/dev/null 2>&1; then
+        return 1
+    fi
+    print_step "Installing Node.js and npm (sudo dnf install -y nodejs npm)..."
+    sudo dnf install -y nodejs npm
+}
+
 librechat_node_version_ok() {
     local version major minor
 
@@ -191,6 +203,33 @@ librechat_node_version_ok() {
         return 0
     fi
     return 1
+}
+
+NODESETUP_22_URL="${NODESETUP_22_URL:-https://rpm.nodesource.com/setup_22.x}"
+
+upgrade_nodejs_via_nodesource_22_dnf() {
+    if ! command -v dnf >/dev/null 2>&1; then
+        return 1
+    fi
+
+    if ! command -v curl >/dev/null 2>&1; then
+        print_step "Installing curl (needed for NodeSource setup)..."
+        sudo dnf install -y curl || return 1
+    fi
+
+    print_step "NodeSource: registering Node.js 22.x repo ($NODESETUP_22_URL)..."
+    if ! curl -fsSL "$NODESETUP_22_URL" | sudo bash -; then
+        print_warning "NodeSource setup script failed"
+        return 1
+    fi
+
+    if sudo dnf install -y nodejs; then
+        return 0
+    fi
+
+    print_warning "dnf install nodejs failed — OL9-style retry (remove nodejs-full-i18n, install with --allowerasing)..."
+    sudo dnf remove -y nodejs-full-i18n 2>/dev/null || true
+    sudo dnf install -y nodejs --allowerasing
 }
 
 bg_stop_service() {
@@ -313,7 +352,13 @@ echo ""
 
 cd "$LIBRECHAT_DIR"
 
-if ! command -v npm >/dev/null 2>&1 || ! command -v node >/dev/null 2>&1; then
+if ! ensure_npm_on_path; then
+    print_warning "Node.js / npm not on PATH — attempting dnf install..."
+    if install_nodejs_npm_via_dnf; then
+        hash -r 2>/dev/null || true
+    fi
+fi
+if ! ensure_npm_on_path; then
     print_error "Node.js / npm is not installed or not on PATH."
     print_info "Install: sudo dnf install -y nodejs npm"
     exit 1
@@ -321,7 +366,15 @@ fi
 print_info "Using $(command -v node) ($(node --version)), $(command -v npm) ($(npm --version))"
 
 if ! librechat_node_version_ok; then
+    print_warning "Node.js is too old for InstiLibreChat (need 20.19+, 22.12+, or 23+) — attempting NodeSource 22.x..."
+    if upgrade_nodejs_via_nodesource_22_dnf; then
+        hash -r 2>/dev/null || true
+    fi
+fi
+if ! librechat_node_version_ok; then
     print_error "Node.js is too old for InstiLibreChat (need 20.19+, 22.12+, or 23+)."
+    print_info "Manual fix (dnf): curl -fsSL $NODESETUP_22_URL | sudo bash - && sudo dnf install -y nodejs"
+    print_info "If dnf conflicts on OL9: sudo dnf remove -y nodejs-full-i18n && sudo dnf install -y nodejs --allowerasing"
     exit 1
 fi
 
