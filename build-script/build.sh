@@ -231,6 +231,14 @@ ensure_go_on_path() {
     command -v go >/dev/null 2>&1
 }
 
+install_golang_via_dnf() {
+    if ! command -v dnf >/dev/null 2>&1; then
+        return 1
+    fi
+    print_step "Installing Go (sudo dnf install -y golang)..."
+    sudo dnf install -y golang
+}
+
 setup_go_private_github_modules() {
     export GOPRIVATE="${GOPRIVATE:-github.com/FyersDev/*}"
     export GONOSUMCHECK="${GONOSUMCHECK:-$GOPRIVATE}"
@@ -575,8 +583,14 @@ if [ ! -d "$LIBRECHAT_PROXY_DIR" ]; then
 fi
 
 if ! ensure_go_on_path; then
+    print_warning "Go is not on PATH — attempting dnf install..."
+    if install_golang_via_dnf; then
+        hash -r 2>/dev/null || true
+    fi
+fi
+if ! ensure_go_on_path; then
     print_error "Go is not installed or not on PATH."
-    print_info "Install: sudo dnf install golang"
+    print_info "Install: sudo dnf install -y golang"
     exit 1
 fi
 print_info "Using $(command -v go) ($(go version))"
