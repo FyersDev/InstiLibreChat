@@ -1,11 +1,19 @@
 import { useState, useEffect } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, useToastContext } from '@librechat/client';
-import { Button } from '@librechat/client';
-import { saasApi } from '~/services/saasApi'; // API service - connects to insti-inquora backend
-import { Loader2 } from 'lucide-react';
+import {
+  Button,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  Input,
+  useToastContext,
+} from '@librechat/client';
+import { Loader2, X } from 'lucide-react';
 import html2canvas from 'html2canvas';
 import jsPDF from 'jspdf';
 import { NotificationSeverity } from '~/common';
+import { saasApi } from '~/services/saasApi'; // API service - connects to insti-inquora backend
+import { cn } from '~/utils';
 
 interface SavePDFModalProps {
   conversationId: string;
@@ -1134,81 +1142,168 @@ export default function SavePDFModal({ conversationId, pdfContent, onClose }: Sa
     handleSave();
   };
 
+  const inputClassName = cn(
+    'fy-typography-body-small h-[var(--Size-input)] w-full',
+    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+    '!bg-fig-Surface-standard px-[var(--Padding-zero-spacer)] !text-fig-Subject-standard',
+    '!placeholder:text-fig-Subject-soft',
+    'focus:border-fig-Stroke-primary focus:outline-none focus:ring-1 focus:ring-fig-Stroke-primary',
+    'transition-colors duration-200',
+  );
+
   return (
-    <Dialog open={true} onOpenChange={onClose}>
-      <DialogContent className="max-w-md p-6 sm:max-w-md bg-[#F7F7F7] dark:bg-[#222222]">
-        <DialogHeader className="mb-4">
-          <DialogTitle className="text-xl font-semibold">Save PDF Report</DialogTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+    <Dialog
+      open
+      onOpenChange={(open) => {
+        if (!open) {
+          onClose();
+        }
+      }}
+    >
+      <DialogContent
+        showCloseButton={false}
+        className={cn(
+          'flex w-full max-w-[var(--Size-overlay)] flex-col overflow-hidden p-0',
+          'gap-0',
+          'border border-fig-Stroke-soft !bg-fig-Surface-one-standard',
+          'rounded-[var(--Corner-highlyRounded)]',
+          'text-fig-Subject-standard shadow-none',
+          'dark:!bg-fig-Surface-one-standard',
+        )}
+      >
+        <DialogHeader
+          className={cn(
+            'mb-0 flex shrink-0 flex-col space-y-0 border-0',
+            'px-[var(--Gap-parentChild)] pt-[var(--Padding-zero-parentChild)]',
+          )}
+        >
+          <div className="flex items-center justify-between gap-[var(--Gap-parentChild)]">
+            <DialogTitle className="fy-typography-title m-0 text-fig-Subject-standard">
+              Save PDF Report
+            </DialogTitle>
+            <button
+              type="button"
+              onClick={onClose}
+              disabled={saving}
+              className={cn(
+                'inline-flex h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] items-center justify-center',
+                'rounded-[var(--Corner-moderatelyRounded)] text-fig-Subject-standard transition-colors',
+                'hover:bg-fig-Surface-neutral',
+                'focus:outline-none focus-visible:ring-fig-Stroke-primary',
+                'disabled:pointer-events-none disabled:opacity-50',
+              )}
+              aria-label="Close"
+            >
+              <X className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)]" aria-hidden />
+            </button>
+          </div>
+          <p className="fy-typography-body-small mt-[var(--Gap-zero-sibling)] text-fig-Subject-neutral">
             Your report will be stored in your organization&apos;s report storage.
           </p>
         </DialogHeader>
-        {error && (
-          <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-3 text-red-700 dark:text-red-400 mb-4 text-sm">
-            {error}
-          </div>
-        )}
-        <form onSubmit={handleFormSubmit} className="space-y-4">
-          {/* Organization selector for super admin */}
-          {isSuperAdmin && organizations.length > 0 && (
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                Select Organization *
-              </label>
-              <select
-                value={selectedOrgId}
-                onChange={(e) => setSelectedOrgId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
-              >
-                {organizations.map((org) => (
-                  <option key={org.id} value={org.id}>
-                    {org.name} {org.legal_name ? `(${org.legal_name})` : ''}
-                  </option>
-                ))}
-              </select>
-              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                Select an organization to save the report to its resources
-              </p>
-            </div>
-          )}
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Report Name *
-            </label>
-            <input
-              type="text"
-              value={pdfName}
-              onChange={(e) => setPdfName(e.target.value)}
-              placeholder="Enter report name (e.g., Q4 Analysis Report)"
-              className="w-full px-3 py-2 border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm bg-[#FFFFFF] dark:bg-[#111111] text-gray-900 dark:text-gray-100"
-              disabled={saving}
-            />
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-              The file is saved using your organization&apos;s configured report upload location.
-            </p>
-          </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button type="button" onClick={onClose} variant="outline" disabled={saving} className="bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 font-medium border border-gray-300 dark:border-gray-400 rounded-lg focus:outline-none focus:ring-0">
-              Cancel
-            </Button>
-            <Button 
-              type="submit"
-              disabled={saving || loading || (isSuperAdmin && !selectedOrgId) || !pdfName.trim()}
-              className="bg-blue-600 hover:bg-blue-700 text-white font-medium focus:outline-none focus:ring-0"
-            >
-              {saving ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Saving...
-                </>
-              ) : (
-                'Save Report'
+        <div className="flex flex-col gap-[var(--Gap-parentChild)] px-[var(--Gap-parentChild)] py-[var(--Padding-spacer)]">
+          <form onSubmit={handleFormSubmit} className="flex flex-col gap-[var(--Gap-parentChild)]">
+            <div
+              className={cn(
+                'flex flex-col gap-[var(--Gap-zero-spacer)]',
+                'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                'p-[var(--Padding-spacer)]',
               )}
-            </Button>
-          </div>
-        </form>
+            >
+              {error && (
+                <div
+                  className={cn(
+                    'fy-typography-body-small',
+                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                    'bg-fig-Surface-one-danger px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                    'text-fig-Subject-danger',
+                  )}
+                >
+                  {error}
+                </div>
+              )}
+              {isSuperAdmin && organizations.length > 0 && (
+                <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                  <label className="fy-typography-label-small text-fig-Subject-neutral">
+                    Select Organization
+                  </label>
+                  <select
+                    value={selectedOrgId}
+                    onChange={(e) => setSelectedOrgId(e.target.value)}
+                    disabled={saving}
+                    className={inputClassName}
+                  >
+                    {organizations.map((org) => (
+                      <option key={org.id} value={org.id}>
+                        {org.name} {org.legal_name ? `(${org.legal_name})` : ''}
+                      </option>
+                    ))}
+                  </select>
+                  <p className="fy-typography-body-small text-fig-Subject-soft">
+                    Select an organization to save the report to its resources
+                  </p>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-[var(--Gap-zero-parentChild)]">
+                <label className="fy-typography-label-small text-fig-Subject-neutral">
+                  Report Name
+                </label>
+                <Input
+                  type="text"
+                  required
+                  value={pdfName}
+                  onChange={(e) => setPdfName(e.target.value)}
+                  placeholder="Enter report name (e.g., Q4 Analysis Report)"
+                  disabled={saving}
+                  className={inputClassName}
+                />
+                <p className="fy-typography-body-small text-fig-Subject-soft">
+                  The file is saved using your organization&apos;s configured report upload
+                  location.
+                </p>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-[var(--Gap-zero-neighbor)]">
+              <Button
+                type="submit"
+                disabled={saving || loading || (isSuperAdmin && !selectedOrgId) || !pdfName.trim()}
+                className={cn(
+                  'fy-typography-label inline-flex h-[var(--Size-button)] items-center rounded-[2px]',
+                  'border border-fig-Stroke-primary bg-fig-Surface-two-primary !text-fig-Subject-two-primary',
+                  'transition-opacity hover:opacity-90',
+                  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+                  'disabled:opacity-50',
+                )}
+              >
+                {saving ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" aria-hidden />
+                    Saving...
+                  </>
+                ) : (
+                  'Save Report'
+                )}
+              </Button>
+              <Button
+                type="button"
+                onClick={onClose}
+                disabled={saving}
+                className={cn(
+                  'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
+                  'border border-fig-Stroke-standard bg-transparent !text-fig-Subject-standard',
+                  'transition-colors hover:bg-fig-Surface-neutral',
+                  'hover:!border-fig-Stroke-standard hover:!bg-fig-Surface-neutral hover:!text-fig-Subject-standard',
+                  'disabled:opacity-50',
+                )}
+              >
+                Dismiss
+              </Button>
+            </div>
+          </form>
+        </div>
       </DialogContent>
     </Dialog>
   );
