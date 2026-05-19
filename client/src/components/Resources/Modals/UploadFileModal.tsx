@@ -1,11 +1,13 @@
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import * as Ariakit from '@ariakit/react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@librechat/client';
 import { Button } from '@librechat/client';
 import { useToastContext, DropdownPopup } from '@librechat/client';
 import { saasApi } from '~/services/saasApi';
-import { File as FileIcon, ChevronDown, X } from 'lucide-react';
+import { File as FileIcon, ChevronDown, Plus, X } from 'lucide-react';
 import { cn } from '~/utils';
+import { asset } from '~/utils/assetPath';
+import CreateFolderModal from '~/components/Resources/Modals/CreateFolderModal';
 import {
   isResearchAllowedUploadFile,
   RESEARCH_ALLOWED_ACCEPT,
@@ -57,11 +59,19 @@ interface FlatFolder {
 
 const EMPTY_FOLDER_LIST: any[] = [];
 
+const createFolderButtonClassName = cn(
+  'flex h-[var(--Size-zero-button)] w-full items-center justify-center gap-0.5 rounded-[2px] border border-fig-Stroke-primary',
+  'bg-fig-Surface-two-primary px-[var(--Dimensions-Size-xs3)] py-px',
+  'font-inter text-xs font-normal leading-4 text-fig-Subject-two-primary',
+  'transition-opacity hover:opacity-90',
+  'hover:!border-fig-Stroke-primary hover:!bg-fig-Surface-two-primary hover:!text-fig-Subject-two-primary',
+);
+
 export default function UploadFileModal({
   folderId,
   orgId,
   folders,
-  isSuperAdmin: _isSuperAdmin = false,
+  isSuperAdmin: isSuperAdminProp = false,
   isOrgAdmin: isOrgAdminProp,
   currentUserId: currentUserIdProp,
   onClose,
@@ -79,10 +89,12 @@ export default function UploadFileModal({
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isFolderMenuOpen, setIsFolderMenuOpen] = useState(false);
+  const [showCreateFolderModal, setShowCreateFolderModal] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const currentUserId = currentUserIdProp || (userInfo?.user_id || userInfo?.id)?.toString();
   const isOrgAdmin = isOrgAdminProp !== undefined ? isOrgAdminProp : userInfo?.org_role === 'admin';
+  const isSuperAdmin = isSuperAdminProp || Boolean(userInfo?.is_super_admin);
 
   const resolvedOrgId =
     orgId != null && String(orgId).trim() !== ''
@@ -93,6 +105,21 @@ export default function UploadFileModal({
           ? String(userInfo.organization_id)
           : null;
   const hasFoldersFromProps = (folders?.length ?? 0) > 0;
+
+  const refreshFolderTree = useCallback(async () => {
+    setFoldersLoading(true);
+    setFoldersError(null);
+    try {
+      const data = await saasApi.getFolderTree(resolvedOrgId);
+      setFolderTree(data.folders ?? []);
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to load folders';
+      setFoldersError(message);
+      setFolderTree([]);
+    } finally {
+      setFoldersLoading(false);
+    }
+  }, [resolvedOrgId]);
 
   useEffect(() => {
     if (hasFoldersFromProps && folders) {
@@ -139,22 +166,11 @@ export default function UploadFileModal({
     let cancelled = false;
 
     const loadFolders = async () => {
-      setFoldersLoading(true);
-      setFoldersError(null);
       try {
-        const data = await saasApi.getFolderTree(resolvedOrgId);
+        await refreshFolderTree();
+      } catch {
         if (!cancelled) {
-          setFolderTree(data.folders ?? []);
-        }
-      } catch (err) {
-        if (!cancelled) {
-          const message = err instanceof Error ? err.message : 'Failed to load folders';
-          setFoldersError(message);
           setFolderTree([]);
-        }
-      } finally {
-        if (!cancelled) {
-          setFoldersLoading(false);
         }
       }
     };
@@ -164,7 +180,7 @@ export default function UploadFileModal({
     return () => {
       cancelled = true;
     };
-  }, [hasFoldersFromProps, resolvedOrgId, userInfoLoaded]);
+  }, [hasFoldersFromProps, refreshFolderTree, userInfoLoaded]);
 
   // Flatten folder tree for dropdown
   const flattenFolders = (folderNodes: any[], level = 0): FlatFolder[] => {
@@ -209,6 +225,9 @@ export default function UploadFileModal({
     const pb = isResearchDefaultUploadFolder(b) ? 0 : 1;
     return pa - pb;
   });
+
+  const hasSelectableFolders = sortedFolders.length > 0;
+  const showEmptyFolderBanner = !foldersLoading && !foldersError && !hasSelectableFolders;
 
   useEffect(() => {
     const applyDefaultFolder = () => {
@@ -296,7 +315,14 @@ export default function UploadFileModal({
       }
     }
 
-    if (sortedFolders.length > 0 && !selectedFolderId) {
+    if (!hasSelectableFolders) {
+      const msg = 'Create a folder before uploading documents.';
+      setError(msg);
+      showToast({ message: msg, status: 'error' });
+      return;
+    }
+
+    if (!selectedFolderId) {
       const msg = 'Please select a folder.';
       setError(msg);
       showToast({ message: msg, status: 'error' });
@@ -346,6 +372,7 @@ export default function UploadFileModal({
   };
 
   return (
+    <>
     <Dialog
       open
       onOpenChange={(open) => {
@@ -487,54 +514,88 @@ export default function UploadFileModal({
                 {foldersError ? (
                   <p className="fy-typography-body-tiny text-fig-Subject-danger">{foldersError}</p>
                 ) : null}
-                {!foldersLoading && sortedFolders.length === 0 ? (
-                  <p className="fy-typography-body-tiny text-fig-Subject-soft">
-                    No upload folders are available.
-                  </p>
-                ) : null}
-                <DropdownPopup
-                  portal={false}
-                  sameWidth={true}
-                  anchor={{ x: 'start', y: 'bottom' }}
-                  menuId="folder-selector-upload"
-                  isOpen={isFolderMenuOpen}
-                  setIsOpen={setIsFolderMenuOpen}
-                  trigger={
-                    <Ariakit.MenuButton
-                      className={cn(
-                        'fy-typography-body flex h-[var(--Size-zero-button)] w-full items-center justify-between',
-                        'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
-                        'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
-                        'transition-colors hover:border-fig-Stroke-standard',
-                      )}
-                    >
-                      <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
-                        {selectedFolderName || 'Select Folder'}
-                      </span>
-                      <ChevronDown
-                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
+                {showEmptyFolderBanner ? (
+                  <div
+                    className={cn(
+                      'flex flex-col gap-[var(--Gap-parentChild)]',
+                      'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                      'bg-fig-Surface-one-neutral p-[var(--Padding-spacer)]',
+                    )}
+                  >
+                    <div className="flex items-start gap-[var(--Gap-zero-parentChild)]">
+                      <img
+                        src={asset('Folder.svg')}
+                        alt=""
+                        className="mt-0.5 h-8 w-8 shrink-0 opacity-70 dark:invert"
                         aria-hidden
                       />
-                    </Ariakit.MenuButton>
-                  }
-                  items={sortedFolders.map((folder) => ({
-                    label: `${'  '.repeat(folder.level)}${folder.level > 0 ? '└─ ' : ''}${folder.name}`,
-                    onClick: () => {
-                      setSelectedFolderId(folder.id);
-                      setSelectedFolderName(folder.name);
-                      setIsFolderMenuOpen(false);
-                    },
-                  }))}
-                  className={cn(
-                    'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
-                    'bg-fig-Surface-standard shadow-sm',
-                  )}
-                  itemClassName={cn(
-                    'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
-                    'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
-                    'cursor-pointer transition-colors',
-                  )}
-                />
+                      <div className="flex min-w-0 flex-1 flex-col gap-[var(--Gap-zero-sibling)]">
+                        <p className="fy-typography-title-tiny text-fig-Subject-standard">
+                          No folders available
+                        </p>
+                        <p className="fy-typography-body-small text-fig-Subject-soft">
+                          Create a folder to upload and organize your documents.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setShowCreateFolderModal(true)}
+                      className={createFolderButtonClassName}
+                    >
+                      <Plus
+                        className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0"
+                        aria-hidden
+                      />
+                      Create folder
+                    </button>
+                  </div>
+                ) : null}
+                {hasSelectableFolders ? (
+                  <DropdownPopup
+                    portal={false}
+                    sameWidth={true}
+                    anchor={{ x: 'start', y: 'bottom' }}
+                    menuId="folder-selector-upload"
+                    isOpen={isFolderMenuOpen}
+                    setIsOpen={setIsFolderMenuOpen}
+                    trigger={
+                      <Ariakit.MenuButton
+                        className={cn(
+                          'fy-typography-body flex h-[var(--Size-zero-button)] w-full items-center justify-between',
+                          'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft bg-fig-Surface-standard',
+                          'px-[var(--Padding-zero-spacer)] text-fig-Subject-standard',
+                          'transition-colors hover:border-fig-Stroke-standard',
+                        )}
+                      >
+                        <span className="min-w-0 flex-1 overflow-hidden text-ellipsis text-left">
+                          {selectedFolderName || 'Select Folder'}
+                        </span>
+                        <ChevronDown
+                          className="h-[var(--Size-zero-icon)] w-[var(--Size-zero-icon)] shrink-0 text-fig-Subject-soft"
+                          aria-hidden
+                        />
+                      </Ariakit.MenuButton>
+                    }
+                    items={sortedFolders.map((folder) => ({
+                      label: `${'  '.repeat(folder.level)}${folder.level > 0 ? '└─ ' : ''}${folder.name}`,
+                      onClick: () => {
+                        setSelectedFolderId(folder.id);
+                        setSelectedFolderName(folder.name);
+                        setIsFolderMenuOpen(false);
+                      },
+                    }))}
+                    className={cn(
+                      'rounded-[var(--Corner-moderatelyRounded)] border border-fig-Stroke-soft',
+                      'bg-fig-Surface-standard shadow-sm',
+                    )}
+                    itemClassName={cn(
+                      'fy-typography-body px-[var(--Padding-zero-neighbor)] py-[var(--Padding-zero-buddy)]',
+                      'text-fig-Subject-standard hover:bg-fig-Surface-neutral',
+                      'cursor-pointer transition-colors',
+                    )}
+                  />
+                ) : null}
               </div>
             </div>
 
@@ -546,7 +607,8 @@ export default function UploadFileModal({
                   loading ||
                   foldersLoading ||
                   !selectedFile ||
-                  (sortedFolders.length > 0 && !selectedFolderId)
+                  !hasSelectableFolders ||
+                  !selectedFolderId
                 }
                 className={cn(
                   'fy-typography-label h-[var(--Size-button)] rounded-[2px]',
@@ -575,5 +637,19 @@ export default function UploadFileModal({
         </div>
       </DialogContent>
     </Dialog>
+
+    {showCreateFolderModal ? (
+      <CreateFolderModal
+        orgId={resolvedOrgId}
+        isSuperAdmin={isSuperAdmin}
+        folders={folderTree}
+        onClose={() => setShowCreateFolderModal(false)}
+        onSuccess={async () => {
+          setShowCreateFolderModal(false);
+          await refreshFolderTree();
+        }}
+      />
+    ) : null}
+    </>
   );
 }
