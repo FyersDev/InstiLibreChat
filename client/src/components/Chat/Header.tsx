@@ -64,9 +64,7 @@ export default function Header() {
         <div className="mx-1 flex items-center">
           <div className="flex flex-row items-center gap-2 scale-75 origin-right">
             <div className="min-w-0 max-w-md flex-1">
-              {modelSelectionDisabled ? (
-                <FixedModelLabel startupConfig={startupConfig} />
-              ) : (
+              {!modelSelectionDisabled && (
                 <ModelSelector startupConfig={startupConfig} />
               )}
             </div>
