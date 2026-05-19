@@ -22,8 +22,8 @@ NC='\033[0m'
 BASE_DIR="/home/ec2-user/insti"
 RUN_DIR="$BASE_DIR/run"
 LIBRECHAT_DIR="$BASE_DIR/InstiLibreChat"
-LIBRECHAT_BRANCH="prod-setup"
-LIBRECHAT_GIT_URL="${LIBRECHAT_GIT_URL:-git@github.com:FyersDev/InstiLibreChat.git}"
+LIBRECHAT_BRANCH="cug"
+LIBRECHAT_GIT_URL="${LIBRECHAT_GIT_URL:-git@github.com:FyersDev/fy_insti_libre_chat.git}"
 LIBRECHAT_BACKEND_LOG_DIR="$BASE_DIR/logs/librechat-backend"
 LIBRECHAT_BACKEND_PORT="${LIBRECHAT_BACKEND_PORT:-3080}"
 
