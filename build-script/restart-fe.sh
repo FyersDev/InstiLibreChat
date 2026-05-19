@@ -1,6 +1,9 @@
 #!/bin/bash
 
-# Restart LibreChat frontend (Vite dev server on port 3090).
+# Rebuild LibreChat frontend production bundle and restart backend.
+# In production the backend (port 3080) serves client/dist/ as static files —
+# there is no separate frontend process. Use this script when only frontend
+# source has changed and you want a fast redeploy without a full build.sh run.
 # Self-contained — no sourcing of other shell scripts.
 
 set -e
@@ -21,7 +24,8 @@ RUN_DIR="$BASE_DIR/run"
 LIBRECHAT_DIR="$BASE_DIR/InstiLibreChat"
 LIBRECHAT_BRANCH="prod-setup"
 LIBRECHAT_GIT_URL="${LIBRECHAT_GIT_URL:-git@github.com:FyersDev/InstiLibreChat.git}"
-LIBRECHAT_FRONTEND_LOG_DIR="$BASE_DIR/logs/librechat-frontend"
+LIBRECHAT_BACKEND_LOG_DIR="$BASE_DIR/logs/librechat-backend"
+LIBRECHAT_BACKEND_PORT="${LIBRECHAT_BACKEND_PORT:-3080}"
 
 print_status()  { echo -e "${GREEN}[✓]${NC} $1"; }
 print_error()   { echo -e "${RED}[✗]${NC} $1"; }
@@ -241,7 +245,7 @@ bg_start_service() {
 }
 
 echo "================================================"
-echo "  Restart: LibreChat Frontend (Dev Server)"
+echo "  Rebuild: LibreChat Frontend (Production Bundle)"
 echo "================================================"
 echo ""
 
@@ -280,26 +284,67 @@ if [ -z "$NPM_BIN" ]; then
     exit 1
 fi
 
-bg_stop_service "librechat-frontend" "3090" "LibreChat Frontend"
+cd "$LIBRECHAT_DIR"
 
-mkdir -p "$LIBRECHAT_FRONTEND_LOG_DIR"
-LIBRECHAT_FRONTEND_LOG_FILE="$LIBRECHAT_FRONTEND_LOG_DIR/$(date +%Y-%m-%d).log"
-touch "$LIBRECHAT_FRONTEND_LOG_FILE"
-print_info "Logging to: $LIBRECHAT_FRONTEND_LOG_FILE"
+print_step "Checking npm dependencies..."
+set -o pipefail
+npm install --silent 2>&1 | tail -1
+print_status "npm dependencies ready"
 
-FRONTEND_CMD="touch $LIBRECHAT_FRONTEND_LOG_FILE; echo \"=== LibreChat frontend start \$(date -Is) ===\" | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; if command -v stdbuf >/dev/null 2>&1; then stdbuf -oL -eL \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; else \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; fi"
-bg_start_service "librechat-frontend" "$LIBRECHAT_DIR" "$FRONTEND_CMD" "LibreChat Frontend (Dev, Port 3090)"
+print_step "Building packages..."
+npm run build:packages 2>&1 | tail -3
+print_status "All packages built"
 
-if ! wait_for_service 3090 "LibreChat Frontend" 90 "librechat-frontend" "$LIBRECHAT_FRONTEND_LOG_FILE"; then
-    print_info "Check: tail -f $LIBRECHAT_FRONTEND_LOG_FILE"
+print_step "Building client production bundle..."
+npm run build:client 2>&1 | tail -5
+if [ ! -f "$LIBRECHAT_DIR/client/dist/index.html" ]; then
+    print_error "Missing $LIBRECHAT_DIR/client/dist/index.html after build:client"
+    exit 1
+fi
+print_status "Client production bundle ready: client/dist/"
+set +o pipefail
+echo ""
+
+# Kill any legacy Vite dev server still running from a previous deploy.
+bg_stop_service "librechat-frontend" "3090" "LibreChat Frontend (legacy dev server)"
+echo ""
+
+# Restart the backend so it picks up the fresh client/dist/.
+print_step "Checking for any process still on port $LIBRECHAT_BACKEND_PORT..."
+PORT_PID=$(ss -tlnp 2>/dev/null | awk -v port=":$LIBRECHAT_BACKEND_PORT " '$0 ~ port {
+    match($0, /pid=([0-9]+)/, arr); if (arr[1] != "") print arr[1]
+}')
+
+bg_stop_service "librechat-backend" "3080" "LibreChat Backend"
+
+if [ -n "$PORT_PID" ]; then
+    print_warning "Process PID $PORT_PID still holding port $LIBRECHAT_BACKEND_PORT — killing it..."
+    kill -9 "$PORT_PID" 2>/dev/null && print_status "Killed PID $PORT_PID" || print_error "Failed to kill PID $PORT_PID"
+    sleep 1
+else
+    print_status "Port $LIBRECHAT_BACKEND_PORT is free"
+fi
+echo ""
+
+mkdir -p "$LIBRECHAT_BACKEND_LOG_DIR"
+LIBRECHAT_BACKEND_LOG_FILE="$LIBRECHAT_BACKEND_LOG_DIR/$(date +%Y-%m-%d).log"
+touch "$LIBRECHAT_BACKEND_LOG_FILE"
+print_info "Logging to: $LIBRECHAT_BACKEND_LOG_FILE"
+
+LIBRECHAT_BACKEND_CMD="touch $LIBRECHAT_BACKEND_LOG_FILE; echo \"=== LibreChat backend start \$(date -Is) ===\" | tee -a $LIBRECHAT_BACKEND_LOG_FILE; if command -v stdbuf >/dev/null 2>&1; then stdbuf -oL -eL env PORT=$LIBRECHAT_BACKEND_PORT HOST=0.0.0.0 \"$NPM_BIN\" run backend 2>&1 | tee -a $LIBRECHAT_BACKEND_LOG_FILE; else env PORT=$LIBRECHAT_BACKEND_PORT HOST=0.0.0.0 \"$NPM_BIN\" run backend 2>&1 | tee -a $LIBRECHAT_BACKEND_LOG_FILE; fi"
+
+bg_start_service "librechat-backend" "$LIBRECHAT_DIR" "$LIBRECHAT_BACKEND_CMD" "LibreChat Backend (Port 3080)"
+
+if ! wait_for_service 3080 "LibreChat Backend" 120 "librechat-backend" "$LIBRECHAT_BACKEND_LOG_FILE"; then
+    print_info "Check: tail -f $LIBRECHAT_BACKEND_LOG_FILE"
 fi
 
 echo ""
-print_info "Vite HMR is active — frontend changes auto-reload."
-echo ""
 echo "================================================"
-echo "  Frontend dev restart complete"
-echo "  PID file: $RUN_DIR/librechat-frontend.pid"
-echo "  Tail -f:  tail -f $LIBRECHAT_FRONTEND_LOG_FILE"
+echo "  Frontend rebuild complete"
+echo "  Static files: client/dist/ (served by backend)"
+echo "  Backend log:  $LIBRECHAT_BACKEND_LOG_FILE"
+echo "  Tail -f:      tail -f $LIBRECHAT_BACKEND_LOG_FILE"
+echo "  PID file:     $RUN_DIR/librechat-backend.pid"
 echo "================================================"
 echo ""
