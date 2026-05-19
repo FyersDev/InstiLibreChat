@@ -1,0 +1,24 @@
+client/src/components/Resources/Modals/UploadFileModal.tsx
+  6d90b32 1,7,9-10,62-68,74,92,97,109-122,170-171,183,229-230,318-323,325,375,517-544,546-547,550-598,610-611,641-653
+client/src/components/Chat/Header.tsx
+  6d90b32 43
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "base_commit_sha": "5e54dab60424fd0903c7bb944f15f255a5c9df74",
+  "prompts": {
+    "6d90b32": {
+      "agent_id": {
+        "tool": "cursor",
+        "id": "485104df-4695-4957-9a71-7ca622bcaee1",
+        "model": "default"
+      },
+      "human_author": "Hiren-fyers <hiren@fyers.in>",
+      "messages": [],
+      "total_additions": 1551,
+      "total_deletions": 849,
+      "accepted_lines": 670,
+      "overriden_lines": 0
+    }
+  }
+}
