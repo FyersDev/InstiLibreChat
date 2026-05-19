@@ -295,6 +295,10 @@ print_step "Building packages..."
 npm run build:packages 2>&1 | tail -3
 print_status "All packages built"
 
+print_step "Cleaning previous client bundle..."
+rm -rf "$LIBRECHAT_DIR/client/dist"
+print_status "client/dist/ cleared"
+
 print_step "Building client production bundle..."
 npm run build:client 2>&1 | tail -5
 if [ ! -f "$LIBRECHAT_DIR/client/dist/index.html" ]; then
