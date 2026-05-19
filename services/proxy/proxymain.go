@@ -87,10 +87,10 @@ func getLibreBackend() string {
 }
 
 func getLibreFrontend() string {
-	if target := os.Getenv("LIBRE_FRONTEND"); target != "" {
+	if target := os.Getenv("LIBRE_MERGE_PORT"); target != "" {
 		return target
 	}
-	return "http://localhost:3090" // Default LibreChat frontend port
+	return "http://localhost:3080" // Production: backend serves both API and static files (client/dist/)
 }
 
 func getMongoURI() string {
@@ -1370,34 +1370,11 @@ func main() {
 		req.Host = frontendTarget.Host
 	}
 
-	// HTML from Vite may reference the dev frontend port; rewrite to this proxy (e.g. 7080) for local WS.
 	frontendProxy.ModifyResponse = func(resp *http.Response) error {
 		resp.Header.Set("Access-Control-Allow-Origin", "*")
 		resp.Header.Set("Access-Control-Allow-Credentials", "true")
 		resp.Header.Set("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS")
 		resp.Header.Set("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With")
-
-		contentType := resp.Header.Get("Content-Type")
-		if !strings.Contains(contentType, "text/html") {
-			return nil
-		}
-		bodyBytes, err := io.ReadAll(resp.Body)
-		if err != nil {
-			return err
-		}
-		_ = resp.Body.Close()
-
-		htmlContent := string(bodyBytes)
-		htmlContent = strings.ReplaceAll(htmlContent, `ws://localhost:3090/`, `ws://localhost:7080/`)
-		htmlContent = strings.ReplaceAll(htmlContent, `wss://localhost:3090/`, `wss://localhost:7080/`)
-		htmlContent = strings.ReplaceAll(htmlContent, `"ws://localhost:3090/`, `"ws://localhost:7080/`)
-		htmlContent = strings.ReplaceAll(htmlContent, `"wss://localhost:3090/`, `"wss://localhost:7080/`)
-		htmlContent = strings.ReplaceAll(htmlContent, `'ws://localhost:3090/`, `'ws://localhost:7080/`)
-		htmlContent = strings.ReplaceAll(htmlContent, `'wss://localhost:3090/`, `'wss://localhost:7080/`)
-
-		resp.Body = io.NopCloser(strings.NewReader(htmlContent))
-		resp.ContentLength = int64(len(htmlContent))
-		resp.Header.Set("Content-Length", fmt.Sprintf("%d", len(htmlContent)))
 		return nil
 	}
 
@@ -1483,7 +1460,7 @@ func main() {
 	// basePath/ handler - frontend and catch-all
 	http.HandleFunc(basePath+"/", func(w http.ResponseWriter, r *http.Request) {
 		// Don't handle routes that have more specific handlers (must still reach a handler below).
-		// basePath/assets/ is served by the LibreChat frontend (Vite/static); do not return early
+		// basePath/assets/ is served by the LibreChat backend (client/dist/); do not return early
 		// without proxying — that produced empty 200 responses and broken images.
 		if strings.HasPrefix(r.URL.Path, basePath+"/api/") ||
 			strings.HasPrefix(r.URL.Path, basePath+"/oauth/") ||
@@ -1491,20 +1468,18 @@ func main() {
 			return
 		}
 
-		// Frontend is configured with base: basePath, so keep the prefix
+		// Strip basePath prefix before forwarding: the production build is served by the backend
+		// at root (e.g. /assets/vendor.js), not at /research/assets/vendor.js.
+		// Vite builds with base:'/research/' so browser requests arrive with the prefix;
+		// we strip it here so the backend resolves files from client/dist/ correctly.
+		stripPrefixPath(r, basePath)
+
 		email := extractEmailFromRequest(r)
 		if strings.EqualFold(r.Header.Get("Connection"), "Upgrade") ||
-			strings.EqualFold(r.Header.Get("Upgrade"), "websocket") ||
-			(r.URL.Query().Get("token") != "" && r.Method == "GET") {
-			if strings.EqualFold(r.Header.Get("Connection"), "Upgrade") ||
-				strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
-				proxyWebsocket(w, r, frontendTarget, email)
-				return
-			}
-			if r.URL.Query().Get("token") != "" {
-				proxyWebsocket(w, r, frontendTarget, email)
-				return
-			}
+			strings.EqualFold(r.Header.Get("Upgrade"), "websocket") {
+			// WebSocket (socket.io) connects to the backend in production.
+			proxyWebsocket(w, r, backendTarget, email)
+			return
 		}
 
 		frontendProxy.ServeHTTP(w, r)

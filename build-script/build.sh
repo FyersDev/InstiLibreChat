@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Full InstiLibreChat deploy: frontend (Vite dev), backend, and insti-proxy.
+# Full InstiLibreChat deploy: frontend (production static build served by backend), backend, and insti-proxy.
 # Self-contained — no sourcing of other shell scripts.
 
 set -e
@@ -20,10 +20,9 @@ BASE_DIR="/home/ec2-user/insti"
 RUN_DIR="$BASE_DIR/run"
 LIBRECHAT_DIR="$BASE_DIR/InstiLibreChat"
 LIBRECHAT_PROXY_DIR="$LIBRECHAT_DIR/services/proxy"
-LIBRECHAT_BRANCH="web-insti-integration"
+LIBRECHAT_BRANCH="prod-setup"
 LIBRECHAT_GIT_URL="${LIBRECHAT_GIT_URL:-git@github.com:FyersDev/InstiLibreChat.git}"
 LIBRECHAT_BACKEND_LOG_DIR="$BASE_DIR/logs/librechat-backend"
-LIBRECHAT_FRONTEND_LOG_DIR="$BASE_DIR/logs/librechat-frontend"
 INSTI_PROXY_LOG_DIR="$BASE_DIR/logs/insti-proxy"
 GO_RUN_TMP="$BASE_DIR/tmp/go-run"
 LIBRECHAT_BACKEND_PORT="${LIBRECHAT_BACKEND_PORT:-3080}"
@@ -391,7 +390,6 @@ print_deploy_status() {
     echo ""
 
     for spec in \
-        "librechat-frontend:3090:Frontend" \
         "librechat-backend:3080:Backend" \
         "insti-proxy:7080:Proxy"; do
         IFS=: read -r service_name port friendly_name <<< "$spec"
@@ -491,33 +489,12 @@ if [ -z "$NPM_BIN" ]; then
 fi
 
 # ----- Frontend -----
+# The production bundle was built above (client/dist/). The backend serves it as
+# static files at /research/ when NODE_ENV=production — no separate frontend
+# process is needed. Stop any lingering Vite dev server from a previous deploy.
 
-echo "================================================"
-echo "  Restart: LibreChat Frontend (Dev Server)"
-echo "================================================"
-echo ""
-
-bg_stop_service "librechat-frontend" "3090" "LibreChat Frontend"
-
-mkdir -p "$LIBRECHAT_FRONTEND_LOG_DIR"
-LIBRECHAT_FRONTEND_LOG_FILE="$LIBRECHAT_FRONTEND_LOG_DIR/$(date +%Y-%m-%d).log"
-touch "$LIBRECHAT_FRONTEND_LOG_FILE"
-print_info "Logging to: $LIBRECHAT_FRONTEND_LOG_FILE"
-
-FRONTEND_CMD="touch $LIBRECHAT_FRONTEND_LOG_FILE; echo \"=== LibreChat frontend start \$(date -Is) ===\" | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; if command -v stdbuf >/dev/null 2>&1; then stdbuf -oL -eL \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; else \"$NPM_BIN\" run frontend:dev 2>&1 | tee -a $LIBRECHAT_FRONTEND_LOG_FILE; fi"
-bg_start_service "librechat-frontend" "$LIBRECHAT_DIR" "$FRONTEND_CMD" "LibreChat Frontend (Dev, Port 3090)"
-
-if ! wait_for_service 3090 "LibreChat Frontend" 90 "librechat-frontend" "$LIBRECHAT_FRONTEND_LOG_FILE"; then
-    print_info "Check: tail -f $LIBRECHAT_FRONTEND_LOG_FILE"
-fi
-
-echo ""
-print_info "Vite HMR is active — frontend changes auto-reload."
-echo ""
-echo "================================================"
-echo "  Frontend dev restart complete"
-echo "  PID file: $RUN_DIR/librechat-frontend.pid"
-echo "================================================"
+bg_stop_service "librechat-frontend" "3090" "LibreChat Frontend (legacy dev server)"
+print_status "Frontend: static files in client/dist/ — served by backend on port $LIBRECHAT_BACKEND_PORT"
 echo ""
 
 # ----- Backend -----
@@ -639,22 +616,17 @@ echo ""
 # ----- Summary -----
 
 INSTI_DEPLOY_LOG_DATE="$(date +%Y-%m-%d)"
-LIBRECHAT_FRONTEND_LOG_FILE="$LIBRECHAT_FRONTEND_LOG_DIR/${INSTI_DEPLOY_LOG_DATE}.log"
 LIBRECHAT_BACKEND_LOG_FILE="$LIBRECHAT_BACKEND_LOG_DIR/${INSTI_DEPLOY_LOG_DATE}.log"
 INSTI_PROXY_LOG_FILE="$INSTI_PROXY_LOG_DIR/${INSTI_DEPLOY_LOG_DATE}.log"
 
 print_deploy_status
 
-echo "  Status all: for s in librechat-frontend:3090 librechat-backend:3080 insti-proxy:7080; do IFS=: read -r n p <<< \"\$s\"; st=not\\ listening; ss -tln 2>/dev/null | grep -qE \":\$p([[:space:]]|\$)\" && st=listening; pid=—; proc=stopped; [ -f $RUN_DIR/\${n}.pid ] && pid=\$(tr -d '[:space:]' < $RUN_DIR/\${n}.pid); [ \"\$pid\" != \"—\" ] && kill -0 \"\$pid\" 2>/dev/null && proc=running; printf '%s (%s): %s process=%s PID=%s\\n' \"\$n\" \"\$p\" \"\$st\" \"\$proc\" \"\$pid\"; done"
+echo "  Status all: for s in librechat-backend:3080 insti-proxy:7080; do IFS=: read -r n p <<< \"\$s\"; st=not\\ listening; ss -tln 2>/dev/null | grep -qE \":\$p([[:space:]]|\$)\" && st=listening; pid=—; proc=stopped; [ -f $RUN_DIR/\${n}.pid ] && pid=\$(tr -d '[:space:]' < $RUN_DIR/\${n}.pid); [ \"\$pid\" != \"—\" ] && kill -0 \"\$pid\" 2>/dev/null && proc=running; printf '%s (%s): %s process=%s PID=%s\\n' \"\$n\" \"\$p\" \"\$st\" \"\$proc\" \"\$pid\"; done"
 echo ""
 
 echo "================================================"
 echo "  Tail logs (all services)"
 echo "================================================"
-echo ""
-echo "  Frontend (3090)"
-echo "    Log file:  $LIBRECHAT_FRONTEND_LOG_FILE"
-echo "    Tail -f:   tail -f $LIBRECHAT_FRONTEND_LOG_FILE"
 echo ""
 echo "  Backend (3080)"
 echo "    Log file:  $LIBRECHAT_BACKEND_LOG_FILE"
