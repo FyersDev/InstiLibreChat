@@ -299,7 +299,24 @@ fetch_insti_env_from_ssm() {
     local aws_err
 
     if ! command -v aws >/dev/null 2>&1; then
-        print_error "AWS CLI is not installed or not on PATH."
+        print_warning "AWS CLI not found — attempting install via pip3..."
+        if command -v pip3 >/dev/null 2>&1; then
+            pip3 install --quiet awscli && hash -r 2>/dev/null || true
+        fi
+    fi
+    if ! command -v aws >/dev/null 2>&1; then
+        print_warning "pip3 unavailable — attempting curl install..."
+        if command -v curl >/dev/null 2>&1 && command -v unzip >/dev/null 2>&1; then
+            curl -fsSL "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o /tmp/awscliv2.zip \
+                && unzip -q /tmp/awscliv2.zip -d /tmp/awscliv2 \
+                && sudo /tmp/awscliv2/aws/install \
+                && rm -rf /tmp/awscliv2.zip /tmp/awscliv2 \
+                && hash -r 2>/dev/null || true
+        fi
+    fi
+    if ! command -v aws >/dev/null 2>&1; then
+        print_error "AWS CLI is not installed and could not be auto-installed."
+        print_info "Manual fix: curl https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip -o awscliv2.zip && unzip awscliv2.zip && sudo ./aws/install"
         return 1
     fi
 
@@ -419,6 +436,15 @@ echo "================================================"
 echo "  InstiLibreChat deploy"
 echo "================================================"
 echo ""
+
+if ! command -v git >/dev/null 2>&1; then
+    print_warning "git not found — attempting dnf install..."
+    sudo dnf install -y git || true
+fi
+if ! command -v git >/dev/null 2>&1; then
+    print_error "git is required but could not be installed. Run: sudo dnf install -y git"
+    exit 1
+fi
 
 ensure_insti_root_layout || exit 1
 
